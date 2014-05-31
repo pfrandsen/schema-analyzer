@@ -69,4 +69,11 @@ public class Utilities {
         return isCamelCaseAscii(text, false);
     }
 
+    public static String removeVersion(String name) {
+        if (name.matches(".+V[0-9]+")) {
+            int index = name.lastIndexOf('V');
+            return name.substring(0, index);
+        }
+        return name;
+    }
 }

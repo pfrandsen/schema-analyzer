@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://technical.schemas/header/application/v1" targetNamespace="http://technical.schemas/header/application/v1" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:simpleType name="RegistryNumberType">
+        <xs:annotation>
+            <xs:documentation>Models the identity of a system in registry.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:int"/>
+    </xs:simpleType>
+    <xs:simpleType name="ApplicationNameType">
+        <xs:annotation>
+            <xs:documentation>A readable name for the application.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="8"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="VersionType">
+        <xs:annotation>
+            <xs:documentation>This represents the version of an application by a major and minor version.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Major" type="xs:int"/>
+            <xs:element name="Minor" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ApplicationType">
+        <xs:annotation>
+            <xs:documentation>This type represents the identification of any application.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="RegistryNumber" type="tns:RegistryNumberType"/>
+            <xs:element name="ApplicationName" type="tns:ApplicationNameType"/>
+            <xs:element name="Version" type="tns:VersionType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ApplicationsType">
+        <xs:annotation>
+            <xs:documentation>Type to put together more applications thus it is possible to form a chain of invocations.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Application" type="tns:ApplicationType" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:anyAttribute namespace="http://schemas.xmlsoap.org/soap/envelope/" processContents="skip">
+            <xs:annotation>
+                <xs:documentation>Attributes from the soap envelope namespace are allowed. SOAP 1.1 (mustUnderstand, actor, relay), SOAP 1.2 (role). The attributes are not validated.</xs:documentation>
+            </xs:annotation>
+        </xs:anyAttribute>
+    </xs:complexType>
+    <xs:element name="Applications" type="tns:ApplicationsType">
+        <xs:annotation>
+            <xs:documentation>Element identifying the application where the invocation originated. If invocation results in events being generated the origination application id might be sent out with the event.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>

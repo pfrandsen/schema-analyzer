@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://technical.schemas/header/logging/v1" targetNamespace="http://technical.schemas/header/logging/v1" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:simpleType name="LogTokenValueType">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="22"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="LogTokenType">
+		<xs:simpleContent>
+			<xs:extension base="tns:LogTokenValueType">
+				<xs:anyAttribute namespace="http://schemas.xmlsoap.org/soap/envelope/" processContents="skip">
+					<xs:annotation>
+						<xs:documentation>Attributes from the soap envelope namespace are allowed. SOAP 1.1 (mustUnderstand, actor, relay), SOAP 1.2 (role). The attributes are not validated.</xs:documentation>
+					</xs:annotation>
+				</xs:anyAttribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:element name="Logging" type="tns:LogTokenType">
+		<xs:annotation>
+			<xs:documentation>Logging</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+</xs:schema>

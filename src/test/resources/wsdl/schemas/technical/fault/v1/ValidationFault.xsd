@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://technical.schemas/fault/v1" targetNamespace="http://technical.schemas/fault/v1" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:include schemaLocation="DataFault.xsd"/>
+    <xs:complexType name="ValidationMessageType">
+        <xs:sequence>
+            <xs:element name="Message" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Message describing the validation error.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ElementName" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Optional name of the element which caused the validation error.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ErrorCode" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Optional error code to signal the validation error.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ValidationFaultType">
+        <xs:complexContent>
+            <xs:extension base="tns:DataFaultType">
+                <xs:sequence>
+                    <xs:element name="ValidationMessage" type="tns:ValidationMessageType" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="ValidationFault" type="tns:ValidationFaultType">
+        <xs:annotation>
+            <xs:documentation>Fault document to signal a data validation error to the caller.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>

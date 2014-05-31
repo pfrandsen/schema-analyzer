@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://technical.schemas/fault/v1" targetNamespace="http://technical.schemas/fault/v1" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:include schemaLocation="Fault.xsd"/>
+	<xs:complexType name="UncategorizedFaultType">
+		<xs:annotation>
+			<xs:documentation>Type that signals an error with data given to the service.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="tns:FaultType">
+				<xs:sequence>
+					<xs:element name="ErrorCode" type="xs:integer"/>
+					<xs:element name="ReasonCode" type="xs:integer"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="UncategorizedFault" type="tns:UncategorizedFaultType">
+		<xs:annotation>
+			<xs:documentation>UncategorizedFault</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+</xs:schema>
