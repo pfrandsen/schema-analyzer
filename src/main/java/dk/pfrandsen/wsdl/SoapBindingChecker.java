@@ -56,7 +56,7 @@ public class SoapBindingChecker {
         }
         checkBindingName("" + binding.getName(), definitions, collector);
         if (!DOCUMENT_LITERAL.equals(binding.getStyle())) {
-            collector.addError(ASSERTION_ID, "binding is not " + DOCUMENT_LITERAL,
+            collector.addError(ASSERTION_ID, "Binding is not " + DOCUMENT_LITERAL,
                     AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Binding detected as [" + binding.getStyle() + "]");
         }
         if (binding.getType() != null) {
@@ -70,11 +70,11 @@ public class SoapBindingChecker {
     public static void checkBindings(Definitions definitions, AnalysisInformationCollector collector) {
         List<Binding> bindings = definitions.getLocalBindings();
         if (bindings.size() > 1) {
-            collector.addError(ASSERTION_ID, "wsdl contains more than one binding",
+            collector.addError(ASSERTION_ID, "WSDL contains more than one binding",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Wsdl contains " + bindings.size() + " bindings.");
         }
         if (bindings.size() == 0) {
-            collector.addError(ASSERTION_ID, "wsdl does not contain binding",
+            collector.addError(ASSERTION_ID, "WSDL does not contain binding",
                     AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL);
         }
         // expecting exactly one binding, but checking all of them if there is more
