@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1" 
+                  xmlns:tns="http://service.schemas/domain/service/v1" 
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+    <wsdl:documentation>
+        700 chars; Lorem ipsum dolor sit ame, consectetur adipiscing elit. Aenean venenatis interdum turpis sit amet pellentesque. Aenean ut ante semper, euismod dolor lobortis, rhoncus dui. Nam molestie fringilla lacinia. Suspendisse eget pharetra ligula. Ut sit amet lobortis tellus. Fusce id volutpat arcu. Sed sollicitudin ligula vel orci congue, sit amet ullamcorper orci lacinia. Curabitur at lectus vitae risus auctor ornare non a erat. Nullam sem risus, dignissim eget lacinia quis, pretium non sem. Cras malesuada mattis mauris non sollicitudin. Duis leo lectus, molestie in diam sit amet, congue volutpat tortor. Curabitur eros turpis, rutrum sed libero ut, tempus sodales mi. Donec imperdiet amet.
+    </wsdl:documentation>
+
+    <wsdl:types>
+        <xs:schema targetNamespace="http://service.schemas/domain/service/v1" xmlns="http://www.w3.org/2000/10/XMLSchema"
+                   elementFormDefault="qualified" attributeFormDefault="unqualified">
+          <xs:element name="GetEntityRequest">
+            <xs:complexType>
+              <xs:sequence>
+                <element name="Abc" type="xs:string"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="GetEntityResponse">
+            <xs:complexType>
+              <xs:sequence>
+                <element name="Def" type="xs:string"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="getEntityRequest">
+        <wsdl:part name="parameters" element="tns:GetEntityRequest"/>
+    </wsdl:message>
+    <wsdl:message name="getEntityResponse">
+        <wsdl:part name="parameters" element="tns:GetEntityResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="EntityService">
+        <wsdl:documentation>     </wsdl:documentation>
+        <wsdl:operation name="getEntity">
+            <wsdl:documentation>
+                701 chars: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean venenatis interdum turpis sit amet pellentesque. Aenean ut ante semper, euismod dolor lobortis, rhoncus dui. Nam molestie fringilla lacinia. Suspendisse eget pharetra ligula. Ut sit amet lobortis tellus. Fusce id volutpat arcu. Sed sollicitudin ligula vel orci congue, sit amet ullamcorper orci lacinia. Curabitur at lectus vitae risus auctor ornare non a erat. Nullam sem risus, dignissim eget lacinia quis, pretium non sem. Cras malesuada mattis mauris non sollicitudin. Duis leo lectus, molestie in diam sit amet, congue volutpat tortor. Curabitur eros turpis, rutrum sed libero ut, tempus sodales mi. Donec imperdiet amet.
+            </wsdl:documentation>
+            <wsdl:input message="tns:getEntityRequest"/>
+            <wsdl:output message="tns:getEntityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="EntityBinding" type="tns:EntityService">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getEntity">
+            <soap:operation style="document" soapAction="http://service.schemas/domain/service/v1/getEntityRequest"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="Entity">
+        <wsdl:port name="EntityWS" binding="tns:EntityBinding">
+            <soap:address location="http://localhost:7001/abc/v1"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>

@@ -67,4 +67,11 @@ public class UtilitiesTest {
         assertEquals(4, words.size());
         assertEquals("aa1;Abc;Def23;B1", Utilities.join(";", words));
     }
+
+    @Test
+    public void testSplitJoinAllCaps() {
+        List<String> words = Utilities.splitOnUppercase("AAA");
+        assertEquals(3, words.size());
+        assertEquals("A;A;A", Utilities.join(";", words));
+    }
 }
