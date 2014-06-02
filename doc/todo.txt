@@ -1,0 +1,3 @@
+
+Look at CXF wsdl validator: http://cxf.apache.org/docs/wsdlvalidator.html
+Look at Eclipse wsdl validator: http://wiki.eclipse.org/Using_the_WSDL_Validator_Outside_of_Eclipse
