@@ -36,16 +36,6 @@ class CheckFileTypes {
         }
     }
 
-    private static void findEmptyRecursive(File folder) {
-        folder.eachDir() { dir ->
-            findEmptyRecursive(dir)
-        }
-        String[] files = folder.list()
-        if (files != null && files.length == 0) {
-            System.out.println("Empty folder ${folder.getAbsolutePath()}")
-        }
-    }
-
     private static void checkFile(File file) {
         boolean match = false
         String extension = file.getName().tokenize('.').last()
@@ -72,27 +62,26 @@ class CheckFileTypes {
         processArguments(options)
         File root = new File(rootFolder)
         if (!root.isDirectory()) {
-            System.out.println("'${rootFolder}' is not a directory. Exiting")
+            System.err.println("'${rootFolder}' is not a directory. Exiting")
             return
         }
-        System.out.println("Extensions used {${matchExtensions.join(', ')}}")
+        System.err.println("Extensions used {${matchExtensions.join(', ')}}")
         root.eachFile { file ->
             if (file.isDirectory()) {
                 if (!ignoreFolders.contains(file.getName())) {
-                    System.out.println("Checking folder '${file.getName()}'")
+                    System.err.println("Checking folder '${file.getName()}'")
                     file.eachFileRecurse() { f ->
                         if (!f.isDirectory()) {
                             checkFile(f)
                         }
                     }
                 } else {
-                    System.out.println("Ignoring folder '${file.getName()}'")
+                    System.err.println("Ignoring folder '${file.getName()}'")
                 }
             } else {
                 checkFile(file)
             }
         }
-        findEmptyRecursive(new File(rootFolder))
     }
 
 }
