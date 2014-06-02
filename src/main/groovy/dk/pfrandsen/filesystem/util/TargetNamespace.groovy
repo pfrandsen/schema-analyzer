@@ -1,7 +1,17 @@
 package dk.pfrandsen.filesystem.util
 
+ import org.apache.commons.cli.Option
+
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
+/**
+ * Utility to check target namespace in files against the location of the file. The expected namespace value is
+ * "http://" + <domain> + <relative path from root folder> where domain and root folder are given as input.
+ * The script will recursively check all the files that matches a given set of extensions (e.g., .xsd) and
+ * print error messages if: The file does not include a target namespace, if it has more than one namespace, or
+ * if the namespace does not match the location of the file.
+ */
 
 class TargetNamespace {
 
@@ -16,6 +26,8 @@ class TargetNamespace {
             _(longOpt: 'help', 'Show usage information')
             r(longOpt: 'root', "Path to root folder", required: true, args: 1)
             d(longOpt: 'domain', "Domain for namespace", required: true, args: 1)
+            e(longOpt: 'extensions', "File extensions to check. Default ${extensions.join(',')}",
+                    args: Option.UNLIMITED_VALUES, valueSeparator: ',')
         }
         return cli
     }
@@ -26,6 +38,9 @@ class TargetNamespace {
         }
         if (options.d) {
             domain = options.d
+        }
+        if (options.e) {
+            extensions = options.es // 's' needs to be added to get all values and not just the first
         }
     }
 
@@ -60,7 +75,7 @@ class TargetNamespace {
         processArguments(options)
         File root = new File(rootFolder)
         if (!root.isDirectory()) {
-            System.out.println("'${rootFolder}' is not a directory. Exiting")
+            System.err.println("'${rootFolder}' is not a directory. Exiting")
             return
         }
 
