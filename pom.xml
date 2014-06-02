@@ -35,6 +35,12 @@
             <artifactId>httpclient</artifactId>
             <version>${httpclient.version}</version>
         </dependency>
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+            <!-- need version 1.3 to use recommended BasicParser but it is not in maven yet (10-5-2014) -->
+            <version>1.2</version>
+        </dependency>
     </dependencies>
 
     <build>
