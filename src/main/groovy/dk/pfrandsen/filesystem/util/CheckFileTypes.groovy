@@ -18,8 +18,10 @@ class CheckFileTypes {
         cli.with {
             _(longOpt: 'help', 'Show usage information')
             r(longOpt: 'root', "Path to root folder", required: true, args: 1)
-            e(longOpt: 'extensions', "Valid file extensions. Default ${matchExtensions.join(',')}", args: Option.UNLIMITED_VALUES, valueSeparator: ',')
-            i(longOpt: 'ignore', "Folders located in root that should be ignored.", args: Option.UNLIMITED_VALUES, valueSeparator: ',')
+            e(longOpt: 'extensions', "Valid file extensions. Default ${matchExtensions.join(',')}",
+                    args: Option.UNLIMITED_VALUES, valueSeparator: ',')
+            i(longOpt: 'ignore', "Folders located in root that should be ignored.",
+                    args: Option.UNLIMITED_VALUES, valueSeparator: ',')
         }
         return cli
     }
