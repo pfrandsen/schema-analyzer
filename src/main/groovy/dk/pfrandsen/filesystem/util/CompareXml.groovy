@@ -2,6 +2,8 @@ package dk.pfrandsen.filesystem.util
 
 import groovy.util.logging.*
 import groovy.xml.XmlUtil
+import org.apache.commons.cli.Option
+
 // import org.apache.commons.cli.Option
 
 import java.util.logging.Level
@@ -85,8 +87,8 @@ class CompareXml {
             _(longOpt: 'help', 'Show usage information')
             m(longOpt: 'master', "Path to master root", required: true, args: 1)
             c(longOpt: 'clone', "Path to clone root", required: true, args: 1)
-            // e(longOpt: 'extensions', "Extension of files to check", required: true, args: Option.UNLIMITED_VALUES, valueSeparator: ',')
-            e(longOpt: 'extensions', "Extension of files to check", required: true, args: -2, valueSeparator: ',')
+            e(longOpt: 'extensions', "Extension of files to check", required: true,
+                    args: Option.UNLIMITED_VALUES, valueSeparator: ',')
         }
         return cli
     }
