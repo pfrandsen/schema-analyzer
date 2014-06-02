@@ -40,10 +40,10 @@ public class AnalysisInformation {
     @Override
     public String toString() {
         return "AnalysisInformation{" +
-            "assertion='" + assertion + '\'' +
-            ", message='" + message + '\'' +
-            ", severity=" + severity +
-            ", details='" + details + '\'' +
-            '}';
+                "assertion='" + assertion + '\'' +
+                ", message='" + message + '\'' +
+                ", severity=" + severity +
+                ", details='" + details + '\'' +
+                '}';
     }
 }
