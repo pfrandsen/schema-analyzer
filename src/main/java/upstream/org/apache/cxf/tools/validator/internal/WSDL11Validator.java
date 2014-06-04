@@ -58,7 +58,7 @@ public class WSDL11Validator extends AbstractDefinitionValidator {
         super(definition, pe, b);
     }
 
-    private Document getWSDLDoc(String wsdl) {
+    protected Document getWSDLDoc(String wsdl) {
         LOG.log(Level.FINE, new Message("VALIDATE_WSDL", LOG, wsdl).toString());
         try {
             OASISCatalogManager catalogResolver = OASISCatalogManager.getCatalogManager(this.getBus());
