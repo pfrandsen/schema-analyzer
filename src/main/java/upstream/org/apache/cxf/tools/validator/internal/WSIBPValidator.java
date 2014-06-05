@@ -38,16 +38,15 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
     public boolean isValid() {
         boolean valid = true;
         for (Method m : getClass().getMethods()) {
-            if (m.getName().startsWith("check")) {
-                if (m.getGenericReturnType() == boolean.class && m.getGenericParameterTypes().length == 0) {
-                    try {
-                        Boolean res = (Boolean)m.invoke(this);
-                        if (!res) {
-                            valid = false;
-                        }
-                    } catch (Exception e) {
-                        throw new ToolException(e);
+            if (m.getName().startsWith("check") && m.getGenericReturnType() == boolean.class
+                    && m.getGenericParameterTypes().length == 0) {
+                try {
+                    Boolean res = (Boolean) m.invoke(this);
+                    if (!res) {
+                        valid = false;
                     }
+                } catch (Exception e) {
+                    throw new ToolException(e);
                 }
             }
         }
