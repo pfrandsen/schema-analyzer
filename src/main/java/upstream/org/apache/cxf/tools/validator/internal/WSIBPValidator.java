@@ -348,8 +348,8 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
         for (Binding binding : bindings) {
 
             if (!SOAPBindingUtil.isSOAPBinding(binding)) {
-                System.err.println("WSIBP Validator found <"
-                        + binding.getQName() + "> is NOT a SOAP binding");
+                addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2205") + "WSIBP Validator found <" + binding.getQName()
+                        + "> is NOT a SOAP binding");
                 continue;
             }
             if (binding.getPortType() == null) {
