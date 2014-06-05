@@ -71,15 +71,11 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
     private Set<QName> messageRefNames = new HashSet<QName>();
     private Map<QName, Service> services = new HashMap<QName, Service>();
 
-    private ValidationResult vResults = new ValidationResult();
-
     private Definition definition;
     private Document baseDoc;
 
     private List<Definition> importedDefinitions;
     private SchemaCollection schemaCollection = new SchemaCollection();
-
-    private boolean suppressWarnings;
 
     public WSDLRefValidator(Definition wsdl, Document doc) {
         this(wsdl, doc, BusFactory.getThreadDefaultBus());
@@ -145,14 +141,6 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
         } catch (MalformedURLException e) {
             // do nothing
         }
-    }
-
-    public void setSuppressWarnings(boolean s) {
-        this.suppressWarnings = s;
-    }
-
-    public ValidationResult getValidationResults() {
-        return this.vResults;
     }
 
     private Document getWSDLDocument(final String wsdl) throws URISyntaxException {
@@ -225,7 +213,7 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
                     //System.out.println("Fail: " + vNode.getXPath());
                     FailureLocation loc = getFailureLocation(wsdlDocs, vNode.getFailurePoint());
 
-                    vResults.addError(new Message("FAILED_AT_POINT",
+                    addError(new Message("FAILED_AT_POINT",
                             LOG,
                             loc.getLocation().getLineNumber(),
                             loc.getLocation().getColumnNumber(),
@@ -234,10 +222,10 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
                 }
             }
         } catch (Exception e) {
-            this.vResults.addError(e.getMessage());
+            this.addError(e.getMessage());
             return false;
         }
-        return vResults.isSuccessful();
+        return isSuccessful();
     }
 
     private void addServices(final Definition wsdlDef) {
@@ -370,13 +358,6 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
         return mNode;
     }
 
-    private void addWarning(String warningMsg) {
-        if (suppressWarnings) {
-            return;
-        }
-        vResults.addWarning(warningMsg);
-    }
-
     private void collectValidationPoints() throws Exception {
         if (services.size() == 0) {
             LOG.log(Level.WARNING, "WSDL document "
@@ -472,12 +453,12 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
                 QName typeName = part.getTypeName();
 
                 if (elementName == null && typeName == null) {
-                    vResults.addError(new Message("PART_NO_TYPES", LOG));
+                    addError(new Message("PART_NO_TYPES", LOG));
                     continue;
                 }
 
                 if (elementName != null && typeName != null) {
-                    vResults.addError(new Message("PART_NOT_UNIQUE", LOG));
+                    addError(new Message("PART_NOT_UNIQUE", LOG));
                     continue;
                 }
 
@@ -485,7 +466,7 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
                     boolean valid = validatePartType(elementName.getNamespaceURI(),
                             elementName.getLocalPart(), true);
                     if (!valid) {
-                        vResults.addError(new Message("TYPE_REF_NOT_FOUND", LOG, message.getQName(),
+                        addError(new Message("TYPE_REF_NOT_FOUND", LOG, message.getQName(),
                                 part.getName(), elementName));
                     }
 
@@ -495,7 +476,7 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
                             typeName.getLocalPart(),
                             false);
                     if (!valid) {
-                        vResults.addError(new Message("TYPE_REF_NOT_FOUND", LOG, message.getQName(),
+                        addError(new Message("TYPE_REF_NOT_FOUND", LOG, message.getQName(),
                                 part.getName(), typeName));
                     }
                 }
@@ -520,7 +501,7 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
         for (QName ptName : portTypeRefNames) {
             PortType portType = getPortType(ptName);
             if (portType == null) {
-                vResults.addError(new Message("NO_PORTTYPE", LOG, ptName));
+                addError(new Message("NO_PORTTYPE", LOG, ptName));
                 continue;
             }
 
@@ -528,7 +509,7 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
             for (Operation operation : getOperations(portType).values()) {
                 XNode vOperationNode = getOperationXNode(vPortTypeNode, operation.getName());
                 if (operation.getInput() == null) {
-                    vResults.addError(new Message("WRONG_MEP", LOG, operation.getName(),
+                    addError(new Message("WRONG_MEP", LOG, operation.getName(),
                             portType.getQName()));
                     continue;
                 }
@@ -603,7 +584,7 @@ public class WSDLRefValidator extends AbstractDefinitionValidator {
     }
 
     public String getErrorMessage() {
-        return vResults.toString();
+        return getValidationResults().toString();
     }
 
     public Definition getDefinition() {
