@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1" 
+                  xmlns:tns="http://service.schemas/domain/service/v1" 
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+    <wsdl:types>
+        <xs:schema targetNamespace="http://service.schemas/domain/service/v1" xmlns="http://www.w3.org/2000/10/XMLSchema"
+                   elementFormDefault="qualified" attributeFormDefault="unqualified">
+            <xs:include schemaLocation="included.xsd"/>
+            <xs:import namespace="http://ns/v1"
+                       schemaLocation="http://service.schemas/v1/Service.xsd"/>
+        </xs:schema>
+    </wsdl:types>
+
+</wsdl:definitions>

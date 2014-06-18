@@ -1,7 +1,9 @@
 package dk.pfrandsen.util;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Utilities {
 
@@ -76,4 +78,25 @@ public class Utilities {
         }
         return name;
     }
+
+    public static void mkDirs(Path folder) {
+        if (!folder.toFile().exists()) {
+            if (!folder.toFile().mkdirs()) {
+                System.out.println("Could not create: " + folder.toString());
+            }
+        }
+    }
+
+    /* get the key for a given value */
+    public static String getKeyForValue(String value, Map<String, String> namespaces) {
+        if (namespaces.containsValue(value)) {
+            for (String key : namespaces.keySet()) {
+                if (value.equals(namespaces.get(key))) {
+                    return key;
+                }
+            }
+        }
+        return "";
+    }
+
 }

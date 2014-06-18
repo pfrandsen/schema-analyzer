@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:tns="http://www.iona.com/artix/defaults" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="defaults.wsdl" targetNamespace="http://www.iona.com/artix/defaults">
+    <types>
+        <xsd:schema xmlns="http://www.iona.com/artix/defaults" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.iona.com/artix/defaults">
+            <xsd:complexType name="TestType">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="1" minOccurs="1" name="msg" type="xsd:string"/>
+                    <xsd:element maxOccurs="1" minOccurs="1" name="num" type="xsd:int"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="Test" type="TestType"/>
+            <xsd:element name="TestInputHeader1" type="xsd:string"/>
+            <xsd:element name="TestInputHeader2" type="xsd:string"/>
+            <xsd:element name="TestOutputHeader" type="xsd:string"/>
+            <xsd:element name="TestFault1" type="xsd:string"/>
+            <xsd:element name="TestFault2" type="xsd:string"/>
+        </xsd:schema>
+    </types>
+    <message name="TestMessage">
+        <part element="tns:Test" name="params"/>
+    </message>
+
+    <message name="TestInputHeader1Message">
+        <part element="tns:TestInput1Header" name="header"/>
+    </message>
+    <message name="TestInputHeader2Message">
+        <part element="tns:TestInput2Header" name="header"/>
+    </message>
+    <message name="TestOutputHeaderMessage">
+        <part element="tns:TestOutputHeader" name="header"/>
+    </message>
+
+
+    <message name="typeOneFault">
+        <part element="tns:TestFault1" name="fault"/>
+    </message>
+    <message name="typeTwoFault">
+        <part element="tns:TestFault2" name="fault"/>
+    </message>
+
+    <portType name="TestPortType">
+        <operation name="Test">
+            <input message="tns:TestMessage"/>
+            <output message="tns:TestMessage"/>
+            <fault name="typeOneFault" message="tns:typeOneFault"/>
+            <fault name="typeTwoFault" message="tns:typeTwoFault"/>
+        </operation>
+    </portType>
+    <binding name="TestPortTypeDefaults" type="tns:TestPortType">
+        <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="Test">
+            <soap:operation soapAction="" style="rpc"/>
+            <input name="TestRequest">
+                <soap:body use="literal" namespace="http://www.iona.com/artix/defaults"/>
+                <soap:header message="tns:TestInputHeader1Message" part="header" use="literal" namespace="http://www.iona.com/artix/defaults"/>
+                <soap:header message="tns:TestInputHeader2Message" part="header" use="literal" namespace="http://www.iona.com/artix/defaults"/>
+            </input>
+            <output name="TestResponse">
+                <soap:body use="literal" namespace="http://www.iona.com/artix/defaults"/>
+                <soap:header message="tns:TestOutputHeaderMessage" part="header" use="literal" namespace="http://www.iona.com/artix/defaults"/>
+            </output>
+            <fault name="typeOneFault">
+                <soap:fault name="typeOneFault" use="literal" namespace="http://www.iona.com/artix/defaults"/>
+            </fault>
+            <fault name="typeTwoFault">
+                <soap:fault name="typeTwoFault" use="literal" namespace="http://www.iona.com/artix/defaults"/>
+            </fault>
+        </operation>
+    </binding>
+    <service name="TestService">
+        <port binding="tns:TestPortTypeDefaults" name="TestPort">
+            <soap:address location="http://localhost:9100/TestService"/>
+        </port>
+    </service>
+</definitions>

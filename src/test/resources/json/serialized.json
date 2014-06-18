@@ -1,0 +1,16 @@
+{
+  "errors": [
+      { "assertion" : "Assertion id 1", "details" : "", "message" : "Error message 1", "severity" : 1},
+      { "assertion" : "Assertion id 2", "details" : "", "message" : "Error message 2", "severity" : 2},
+      { "assertion" : "Assertion id 3", "details" : "", "message" : "Error message 3", "severity" : 2},
+      { "assertion" : "Assertion id 4", "details" : "", "message" : "Error message 4", "severity" : 3},
+      { "assertion" : "Assertion id 5", "details" : "", "message" : "Error message 5", "severity" : 2}
+    ],
+  "info":[
+      { "assertion" : "Assertion id 7", "details" : "", "message" : "Info message 1", "severity" : 4}
+    ],
+  "warnings":[
+      { "assertion" : "Assertion id 8", "details" : "", "message" : "Warning message 1", "severity" : -1},
+      { "assertion" : "Assertion id 9", "details" : "", "message" : "Warning message 2", "severity" : 2}
+  ]
+}

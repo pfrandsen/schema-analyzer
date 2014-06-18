@@ -1,6 +1,5 @@
 package upstream.org.apache.cxf.tools.validator.internal;
 
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +26,7 @@ import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.tools.common.ToolException;
 import org.apache.cxf.wsdl.WSDLHelper;
 
+// WS-I Basic Profile 1.1 specification: http://www.ws-i.org/Profiles/BasicProfile-1.1-2006-04-10.html
 public class WSIBPValidator extends AbstractDefinitionValidator {
     private List<String> operationMap = new ArrayList<String>();
     private WSDLHelper wsdlHelper = new WSDLHelper();
@@ -53,68 +53,119 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
         return valid;
     }
 
+    // R2716 A document-literal binding in a DESCRIPTION MUST NOT have the namespace attribute specified on contained
+    // soap:body, soap:header, soap:headerfault and soap:fault elements.
     private boolean checkR2716(final BindingOperation bop) {
+        // headerfault which can be embedded in both input and output headers have the same namespace attribute rule
+        // are not validated. http://www.w3.org/TR/wsdl#_soap:header
+        // TODO: should also check headerfault
+        boolean retVal = true;
         SoapBody inSoapBody = SOAPBindingUtil.getBindingInputSOAPBody(bop);
-        SoapBody outSoapBody = SOAPBindingUtil.getBindingOutputSOAPBody(bop);
-        if (inSoapBody != null && !StringUtils.isEmpty(inSoapBody.getNamespaceURI())
-                || outSoapBody != null && !StringUtils.isEmpty(outSoapBody.getNamespaceURI())) {
+        if (inSoapBody != null && !StringUtils.isEmpty(inSoapBody.getNamespaceURI())) {
             addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2716") + "Operation '"
-                    + bop.getName() + "' soapBody MUST NOT have namespace attribute");
-            return false;
+                    + bop.getName() + "' input soapBody MUST NOT have namespace attribute");
+            retVal = false;
+        }
+        SoapBody outSoapBody = SOAPBindingUtil.getBindingOutputSOAPBody(bop);
+        if (outSoapBody != null && !StringUtils.isEmpty(outSoapBody.getNamespaceURI())) {
+            addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2716") + "Operation '"
+                    + bop.getName() + "' output soapBody MUST NOT have namespace attribute");
+            retVal = false;
         }
 
-        SoapHeader inSoapHeader = SOAPBindingUtil.getBindingInputSOAPHeader(bop);
-        SoapHeader outSoapHeader = SOAPBindingUtil.getBindingOutputSOAPHeader(bop);
-        if (inSoapHeader != null && !StringUtils.isEmpty(inSoapHeader.getNamespaceURI())
-                || outSoapHeader != null && !StringUtils.isEmpty(outSoapHeader.getNamespaceURI())) {
-            addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2716") + "Operation '"
-                    + bop.getName() + "' soapHeader MUST NOT have namespace attribute");
-            return false;
+        List<SoapHeader> inputHeaders =
+                dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingInputSOAPHeaders(bop);
+        for (SoapHeader hdr : inputHeaders) {
+            if (!StringUtils.isEmpty(hdr.getNamespaceURI())) {
+                String msg = hdr.getMessage() == null ? "" : "<" + hdr.getMessage().getLocalPart() + "> ";
+                addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2716") + "Operation '"
+                        + bop.getName() + "' input soapHeader " + msg + "MUST NOT have namespace attribute");
+                retVal = false;
+            }
+        }
+        List<SoapHeader> outputHeaders =
+            dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingOutputSOAPHeaders(bop);
+        for (SoapHeader hdr : outputHeaders) {
+            if (!StringUtils.isEmpty(hdr.getNamespaceURI())) {
+                String msg = hdr.getMessage() == null ? "" : "<" + hdr.getMessage().getLocalPart() + "> ";
+                addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2716") + "Operation '"
+                        + bop.getName() + "' output soapHeader " + msg + "MUST NOT have namespace attribute");
+                retVal = false;
+            }
         }
 
         List<SoapFault> soapFaults = SOAPBindingUtil.getBindingOperationSoapFaults(bop);
         for (SoapFault fault : soapFaults) {
             if (!StringUtils.isEmpty(fault.getNamespaceURI())) {
                 addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2716") + "Operation '"
-                        + bop.getName() + "' soapFault MUST NOT have namespace attribute");
-                return false;
+                        + bop.getName() + "' soapFault <" + fault.getName() + "> MUST NOT have namespace attribute");
+                retVal = false;
             }
         }
-        return true;
+        return retVal;
     }
 
+    // R2717 An rpc-literal binding in a DESCRIPTION MUST have the namespace attribute specified, the value of which
+    // MUST be an absolute URI, on contained soap:body elements.
+    // R2726 An rpc-literal binding in a DESCRIPTION MUST NOT have the namespace attribute specified on contained
+    // soap:header, soap:headerfault and soap:fault elements.
     private boolean checkR2717AndR2726(final BindingOperation bop) {
+        // TODO: should also check headerfault
+        boolean retVal = true;
         if (null == bop) {
             return true;
         }
         SoapBody inSoapBody = SOAPBindingUtil.getBindingInputSOAPBody(bop);
-        SoapBody outSoapBody = SOAPBindingUtil.getBindingOutputSOAPBody(bop);
-        if (inSoapBody != null && StringUtils.isEmpty(inSoapBody.getNamespaceURI())
-                || outSoapBody != null && StringUtils.isEmpty(outSoapBody.getNamespaceURI())) {
+        if (inSoapBody != null && StringUtils.isEmpty(inSoapBody.getNamespaceURI())) {
             addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2717")
-                    + "soapBody in the input/output of the binding operation '"
+                    + "soapBody in the input of the binding operation '"
                     + bop.getName() + "' MUST have namespace attribute");
-            return false;
+            retVal = false;
+        }
+        SoapBody outSoapBody = SOAPBindingUtil.getBindingOutputSOAPBody(bop);
+        if (outSoapBody != null && StringUtils.isEmpty(outSoapBody.getNamespaceURI())) {
+            addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2717")
+                    + "soapBody in the output of the binding operation '"
+                    + bop.getName() + "' MUST have namespace attribute");
+            retVal = false;
         }
 
-        SoapHeader inSoapHeader = SOAPBindingUtil.getBindingInputSOAPHeader(bop);
-        SoapHeader outSoapHeader = SOAPBindingUtil.getBindingOutputSOAPHeader(bop);
-        if (inSoapHeader != null && !StringUtils.isEmpty(inSoapHeader.getNamespaceURI())
-                || outSoapHeader != null && !StringUtils.isEmpty(outSoapHeader.getNamespaceURI())) {
-            addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2726") + "Operation '"
-                    + bop.getName() + "' soapHeader MUST NOT have namespace attribute");
-            return false;
+        List<SoapHeader> inputHeaders =
+                dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingInputSOAPHeaders(bop);
+        for (SoapHeader hdr : inputHeaders) {
+            if (!StringUtils.isEmpty(hdr.getNamespaceURI())) {
+                String msg = "";
+                if (hdr.getMessage() != null) {
+                    msg = "<" + hdr.getMessage().getLocalPart() + "," + hdr.getPart() +"> ";
+                }
+                addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2726") + "Operation '"
+                        + bop.getName() + "' input soapHeader " + msg + "MUST NOT have namespace attribute");
+                retVal = false;
+            }
+        }
+        List<SoapHeader> outputHeaders =
+                dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingOutputSOAPHeaders(bop);
+        for (SoapHeader hdr : outputHeaders) {
+            if (!StringUtils.isEmpty(hdr.getNamespaceURI())) {
+                String msg = "";
+                if (hdr.getMessage() != null) {
+                    msg = "<" + hdr.getMessage().getLocalPart() + "," + hdr.getPart() +"> ";
+                }
+                addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2726") + "Operation '"
+                        + bop.getName() + "' output soapHeader " + msg + "MUST NOT have namespace attribute");
+                retVal = false;
+            }
         }
 
         List<SoapFault> soapFaults = SOAPBindingUtil.getBindingOperationSoapFaults(bop);
         for (SoapFault fault : soapFaults) {
             if (!StringUtils.isEmpty(fault.getNamespaceURI())) {
                 addErrorMessage(getErrorPrefix("WSI-BP-1.0 R2726") + "Operation '"
-                        + bop.getName() + "' soapFault MUST NOT have namespace attribute");
-                return false;
+                        + bop.getName() + "' soapFault <" + fault.getName() + "> MUST NOT have namespace attribute");
+                retVal = false;
             }
         }
-        return true;
+        return retVal;
     }
 
     private boolean checkR2201Input(final Operation operation,
@@ -254,6 +305,72 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
         return true;
     }
 
+    private boolean isHeaderPart(final List<SoapHeader> headers, final Part part) {
+        String partName = part.getName();
+        //QName elementName = part.getElementName();
+        //if (elementName != null) {
+        if (partName != null) {
+            //String partName = elementName.getLocalPart();
+            for (SoapHeader hdr : headers) {
+                System.out.println("Checking " + partName + "," + hdr.getPart());
+                if (partName.equals(hdr.getPart())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isInputHeaderPart(final BindingOperation bop, final Part part) {
+        List<SoapHeader> headers =
+                dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingInputSOAPHeaders(bop);
+        return isHeaderPart(headers, part);
+        /* QName elementName = part.getElementName();
+        if (elementName != null) {
+            String partName = elementName.getLocalPart();
+            List<SoapHeader> headers =
+                    dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingInputSOAPHeaders(bop);
+            for (SoapHeader hdr : headers) {
+                if (partName.equals(hdr.getPart())) {
+                    return true;
+                }
+            }
+        }
+        return false; */
+    }
+
+    private boolean isOutputHeaderPart(final BindingOperation bop, final Part part) {
+        List<SoapHeader> headers =
+                dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingOutputSOAPHeaders(bop);
+        return isHeaderPart(headers, part);
+
+        /* QName elementName = part.getElementName();
+        if (elementName != null) {
+            String partName = elementName.getLocalPart();
+
+            // must check all headers!!
+            List<SoapHeader> inputHeaders =
+                    dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingInputSOAPHeaders(bop);
+
+            List<SoapHeader> outputHeaders =
+                    dk.pfrandsen.wsdl.upstream.org.apache.cxf.binding.soap.SOAPBindingUtil.getBindingOutputSOAPHeaders(bop);
+            for (SoapHeader hdr : outputHeaders) {
+
+            }
+
+            SoapHeader inSoapHeader = SOAPBindingUtil.getBindingInputSOAPHeader(bop);
+            if (inSoapHeader != null) {
+                return partName.equals(inSoapHeader.getPart());
+            }
+            SoapHeader outSoapHeader = SOAPBindingUtil.getBindingOutputSOAPHeader(bop);
+            if (outSoapHeader != null) {
+                return partName.equals(outSoapHeader.getPart());
+            }
+        }
+        return false;*/
+    }
+
+    /*
     private boolean isHeaderPart(final BindingOperation bop, final Part part) {
         QName elementName = part.getElementName();
         if (elementName != null) {
@@ -268,7 +385,7 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
             }
         }
         return false;
-    }
+    } */
 
     public boolean checkR2203And2204() {
 
@@ -292,11 +409,13 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
                     for (Iterator<?> ite3 = inMess.getParts().values().iterator(); ite3.hasNext();) {
                         Part p = (Part)ite3.next();
                         if (SOAPBinding.Style.RPC.name().equalsIgnoreCase(style) && p.getTypeName() == null
-                                && !isHeaderPart(bop, p)) {
+                                && !isInputHeaderPart(bop, p)) {
+
                             addErrorMessage("An rpc-literal binding in a DESCRIPTION MUST refer, "
                                     + "in its soapbind:body element(s), only to "
                                     + "wsdl:part element(s) that have been defined "
                                     + "using the type attribute.");
+                            addErrorMessage("An rpc-literal binding " + p.getName());
                             return false;
                         }
 
@@ -316,7 +435,7 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
                     for (Iterator<?> ite3 = outMess.getParts().values().iterator(); ite3.hasNext();) {
                         Part p = (Part)ite3.next();
                         if (style.equalsIgnoreCase(SOAPBinding.Style.RPC.name()) && p.getTypeName() == null
-                                &&  !isHeaderPart(bop, p)) {
+                                &&  !isOutputHeaderPart(bop, p)) {
                             addErrorMessage("An rpc-literal binding in a DESCRIPTION MUST refer, "
                                     + "in its soapbind:body element(s), only to "
                                     + "wsdl:part element(s) that have been defined "
@@ -355,6 +474,10 @@ public class WSIBPValidator extends AbstractDefinitionValidator {
                 //will error later
                 continue;
             }
+
+            // TODO: PFRANDSEN check headers - check that all headers have element attribute
+            // get all input headers and output header for binding and check for element attribute (error if not present)
+            // plus type attribute must not be present (warn)
 
             for (Iterator<?> ite2 = binding.getPortType().getOperations().iterator(); ite2.hasNext();) {
                 Operation operation = (Operation)ite2.next();

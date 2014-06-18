@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1"
+                  xmlns:tns="http://service.schemas/domain/service/v1"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+    <wsdl:documentation>
+        Docs.
+    </wsdl:documentation>
+
+    <wsdl:types>
+        <xs:schema targetNamespace="http://service.schemas/domain/service/v1" xmlns="http://www.w3.org/2000/10/XMLSchema"
+                   elementFormDefault="qualified" attributeFormDefault="unqualified">
+            <xs:element name="GetEntityRequest">
+                <xs:complexType>
+                    <xs:sequence>
+                        <element name="Abc" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="GetEntityResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <element name="Def" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="getEntityRequest">
+        <wsdl:part name="parameters" element="tns:GetEntityRequest"/>
+    </wsdl:message>
+    <wsdl:message name="getEntityResponse">
+        <wsdl:part name="parameters" element="tns:GetEntityResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="EntityService">
+        <wsdl:documentation>The service ....</wsdl:documentation>
+        <wsdl:operation name="getEntity">
+            <wsdl:documentation>Retrieve ...</wsdl:documentation>
+            <wsdl:input message="tns:getEntityRequest"/>
+            <wsdl:output message="tns:getEntityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="EntityBinding" type="tns:EntityService">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getEntity">
+            <soap:operation style="document" soapAction="http://service.schemas/domain/service/v1/getEntityRequest"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="Entity">
+        <wsdl:port name="EntityWS" binding="tns:EntityBinding">
+            <soap:address location="http://localhost:7001/abc/v1"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>

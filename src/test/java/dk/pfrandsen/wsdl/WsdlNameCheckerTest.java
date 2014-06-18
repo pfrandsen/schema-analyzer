@@ -30,9 +30,9 @@ public class WsdlNameCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         WsdlNameChecker.checkName(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
@@ -41,9 +41,9 @@ public class WsdlNameCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         WsdlNameChecker.checkName(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
@@ -52,9 +52,9 @@ public class WsdlNameCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         WsdlNameChecker.checkName(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
@@ -63,9 +63,9 @@ public class WsdlNameCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         WsdlNameChecker.checkName(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals("Name in wsdl:definitions start tag is invalid; must be upper camel case ascii", collector.getErrors().get(0).getMessage());
     }
@@ -76,9 +76,9 @@ public class WsdlNameCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         WsdlNameChecker.checkName(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals("Name in wsdl:definitions start tag is invalid; must be upper camel case ascii", collector.getErrors().get(0).getMessage());
     }
@@ -89,9 +89,9 @@ public class WsdlNameCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         WsdlNameChecker.checkName(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, collector.getErrors().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("Name in wsdl:definitions start tag contains version information", collector.getErrors().get(0).getMessage());

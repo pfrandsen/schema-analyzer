@@ -30,9 +30,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
@@ -41,9 +41,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("Danish characters found in WSDL element (top level)", collector.getErrors().get(0).getMessage());
@@ -57,9 +57,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals("Danish characters found in WSDL element (top level)", collector.getErrors().get(0).getMessage());
     }
@@ -70,9 +70,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(2, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(2, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(1).getSeverity());
         assertEquals("No documentation for WSDL element (top level)", collector.getWarnings().get(0).getMessage());
@@ -85,9 +85,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(2, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(2, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(1).getSeverity());
         assertEquals("No documentation for WSDL element (top level)", collector.getWarnings().get(0).getMessage());
@@ -100,9 +100,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("Documentation for WSDL element (top level) exceed limit (700)", collector.getWarnings().get(0).getMessage());
     }
@@ -113,9 +113,9 @@ public class DocumentationCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         DocumentationChecker.checkDocumentation(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("Documentation for portType [EntityService] operation [getEntity] exceed limit (700)", collector.getWarnings().get(0).getMessage());
     }

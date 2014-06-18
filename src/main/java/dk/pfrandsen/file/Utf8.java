@@ -77,7 +77,7 @@ public class Utf8 {
     }
 
     public static boolean checkUtf8File(String filePath, AnalysisInformationCollector collector) {
-        int errorCount = collector.getErrorCount();
+        int errorCount = collector.errorCount();
         boolean bom = hasUTF8ByteOrderMark(filePath, collector);
         if (bom) {
             collector.addError(ASSERTION_ID, "UTF-8 byte order mark found in '" + filePath + "'.",
@@ -97,6 +97,6 @@ public class Utf8 {
                         AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             }
         }
-        return collector.getErrorCount() == errorCount;
+        return collector.errorCount() == errorCount;
     }
 }

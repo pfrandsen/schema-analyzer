@@ -25,7 +25,7 @@ under the License.
     </types>
     <message name="inHeaderRequest">
         <part type="x1:inHeaderT" name="in"/>
-        <part element="x1:header" name="header"/>
+        <part element="x1:header" name="header000"/>
     </message>
     <message name="inHeaderResponse">
         <part type="x1:inHeaderResponseT" name="out"/>
@@ -53,7 +53,7 @@ under the License.
             <soap:operation soapAction="" style="rpc"/>
             <input name="inHeaderRequest">
                 <soap:body namespace="http://apache.org/headers/coloc/types" parts="in" use="literal"/>
-                <soap:header message="tns:inHeaderRequest" part="header" use="literal"/>
+                <soap:header message="tns:inHeaderRequest" part="header000" use="literal"/>
             </input>
             <output name="inHeaderResponse">
                 <soap:body namespace="http://apache.org/headers/coloc/types" use="literal"/>

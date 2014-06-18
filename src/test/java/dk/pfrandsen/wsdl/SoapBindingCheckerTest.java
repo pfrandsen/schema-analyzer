@@ -30,9 +30,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
@@ -41,9 +41,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
@@ -52,9 +52,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, collector.getErrors().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("Binding is not Document/Literal", collector.getErrors().get(0).getMessage());
@@ -67,9 +67,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("SOAP binding transport is not http://schemas.xmlsoap.org/soap/http", collector.getWarnings().get(0).getMessage());
         assertEquals("SOAP transport found [http://example.com/smtp]", collector.getWarnings().get(0).getDetails());
@@ -81,9 +81,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals("Binding is not SOAP 1.1", collector.getErrors().get(0).getMessage());
     }
@@ -94,9 +94,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(2, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(1).getSeverity());
         assertEquals("WSDL contains more than one binding", collector.getErrors().get(0).getMessage());
@@ -110,9 +110,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, collector.getErrors().get(0).getSeverity());
         assertEquals("WSDL does not contain binding", collector.getErrors().get(0).getMessage());
     }
@@ -123,9 +123,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals("Binding name is invalid", collector.getErrors().get(0).getMessage());
         assertEquals("Binding name InvalidEntityBinding should be <serviceName>Binding where service name is {Entity}", collector.getErrors().get(0).getDetails());
@@ -137,9 +137,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(0, collector.getErrorCount());
-        assertEquals(1, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals("WSDL binding type does not use tns namespace prefix", collector.getWarnings().get(0).getMessage());
         assertEquals("Namespace prefix used 'tnsinvalid'", collector.getWarnings().get(0).getDetails());
@@ -151,9 +151,9 @@ public class SoapBindingCheckerTest {
         Definitions definition = parser.parse(uri);
         assertTrue(definition != null);
         SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(1, collector.getErrorCount());
-        assertEquals(0, collector.getWarningCount());
-        assertEquals(0, collector.getInfoCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, collector.getErrors().get(0).getSeverity());
         assertEquals("Binding is not Document/Literal", collector.getErrors().get(0).getMessage());
         assertEquals("Binding detected as [Document/Encoded]", collector.getErrors().get(0).getDetails());

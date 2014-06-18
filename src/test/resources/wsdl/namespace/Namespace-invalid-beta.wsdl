@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://beta-service.schemas/domain/service/v1"
+                  xmlns:tns="http://beta-service.schemas/domain/service/v1"
+                  xmlns:beta="http://beta-somewhere.com"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:Soap="http://schemas.xmlsoap.org/wsdl/soap/">
+    <wsdl:documentation>
+        Docs.
+    </wsdl:documentation>
+
+    <wsdl:types>
+        <xs:schema targetNamespace="http://service.schemas/domain/service/v1" xmlns="http://www.w3.org/2000/10/XMLSchema"
+                   elementFormDefault="qualified" attributeFormDefault="unqualified">
+            <xs:import namespace="http://beta-service.net/service/v1" schemaLocation="http://service.schemas/BetaService.xsd"/>
+            <xs:import namespace="http://not.beta.service.net/service/v1" schemaLocation="http://service.schemas/Service.xsd"/>
+          <xs:element name="GetEntityRequest">
+            <xs:complexType>
+              <xs:sequence>
+                <element name="Abc" type="xs:string"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="getEntityRequest">
+        <wsdl:part name="parameters" element="tns:GetEntityRequest"/>
+    </wsdl:message>
+
+</wsdl:definitions>
