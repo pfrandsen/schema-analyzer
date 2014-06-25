@@ -6,7 +6,6 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,8 +51,6 @@ public class XQueryTest {
         assertEquals("SvcName", result.get(0).get("name"));
     }
 
-    /*
-    XQuery fails on parent() - need to report this to EZH
     @Test
     public void testPort() throws IOException, MXQueryException {
         Path resource = Paths.get("src", "test", "resources", "wsdl", "port", "Port-valid-simple.wsdl");
@@ -62,10 +59,25 @@ public class XQueryTest {
         String ports = XQuery.runXQuery(xq, "port.xq", wsdl);
         List<Map<String, String>> result = Xml.parseXQueryResult(ports);
         assertEquals(1, result.size());
-        assertEquals("", result.get(0).get("name"));
-        assertEquals("", result.get(0).get("service"));
+        assertEquals("SvcNameWS", result.get(0).get("name"));
+        assertEquals("SvcName", result.get(0).get("service"));
     }
-    */
+
+    @Test
+    public void testPortMultiple() throws IOException, MXQueryException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "port", "Port-multiple.wsdl");
+        Path xq = Paths.get("wsdl", "port");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String ports = XQuery.runXQuery(xq, "port.xq", wsdl);
+        List<Map<String, String>> result = Xml.parseXQueryResult(ports);
+        assertEquals(3, result.size());
+        assertEquals("SvcNameOneWS", result.get(0).get("name"));
+        assertEquals("SvcNameOne", result.get(0).get("service"));
+        assertEquals("SvcNameTwoWS", result.get(1).get("name"));
+        assertEquals("SvcNameTwo", result.get(1).get("service"));
+        assertEquals("SvcNameThreeWS", result.get(2).get("name"));
+        assertEquals("SvcNameTwo", result.get(2).get("service"));
+    }
 
     @Test
     public void testServicePort() throws IOException, MXQueryException {

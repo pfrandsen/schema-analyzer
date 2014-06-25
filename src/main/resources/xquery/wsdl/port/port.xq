@@ -23,6 +23,21 @@ let $ports := $xmlSource/wsdl:definitions/wsdl:service/wsdl:port
 return
 <result>
 {for $port in $ports
+  let $service := $xmlSource/wsdl:definitions/wsdl:service[wsdl:port/@name = $port/@name]
+  return
+  <item>
+    <name>{string($port/@name)}</name>
+    <service>{string($service/@name)}</service>
+  </item>
+}
+</result>
+
+
+(:
+The parent ref below fails - report error to EZH
+return
+<result>
+{for $port in $ports
   return
   <item>
     <name>{string($port/@name)}</name>
@@ -30,3 +45,4 @@ return
   </item>
 }
 </result>
+:)
