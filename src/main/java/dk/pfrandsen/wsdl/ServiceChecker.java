@@ -7,7 +7,6 @@ import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.Service;
 
 public class ServiceChecker {
-    // public static String SERVICE_NAME_POSTFIX = "Service";
     public static String SERVICE_PORT_POSTFIX = "WS";
 
     public static String removeVersion(String serviceName) {

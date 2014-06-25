@@ -9,6 +9,7 @@ import ch.ethz.mxquery.model.XDMIterator;
 import ch.ethz.mxquery.query.PreparedStatement;
 import ch.ethz.mxquery.query.XQCompiler;
 import ch.ethz.mxquery.query.impl.CompilerImpl;
+import ch.ethz.mxquery.xdmio.XDMAtomicItemFactory;
 import ch.ethz.mxquery.xdmio.XDMInputFactory;
 import ch.ethz.mxquery.xdmio.XDMSerializer;
 import ch.ethz.mxquery.xdmio.XMLSource;
@@ -65,4 +66,42 @@ public class XQuery {
         // System.out.println(strResult);
         return queryResult;
     }
+
+    public static String runXQuery(Path queryLocation, String queryFile, String xml, String name) throws IOException,
+            MXQueryException {
+        String queryResult = "";
+        String path = "/xquery/" + queryLocation.resolve(queryFile).toString();
+        // InputStream stream = XQuery.class.getResourceAsStream(path);
+        String xq = IOUtils.toString(XQuery.class.getResourceAsStream(path));
+
+        Context ctx = new Context();
+        CompilerOptions compilerOptions = new CompilerOptions();
+        compilerOptions.setSchemaAwareness(true);
+        XQCompiler compiler = new CompilerImpl();
+        PreparedStatement statement;
+        statement = compiler.compile(ctx, xq, compilerOptions);
+        XDMIterator result;
+        result = statement.evaluate();
+
+        // add external resources
+        XMLSource xmlIt = XDMInputFactory.createXMLInput(result.getContext(), new StringReader(xml), true,
+                Context.NO_VALIDATION, QueryLocation.OUTSIDE_QUERY_LOC);
+        statement.addExternalResource(new QName("xmlSource"), xmlIt);
+        statement.addExternalResource(new QName("name"), XDMAtomicItemFactory.createString(name));
+
+        // Create an XDM serializer, can take an XDMSerializerSettings object if needed
+        XDMSerializer ip = new XDMSerializer();
+        // run expression, generate XDM instance and serialize into String format
+        queryResult = ip.eventsToXML(result);
+        // XQuery Update "programs" create a pending update list, not a normal result
+        // apply the results to the relevant "stores"
+        // currently in-memory stores
+        statement.applyPUL();
+        statement.close();
+
+        // System.out.println(strResult);
+        return queryResult;
+    }
+
+
 }

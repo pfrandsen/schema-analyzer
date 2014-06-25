@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1" 
+                  xmlns:tns="http://service.schemas/domain/service/v1" 
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+    <!--
+    cardinality 2; first name is not upper camel case; second name does not end with "Service"
+    -->
+    <wsdl:portType name="firstService"></wsdl:portType>
+    <wsdl:portType name="Second"></wsdl:portType>
+
+</wsdl:definitions>
