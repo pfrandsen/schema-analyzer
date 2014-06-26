@@ -1,10 +1,19 @@
 package dk.pfrandsen.wsdl;
 
+import ch.ethz.mxquery.exceptions.MXQueryException;
 import com.predic8.wsdl.Definitions;
+import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
+import dk.pfrandsen.util.XQuery;
+import org.apache.commons.io.IOUtils;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class NamespaceChecker {
@@ -17,6 +26,21 @@ public class NamespaceChecker {
     public static final String NS_XSD = "xsd";
     public static final String NS_XSD_VALUE = "http://www.w3.org/2001/XMLSchema";
     public static final String NS_PREFIX = "http://";
+
+    public static void checkUnusedImports(String wsdl, AnalysisInformationCollector collector) {
+        Path xq = Paths.get("wsdl", "namespace");
+        try {
+            String xqResult = XQuery.runXQuery(xq, "unusedImports.xq", wsdl);
+            List<String> unused = XQuery.mapResult(xqResult, "namespace");
+            for (String ns : unused) {
+                collector.addWarning(ASSERTION_ID, "Namespace '" + ns + "' imported but not used",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
+            }
+        } catch (Exception e) {
+            collectException(e, collector);
+        }
+
+    }
 
     public static void checkNamespace(Definitions definitions, AnalysisInformationCollector collector) {
         String tns = definitions.getTargetNamespacePrefix();
@@ -144,6 +168,11 @@ public class NamespaceChecker {
             }
         }
         return namespaces;
+    }
+
+    private static void collectException(Exception e, AnalysisInformationCollector collector) {
+        collector.addInfo(ASSERTION_ID, "Exception while checking namespaces",
+                AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, e.getMessage());
     }
 
 }

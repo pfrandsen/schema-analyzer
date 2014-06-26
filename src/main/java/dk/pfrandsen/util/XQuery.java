@@ -13,12 +13,16 @@ import ch.ethz.mxquery.xdmio.XDMAtomicItemFactory;
 import ch.ethz.mxquery.xdmio.XDMInputFactory;
 import ch.ethz.mxquery.xdmio.XDMSerializer;
 import ch.ethz.mxquery.xdmio.XMLSource;
+import dk.pfrandsen.Xml;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class XQuery {
 
@@ -103,5 +107,21 @@ public class XQuery {
         return queryResult;
     }
 
+    /**
+     *
+     * @param xqResult
+     * @param key
+     * @return list of values for the given key
+     */
+    public static List<String> mapResult(String xqResult, String key) {
+        List<Map<String, String>> result = Xml.parseXQueryResult(xqResult);
+        List<String> retVal = new ArrayList<>();
+        if (result.size() > 0) {
+            for (Map<String, String> element : result) {
+                retVal.add(element.get(key));
+            }
+        }
+        return retVal;
+    }
 
 }

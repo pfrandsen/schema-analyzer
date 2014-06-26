@@ -3,9 +3,13 @@ package dk.pfrandsen.wsdl;
 import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.WSDLParser;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -49,6 +53,21 @@ public class NamespaceCheckerTest {
         assertEquals(0, collector.errorCount());
         assertEquals(5, collector.warningCount());
         assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidUnusedImports() throws IOException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "namespace", "Namespace-unused-imports.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        NamespaceChecker.checkUnusedImports(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(2, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Namespace 'http://namespace5' imported but not used",
+                collector.getWarnings().get(0).getMessage());
+        assertEquals("Namespace 'http://namespace3' imported but not used",
+                collector.getWarnings().get(1).getMessage());
+
     }
 
 }

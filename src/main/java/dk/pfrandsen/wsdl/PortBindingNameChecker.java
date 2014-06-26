@@ -12,12 +12,22 @@ public class PortBindingNameChecker {
 
     public static void checkNames(String serviceName, String wsdl, AnalysisInformationCollector collector) {
         List<String> serviceNames = new ArrayList<>();
-        serviceNames.add(serviceName);
-
+        serviceNames.add(Utilities.removeVersion(serviceName)); // use service name without version
         checkPortTypeServiceName(serviceNames, wsdl, collector);
         checkBindingServiceName(serviceNames, wsdl, collector);
-        // check port name
+        checkPortServiceName(serviceNames, wsdl, collector);
+    }
 
+    public static void checkNames(String wsdl, AnalysisInformationCollector collector) {
+        try {
+            // get service name(s) without version
+            List<String> serviceNames = ServiceChecker.getServiceNames(wsdl, true);
+            checkPortTypeServiceName(serviceNames, wsdl, collector);
+            checkBindingServiceName(serviceNames, wsdl, collector);
+            checkPortServiceName(serviceNames, wsdl, collector);
+        } catch (Exception e) {
+            collectException(e, collector);
+        }
     }
 
     // Check correlation between service name and portType name; each service name must have a corresponding portType
@@ -27,10 +37,11 @@ public class PortBindingNameChecker {
         try {
             List<String> ports = WsdlUtil.getPortTypes(wsdl);
             for (String serviceName : serviceNames) {
-                if (!ports.contains(serviceName + PortTypeChecker.PORT_TYPE_POSTFIX)) {
+                String expected = serviceName + PortTypeChecker.PORT_TYPE_POSTFIX;
+                if (!ports.contains(expected)) {
                     collector.addError(ASSERTION_ID, "No matching wsdl:portType name for service '" + serviceName + "'",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
-                            "Found portType names [" + Utilities.join(",", ports) + "]");
+                            "Found portType names [" + Utilities.join(",", ports) + "]; expected '" + expected + "'");
                 }
             }
         } catch (Exception e) {
@@ -43,10 +54,38 @@ public class PortBindingNameChecker {
         try {
             List<String> bindings = WsdlUtil.getBindings(wsdl);
             for (String serviceName : serviceNames) {
-                if (!bindings.contains(serviceName + SoapBindingChecker.BINDING_NAME_POSTFIX)) {
+                String expected = serviceName + SoapBindingChecker.BINDING_NAME_POSTFIX;
+                if (!bindings.contains(expected)) {
                     collector.addError(ASSERTION_ID, "No matching wsdl:binding name for service '" + serviceName + "'",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
-                            "Found binding names [" + Utilities.join(",", bindings) + "]");
+                            "Found binding names [" + Utilities.join(",", bindings) + "]; expected '" + expected + "'");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector);
+        }
+    }
+
+    public static void checkPortServiceName(List<String> serviceNames, String wsdl,
+                                            AnalysisInformationCollector collector) {
+        try {
+            for (String serviceName : serviceNames) {
+                String expected = serviceName + PortChecker.PORT_NAME_POSTFIX;
+                List<String> ports = WsdlUtil.getPorts(wsdl, serviceName);
+                if (ports.size() > 0) {
+                    if (ports.size() > 1) {
+                        collector.addError(ASSERTION_ID, "Multiple ports defined for service '" + serviceName + "'",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
+                                "Found port names [" + Utilities.join(",", ports) + "]");
+                    }
+                    if (!ports.contains(expected)) {
+                        collector.addError(ASSERTION_ID, "No matching wsdl:port name for service '" + serviceName + "'",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
+                                "Found port names [" + Utilities.join(",", ports) + "]; expected '" + expected + "'");
+                    }
+                } else {
+                    collector.addError(ASSERTION_ID, "No port defined for service '" + serviceName + "'",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
                 }
             }
         } catch (Exception e) {

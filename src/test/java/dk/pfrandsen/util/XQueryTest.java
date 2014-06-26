@@ -9,9 +9,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public class XQueryTest {
@@ -100,6 +102,22 @@ public class XQueryTest {
         assertEquals(2, result.size());
         assertEquals("SvcNameTwoWS", result.get(0).get("name"));
         assertEquals("SvcNameThreeWS", result.get(1).get("name"));
+    }
+
+    @Test
+    public void testUnusedImports() throws IOException, MXQueryException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "namespace", "Namespace-unused-imports.wsdl");
+        Path xq = Paths.get("wsdl", "namespace");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String xqResult = XQuery.runXQuery(xq, "unusedImports.xq", wsdl);
+        List<Map<String, String>> result = Xml.parseXQueryResult(xqResult);
+        System.out.println(xqResult);
+        assertEquals(2, result.size());
+        List<String> unusedNamespaces = new ArrayList<>();
+        unusedNamespaces.add(result.get(0).get("namespace"));
+        unusedNamespaces.add(result.get(1).get("namespace"));
+        assertTrue("Expected unused: http://namespace5", unusedNamespaces.contains("http://namespace5"));
+        assertTrue("Expected unused: http://namespace3", unusedNamespaces.contains("http://namespace3"));
     }
 
 }
