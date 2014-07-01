@@ -120,4 +120,49 @@ public class XQueryTest {
         assertTrue("Expected unused: http://namespace3", unusedNamespaces.contains("http://namespace3"));
     }
 
+    @Test
+    public void testMessageNames() throws IOException, MXQueryException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "message", "Message-valid-simple.wsdl");
+        Path xq = Paths.get("wsdl", "message");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String messages = XQuery.runXQuery(xq, "messages.xq", wsdl);
+        List<String> result = XQuery.mapResult(messages, "name");
+        assertEquals(4, result.size());
+        assertTrue("Expected uncategorizedFault message", result.contains("uncategorizedFault"));
+        assertTrue("Expected applications message", result.contains("applications"));
+        assertTrue("Expected getDataRequest message", result.contains("getDataRequest"));
+        assertTrue("Expected getDataResponse message", result.contains("getDataResponse"));
+    }
+
+    @Test
+    public void testMessageWithName() throws IOException, MXQueryException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "message", "Message-valid-simple.wsdl");
+        Path xq = Paths.get("wsdl", "message");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String message = XQuery.runXQuery(xq, "message.xq", wsdl, "getDataRequest");
+        List<Map<String, String>> result = Xml.parseXQueryResult(message);
+        assertEquals(1, result.size());
+        assertEquals("getDataRequest", result.get(0).get("name"));
+        assertEquals("GetDataRequest", result.get(0).get("element-local"));
+        assertEquals("http://service.schemas/domain/service/v1", result.get(0).get("element-namespace"));
+        assertEquals("", result.get(0).get("type-local"));
+        assertEquals("", result.get(0).get("type-namespace"));
+    }
+
+    @Test
+    public void testMessageWithNameInvalidUsesType() throws IOException, MXQueryException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "message",
+                "Message-invalid-uses-type-simple.wsdl");
+        Path xq = Paths.get("wsdl", "message");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String message = XQuery.runXQuery(xq, "message.xq", wsdl, "getDataRequest");
+        List<Map<String, String>> result = Xml.parseXQueryResult(message);
+        assertEquals(1, result.size());
+        assertEquals("getDataRequest", result.get(0).get("name"));
+        assertEquals("", result.get(0).get("element-local"));
+        assertEquals("", result.get(0).get("element-namespace"));
+        assertEquals("GetDataRequest", result.get(0).get("type-local"));
+        assertEquals("http://service.schemas/domain/service/v1", result.get(0).get("type-namespace"));
+    }
+
 }

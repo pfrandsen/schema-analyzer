@@ -1,5 +1,6 @@
 package dk.pfrandsen.util;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -73,4 +74,49 @@ public class UtilitiesTest {
         assertEquals(3, words.size());
         assertEquals("A;A;A", Utilities.join(";", words));
     }
+
+    @Test
+    public void testToUpperCamelCaseString() {
+        String unCapitalized = "thisIsIt";
+        String capitalized = "ThisIsIt";
+        assertEquals(capitalized, Utilities.toUpperCamelCase(unCapitalized));
+    }
+
+    @Test
+    public void testToUpperCamelCaseStringNop() {
+        String capitalized = "ThisIsIt";
+        assertEquals(capitalized, Utilities.toUpperCamelCase(capitalized));
+    }
+
+    @Test
+    public void testToUpperCamelCaseList() {
+        String [] unCapitalized = {"thisIsIt", "soIsThis"};
+        String [] capitalized = {"ThisIsIt", "SoIsThis"};
+        List<String> ucc = Utilities.toUpperCamelCase(Arrays.asList(unCapitalized));
+        assertEquals(capitalized[0], ucc.get(0));
+        assertEquals(capitalized[1], ucc.get(1));
+    }
+
+    @Test
+    public void testToLowerCamelCaseString() {
+        String unCapitalized = "thisIsIt";
+        String capitalized = "ThisIsIt";
+        assertEquals(unCapitalized, Utilities.toLowerCamelCase(capitalized));
+    }
+
+    @Test
+    public void testToLowerCamelCaseStringNop() {
+        String unCapitalized = "thisIsIt";
+        assertEquals(unCapitalized, Utilities.toLowerCamelCase(unCapitalized));
+    }
+
+    @Test
+    public void testToLowerCamelCaseList() {
+        String [] unCapitalized = {"thisIsIt", "soIsThis"};
+        String [] capitalized = {"ThisIsIt", "SoIsThis"};
+        List<String> lcc = Utilities.toLowerCamelCase(Arrays.asList(capitalized));
+        assertEquals(unCapitalized[0], lcc.get(0));
+        assertEquals(unCapitalized[1], lcc.get(1));
+    }
+
 }

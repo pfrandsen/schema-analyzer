@@ -1,5 +1,7 @@
 package dk.pfrandsen.util;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,31 @@ public class Utilities {
         }
         return false;
     }
+
+    public static String toLowerCamelCase(String label) {
+        return StringUtils.uncapitalize(label);
+    }
+
+    public static List<String> toLowerCamelCase(List<String> labels) {
+        List<String> unCapitalized = new ArrayList<>();
+        for (String label : labels) {
+            unCapitalized.add(toLowerCamelCase(label));
+        }
+        return unCapitalized;
+    }
+
+    public static String toUpperCamelCase(String label) {
+        return StringUtils.capitalize(label);
+    }
+
+    public static List<String> toUpperCamelCase(List<String> labels) {
+        List<String>unCapitalized = new ArrayList<>();
+        for (String label : labels) {
+            unCapitalized.add(toUpperCamelCase(label));
+        }
+        return unCapitalized;
+    }
+
 
     public static boolean isUpperCamelCaseAscii(String text) {
         return isCamelCaseAscii(text, true);
