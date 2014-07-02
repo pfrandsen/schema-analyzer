@@ -89,4 +89,78 @@ public class PortTypeCheckerTest {
         assertEquals("No matching wsdl:portType name for service 'First'", collector.getErrors().get(0).getMessage());
     }
 
+    @Test
+    public void testValidMessages() throws Exception {
+        String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.resolve("PortType-valid-messages-simple.wsdl").
+                toFile()));
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidMessagesInputPostfix() throws Exception {
+        String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.
+                resolve("PortType-invalid-messages-input-simple.wsdl").toFile()));
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Invalid input message name", collector.getErrors().get(0).getMessage());
+        assertEquals("Input message in portType 'FirstService' operation 'operationTwo' does not end with 'Request'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidMessagesOutputPostfix() throws Exception {
+        String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.
+                resolve("PortType-invalid-messages-output-simple.wsdl").toFile()));
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Invalid output message name", collector.getErrors().get(0).getMessage());
+        assertEquals("Output message in portType 'SecondService' operation 'operationOne' does not end with 'Response'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidMessagesFaultPostfix() throws Exception {
+        String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.
+                resolve("PortType-invalid-messages-fault-simple.wsdl").toFile()));
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Invalid fault message name", collector.getErrors().get(0).getMessage());
+        assertEquals("Fault message 'firstFlt' in portType 'FirstService' operation 'operationTwo' does not end with " +
+                "'Fault'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidMessagesFaultName() throws Exception {
+        String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.
+                resolve("PortType-invalid-messages-fault-name-simple.wsdl").toFile()));
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Invalid fault name", collector.getErrors().get(0).getMessage());
+        assertEquals("Fault name 'firstFlt' in portType 'FirstService' operation 'operationOne' must be equal to " +
+                "message name 'firstFault'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidMessagesNoFault() throws Exception {
+        String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.
+                resolve("PortType-invalid-messages-no-fault-simple.wsdl").toFile()));
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Missing fault", collector.getErrors().get(0).getMessage());
+        assertEquals("Fault not defined for portType 'FirstService', operation 'operationOne'",
+                collector.getErrors().get(0).getDetails());
+    }
 }

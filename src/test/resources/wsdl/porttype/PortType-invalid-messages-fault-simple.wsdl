@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1" 
+                  xmlns:tns="http://service.schemas/domain/service/v1" 
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+    <wsdl:portType name="FirstService">
+        <wsdl:operation name="operationOne">
+            <wsdl:input message="inputMessageRequest" />
+            <wsdl:output message="outputMessageResponse" />
+            <wsdl:fault name="firstFault" message="tns:firstFault" />
+            <wsdl:fault name="secondFault" message="tns:secondFault" />
+        </wsdl:operation>
+        <wsdl:operation name="operationTwo">
+            <wsdl:input message="inputMessageRequest" />
+            <wsdl:output message="outputMessageResponse" />
+            <wsdl:fault name="firstFlt" message="tns:firstFlt" />
+            <wsdl:fault name="secondFault" message="tns:secondFault" />
+        </wsdl:operation>
+    </wsdl:portType>
+
+</wsdl:definitions>

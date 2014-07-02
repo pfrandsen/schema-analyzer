@@ -4,6 +4,7 @@ import ch.ethz.mxquery.exceptions.MXQueryException;
 import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
+import dk.pfrandsen.util.WsdlUtil;
 import dk.pfrandsen.util.XQuery;
 import org.apache.commons.io.IOUtils;
 
@@ -34,6 +35,10 @@ public class MessageChecker {
                 "http://technical.schemas.nykreditnet.net/fault/v1"
         };
         return Arrays.asList(faults);
+    }
+
+    public static String getValidFaultNamespacePrefix() {
+        return "http://technical.schemas.nykreditnet.net/fault";
     }
 
     public static List<String> getKnownHeaderNames() {
@@ -77,6 +82,9 @@ public class MessageChecker {
                                 AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Message '" + message + "', " +
                                 "[" + Utilities.join(",", Utilities.toLowerCamelCase(getKnownFaultNames())) + "]");
                     }
+                    // check namespace
+                    //  getValidFaultNamespacePrefix
+
                 }
                 if ( (!message.endsWith(validRequestPostfix)) && (!message.endsWith(validResponsePostfix)) &&
                         (!message.endsWith(validFaultPostfix)) ) {
@@ -159,6 +167,23 @@ public class MessageChecker {
                         collector.addError(ASSERTION_ID, "Element name (in lowerCamelCase) must match part name",
                                 AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Message '" +
                                         messageName + "' part '" + partName + "' element '" + elementName + "'");
+                    }
+                    if (messageName.endsWith(validFaultPostfix)) {
+                        String elementNamespace = part.get("element-namespace");
+                        if (!elementNamespace.startsWith(getValidFaultNamespacePrefix())) {
+                            collector.addError(ASSERTION_ID, "Element namespace not valid",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Fault message '" +
+                                            messageName + "' part '" + partName + "' element '" + elementName + "' " +
+                            "must be in namespace under '" + getValidFaultNamespacePrefix() + "', namespace found '" +
+                            elementNamespace + "'");
+                        } else {
+                            if (!getKnownFaultNamespaces().contains(elementNamespace)) {
+                                collector.addWarning(ASSERTION_ID, "Unknown fault namespace",
+                                        AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" +
+                                elementNamespace + "' not in known namespaces [" +
+                                                Utilities.join(",", getKnownFaultNamespaces()) + "]");
+                            }
+                        }
                     }
                 } else {
                     collector.addError(ASSERTION_ID, "Message part must include element",

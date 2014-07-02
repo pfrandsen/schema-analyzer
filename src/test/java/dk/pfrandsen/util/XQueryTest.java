@@ -165,4 +165,42 @@ public class XQueryTest {
         assertEquals("http://service.schemas/domain/service/v1", result.get(0).get("type-namespace"));
     }
 
+    @Test
+    public void testSoapAction() throws IOException, MXQueryException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "binding",
+                "Binding-valid-soap-action-xq-simple.wsdl");
+        Path xq = Paths.get("wsdl", "binding");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String message = XQuery.runXQuery(xq, "bindingSoapAction.xq", wsdl, "FirstBinding");
+        List<Map<String, String>> result = Xml.parseXQueryResult(message);
+        assertEquals(3, result.size());
+        assertEquals("opOne", result.get(0).get("name"));
+        assertEquals("operationOneSoapAction", result.get(0).get("soapAction"));
+        assertEquals("opTwo", result.get(1).get("name"));
+        assertEquals("operationTwoSoapAction", result.get(1).get("soapAction"));
+        assertEquals("opThree", result.get(2).get("name"));
+        assertEquals("", result.get(2).get("soapAction"));
+    }
+
+    @Test
+    public void testOperationFaults() throws Exception {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "porttype",
+                "PortType-valid-fault-xq.wsdl");
+        Path xq = Paths.get("wsdl", "porttype");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String message = XQuery.runXQuery(xq, "operationFauts.xq", wsdl, "FirstService", "operationOne");
+        List<Map<String, String>> result = Xml.parseXQueryResult(message);
+        assertEquals(2, result.size());
+        assertEquals("firstFault", result.get(0).get("name"));
+        assertEquals("tns:firstFault", result.get(0).get("message"));
+        assertEquals("firstFault", result.get(0).get("message-local"));
+        assertEquals("http://service.schemas/domain/service/v1", result.get(0).get("message-ns"));
+        assertEquals("tns", result.get(0).get("message-pre"));
+        assertEquals("secondFault", result.get(1).get("name"));
+        assertEquals("tns:secondFault", result.get(1).get("message"));
+        assertEquals("secondFault", result.get(1).get("message-local"));
+        assertEquals("http://service.schemas/domain/service/v1", result.get(1).get("message-ns"));
+        assertEquals("tns", result.get(1).get("message-pre"));
+    }
+
 }

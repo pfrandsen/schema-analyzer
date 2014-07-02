@@ -124,4 +124,31 @@ public class MessageCheckerTest {
                 "requestorIdentity]", collector.getWarnings().get(0).getDetails());
     }
 
+    @Test
+    public void testInvalidFaultNamespace() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Message-invalid-fault-namespace-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        MessageChecker.checkMessageParts(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Element namespace not valid", collector.getErrors().get(0).getMessage());
+        assertEquals("Fault message 'uncategorizedFault' part 'uncategorizedFault' element 'UncategorizedFault' must " +
+                "be in namespace under 'http://technical.schemas.nykreditnet.net/fault', namespace found " +
+                "'http://technical.schemas.nykreditnet.net/flt'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testUnknownFaultNamespace() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Message-invalid-fault-unknown-namespace-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        MessageChecker.checkMessageParts(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Unknown fault namespace", collector.getWarnings().get(0).getMessage());
+        assertEquals("Namespace 'http://technical.schemas.nykreditnet.net/fault/v2' not in known namespaces " +
+                "[http://technical.schemas.nykreditnet.net/fault/v1]", collector.getWarnings().get(0).getDetails());
+    }
+
 }
