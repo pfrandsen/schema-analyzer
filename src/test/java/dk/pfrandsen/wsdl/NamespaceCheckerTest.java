@@ -70,4 +70,20 @@ public class NamespaceCheckerTest {
 
     }
 
+    @Test
+    public void testInvalidImports() throws IOException {
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "namespace", "Namespace-invalid-imports.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        NamespaceChecker.checkInvalidImports(wsdl, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Namespace import not allowed", collector.getErrors().get(0).getMessage());
+        assertEquals("Namespace 'http://invalidNamespaceGlobal' not in target namespace or " +
+                        "'http://technical.schemas.nykreditnet.net/*'", collector.getErrors().get(0).getDetails());
+        assertEquals("Namespace import not allowed", collector.getErrors().get(1).getMessage());
+        assertEquals("Namespace 'http://invalidNamespaceTypes' not in target namespace or " +
+                        "'http://technical.schemas.nykreditnet.net/*'",  collector.getErrors().get(1).getDetails());
+    }
+
 }

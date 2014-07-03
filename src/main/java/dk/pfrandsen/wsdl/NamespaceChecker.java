@@ -39,8 +39,23 @@ public class NamespaceChecker {
         } catch (Exception e) {
             collectException(e, collector);
         }
-
     }
+
+    public static void checkInvalidImports(String wsdl, AnalysisInformationCollector collector) {
+        Path xq = Paths.get("wsdl", "namespace");
+        try {
+            String xqResult = XQuery.runXQuery(xq, "invalidImports.xq", wsdl);
+            List<String> invalid = XQuery.mapResult(xqResult, "namespace");
+            for (String ns : invalid) {
+                collector.addError(ASSERTION_ID, "Namespace import not allowed",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Namespace '" + ns +
+                                "' not in target namespace or 'http://technical.schemas.nykreditnet.net/*'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector);
+        }
+    }
+
 
     public static void checkNamespace(Definitions definitions, AnalysisInformationCollector collector) {
         String tns = definitions.getTargetNamespacePrefix();
