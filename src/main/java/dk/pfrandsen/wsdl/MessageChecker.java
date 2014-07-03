@@ -19,6 +19,7 @@ import java.util.Map;
 
 public class MessageChecker {
     public static final String ASSERTION_ID = "CA16a-WSDL-Message-Name-Validate";
+    public static final String ASSERTION_ID_FAULT_NAMESPACE = "CA7a-WSDL-Operation-Has-Fault-Message";
     public static final String validRequestPostfix = "Request";
     public static final String validResponsePostfix = "Response";
     public static final String validFaultPostfix = "Fault";
@@ -61,9 +62,6 @@ public class MessageChecker {
         return Arrays.asList(headers);
     }
 
-    // get all messages - list of message names
-    // for each message get parts (name, element, type) - check only one part, only element used
-
     public static void checkMessageNames(String wsdl, AnalysisInformationCollector collector) {
         Path xq = Paths.get("wsdl", "message");
         try {
@@ -82,9 +80,6 @@ public class MessageChecker {
                                 AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Message '" + message + "', " +
                                 "[" + Utilities.join(",", Utilities.toLowerCamelCase(getKnownFaultNames())) + "]");
                     }
-                    // check namespace
-                    //  getValidFaultNamespacePrefix
-
                 }
                 if ( (!message.endsWith(validRequestPostfix)) && (!message.endsWith(validResponsePostfix)) &&
                         (!message.endsWith(validFaultPostfix)) ) {
@@ -105,6 +100,7 @@ public class MessageChecker {
         // there should be only one part, element should be defined and not type
         // element name should be upper camel case
         // name of part should be lower camel case (of element name)
+        // fault messages should be in specific namespace
 
         Path xq = Paths.get("wsdl", "message");
         try {
@@ -171,14 +167,14 @@ public class MessageChecker {
                     if (messageName.endsWith(validFaultPostfix)) {
                         String elementNamespace = part.get("element-namespace");
                         if (!elementNamespace.startsWith(getValidFaultNamespacePrefix())) {
-                            collector.addError(ASSERTION_ID, "Element namespace not valid",
+                            collector.addError(ASSERTION_ID_FAULT_NAMESPACE, "Element namespace not valid",
                                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Fault message '" +
                                             messageName + "' part '" + partName + "' element '" + elementName + "' " +
                             "must be in namespace under '" + getValidFaultNamespacePrefix() + "', namespace found '" +
                             elementNamespace + "'");
                         } else {
                             if (!getKnownFaultNamespaces().contains(elementNamespace)) {
-                                collector.addWarning(ASSERTION_ID, "Unknown fault namespace",
+                                collector.addWarning(ASSERTION_ID_FAULT_NAMESPACE, "Unknown fault namespace",
                                         AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" +
                                 elementNamespace + "' not in known namespaces [" +
                                                 Utilities.join(",", getKnownFaultNamespaces()) + "]");
