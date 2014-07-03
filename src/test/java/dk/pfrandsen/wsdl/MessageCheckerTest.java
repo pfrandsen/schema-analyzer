@@ -120,7 +120,8 @@ public class MessageCheckerTest {
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals("Unknown header message", collector.getWarnings().get(0).getMessage());
-        assertEquals("Message 'customHeader', [applications,user,proxy,serviceConsumer,filtering,logging," +
+        assertEquals("Message 'customHeader' not detected as request/response/fault by postfix [Request,Response," +
+                "Fault], known headers [applications,user,proxy,serviceConsumer,filtering,logging," +
                 "requestorIdentity]", collector.getWarnings().get(0).getDetails());
     }
 

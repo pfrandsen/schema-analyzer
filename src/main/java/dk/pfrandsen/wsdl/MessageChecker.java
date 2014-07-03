@@ -85,8 +85,12 @@ public class MessageChecker {
                         (!message.endsWith(validFaultPostfix)) ) {
                     // must be header message
                     if (!Utilities.toLowerCamelCase(getKnownHeaderNames()).contains(message)) {
+                        String endings = "[" + validRequestPostfix + "," + validResponsePostfix + "," +
+                                validFaultPostfix + "]";
                         collector.addWarning(ASSERTION_ID, "Unknown header message",
-                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Message '" + message + "', [" +
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Message '" + message +
+                                        "' not detected as request/response/fault by postfix " + endings +
+                                        ", known headers [" +
                                         Utilities.join(",", Utilities.toLowerCamelCase(getKnownHeaderNames())) + "]");
                     }
                 }
@@ -101,7 +105,6 @@ public class MessageChecker {
         // element name should be upper camel case
         // name of part should be lower camel case (of element name)
         // fault messages should be in specific namespace
-
         Path xq = Paths.get("wsdl", "message");
         try {
             String xml = XQuery.runXQuery(xq, "messages.xq", wsdl);
