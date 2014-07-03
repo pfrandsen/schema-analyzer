@@ -156,11 +156,11 @@ public class PortTypeCheckerTest {
         String wsdl = IOUtils.toString(new FileInputStream(RELATIVE_PATH.
                 resolve("PortType-invalid-messages-no-fault-simple.wsdl").toFile()));
         PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
-        assertEquals(1, collector.errorCount());
-        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
-        assertEquals("Missing fault", collector.getErrors().get(0).getMessage());
+        assertEquals("Missing fault", collector.getWarnings().get(0).getMessage());
         assertEquals("Fault not defined for portType 'FirstService', operation 'operationOne'",
-                collector.getErrors().get(0).getDetails());
+                collector.getWarnings().get(0).getDetails());
     }
 }

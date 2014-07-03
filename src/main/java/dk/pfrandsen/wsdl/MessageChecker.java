@@ -6,20 +6,15 @@ import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.WsdlUtil;
 import dk.pfrandsen.util.XQuery;
-import org.apache.commons.io.IOUtils;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MessageChecker {
     public static final String ASSERTION_ID = "CA16a-WSDL-Message-Name-Validate";
     public static final String ASSERTION_ID_FAULT_NAMESPACE = "CA7a-WSDL-Operation-Has-Fault-Message";
+    public static final String ASSERTION_ID_UNUSED_MESSAGE = "CA48-WSDL-Operation-Has-Fault-Message";
     public static final String validRequestPostfix = "Request";
     public static final String validResponsePostfix = "Response";
     public static final String validFaultPostfix = "Fault";
@@ -96,7 +91,7 @@ public class MessageChecker {
                 }
             }
         } catch (Exception e) {
-            collectException(e, collector);
+            collectException(e, collector, ASSERTION_ID);
         }
     }
 
@@ -113,7 +108,7 @@ public class MessageChecker {
                 checkPart(message, wsdl, collector);
             }
         } catch (Exception e) {
-            collectException(e, collector);
+            collectException(e, collector, ASSERTION_ID);
         }
     }
 
@@ -191,12 +186,40 @@ public class MessageChecker {
                 }
             }
         } catch (Exception e) {
-            collectException(e, collector);
+            collectException(e, collector, ASSERTION_ID);
         }
     }
 
-    private static void collectException(Exception e, AnalysisInformationCollector collector) {
-        collector.addInfo(ASSERTION_ID, "Exception while checking messages",
+    public static void checkUnusedMessages(String wsdl, AnalysisInformationCollector collector) {
+        Path xq = Paths.get("wsdl", "message");
+        try {
+            // find all messages defined
+            String defined = XQuery.runXQuery(xq, "messages.xq", wsdl);
+            Set<String> messagesDefined = new HashSet<>();
+            messagesDefined.addAll(XQuery.mapResult(defined, "name"));
+            // find all messages used
+            String used = XQuery.runXQuery(xq, "used.xq", wsdl);
+            Set<String> messagesUsed = new HashSet<>();
+            messagesUsed.addAll(XQuery.mapResult(used, "msg-local"));
+            for (String message : messagesDefined) {
+                if (!messagesUsed.contains(message)) {
+                    collector.addError(ASSERTION_ID_UNUSED_MESSAGE, "Message defined but not used",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Message is '" + message + "'");
+                }
+            }
+            for (String message : messagesUsed) {
+                if (!messagesDefined.contains(message)) {
+                    collector.addError(ASSERTION_ID_UNUSED_MESSAGE, "Message used but not defined",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Message is '" + message + "'");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_UNUSED_MESSAGE);
+        }
+    }
+
+    private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
+        collector.addInfo(assertion, "Exception while checking messages",
                 AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, e.getMessage());
     }
 

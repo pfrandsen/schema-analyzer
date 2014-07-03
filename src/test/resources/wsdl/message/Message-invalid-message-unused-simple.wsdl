@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1" 
+                  xmlns:tns="http://service.schemas/domain/service/v1" 
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:app="http://technical.schemas.nykreditnet.net/header/application/v1"
+                  xmlns:fault="http://technical.schemas.nykreditnet.net/fault/v1"
+        >
+
+    <wsdl:message name="inputMessageRequest" />
+    <wsdl:message name="outputMessageResponse" />
+    <wsdl:message name="firstFault" />
+    <wsdl:message name="secondFault" />
+    <wsdl:message name="unusedMessage" />
+    <wsdl:message name="Applications" />
+    <wsdl:message name="Logging" />
+    <wsdl:message name="SomeHeader" />
+
+    <wsdl:portType name="FirstService">
+        <wsdl:operation name="operationOne">
+            <wsdl:input message="inputMessageRequest" />
+            <wsdl:output message="outputMessageResponse" />
+            <wsdl:fault name="firstFault" message="tns:firstFault" />
+            <wsdl:fault name="secondFault" message="tns:secondFault" />
+        </wsdl:operation>
+        <wsdl:operation name="operationTwo">
+            <wsdl:input message="inputMessageRequest" />
+            <wsdl:output message="outputMessageResponse" />
+            <wsdl:fault name="firstFault" message="tns:firstFault" />
+            <wsdl:fault name="secondFault" message="tns:secondFault" />
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:portType name="SecondService">
+        <wsdl:operation name="operationOne">
+            <wsdl:input message="inputMessageRequest" />
+            <wsdl:output message="outputMessageResponse" />
+            <wsdl:fault name="firstFault" message="tns:firstFault" />
+            <wsdl:fault name="secondFault" message="tns:secondFault" />
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="FirstBinding" type="tns:FirstService">
+        <wsdl:operation name="operationOne">
+            <soap:operation soapAction="http://service.schemas/domain/service/v1/opOneRequest" />
+            <wsdl:input>
+                <soap:header message="tns:Applications" part="Applications" use="literal"></soap:header>
+                <soap:header message="tns:Logging" part="Logging" use="literal"></soap:header>
+            </wsdl:input>
+        </wsdl:operation>
+        <wsdl:operation name="operationTwo">
+            <wsdl:input>
+                <soap:header message="tns:SomeHeader" part="header" use="literal"></soap:header>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+
+</wsdl:definitions>

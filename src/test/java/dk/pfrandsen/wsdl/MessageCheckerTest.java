@@ -152,4 +152,38 @@ public class MessageCheckerTest {
                 "[http://technical.schemas.nykreditnet.net/fault/v1]", collector.getWarnings().get(0).getDetails());
     }
 
+    @Test
+    public void testUsedMessage() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Message-valid-message-used-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        MessageChecker.checkUnusedMessages(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testUnusedMessage() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Message-invalid-message-unused-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        MessageChecker.checkUnusedMessages(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Message defined but not used", collector.getErrors().get(0).getMessage());
+        assertEquals("Message is 'unusedMessage'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testUndefinedMessage() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Message-invalid-message-undefined-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        MessageChecker.checkUnusedMessages(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Message used but not defined", collector.getErrors().get(0).getMessage());
+        assertEquals("Message is 'undefinedMessage'", collector.getErrors().get(0).getDetails());
+    }
+
 }

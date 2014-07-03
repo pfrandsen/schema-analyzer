@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -203,4 +204,18 @@ public class XQueryTest {
         assertEquals("tns", result.get(1).get("message-pre"));
     }
 
+    @Test
+    public void testUsedMessages() throws Exception {
+        String [] expected = {"inputMessageRequest", "outputMessageResponse", "firstFault" ,"secondFault",
+                "Applications", "Logging", "SomeHeader"};
+        Path resource = Paths.get("src", "test", "resources", "wsdl", "message",
+                "Message-used-xq.wsdl");
+        Path xq = Paths.get("wsdl", "message");
+        String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
+        String used = XQuery.runXQuery(xq, "used.xq", wsdl);
+        List<String> result = XQuery.mapResult(used, "msg-local");
+        assertEquals(7, result.size());
+        assertTrue("Result [" + Utilities.join(", ", result) + "] expected [" +
+                Utilities.join(", ", Arrays.asList(expected)) + "]", result.containsAll(Arrays.asList(expected)));
+    }
 }

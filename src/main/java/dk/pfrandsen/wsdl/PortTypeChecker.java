@@ -85,9 +85,8 @@ public class PortTypeChecker {
                     String xqFaults = XQuery.runXQuery(xqPortType, "operationFauts.xq", wsdl, portType, operationName);
                     List<Map<String, String>> faults = Xml.parseXQueryResult(xqFaults);
                     if (operationName.length() != 0 && faults.size() == 0) {
-                        // should this be a warning
-                        collector.addError(ASSERTION_ID_PORT_TYPE_FAULTS, "Missing fault",
-                                AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Fault not defined for portType '" +
+                        collector.addWarning(ASSERTION_ID_PORT_TYPE_FAULTS, "Missing fault",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Fault not defined for portType '" +
                                         portType + "', operation '" + operationName + "'");
                     }
                     for (Map<String, String> fault : faults) {
