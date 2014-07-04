@@ -126,4 +126,15 @@ public class Utilities {
         return "";
     }
 
+    public static boolean hasUtf8Bom(String text) {
+        String bom = "\uFEFF";
+        return text.startsWith(bom);
+    }
+
+    public static String removeUtf8Bom(String text) {
+        if (hasUtf8Bom(text)) {
+            return text.substring(1);
+        }
+        return text;
+    }
 }

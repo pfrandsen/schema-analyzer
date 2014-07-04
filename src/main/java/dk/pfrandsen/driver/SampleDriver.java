@@ -10,6 +10,8 @@ import java.io.File;
 
 public class SampleDriver {
 
+    // TODO: driver must remove Byte Order Mark from xml if present (else SAX parser will throw exception)
+
     public static void main(String[] args) {
         AnalysisInformationCollector collector = new AnalysisInformationCollector();
         String path = System.getProperty("user.dir") + "/src/test/resources/wsdl/name/Entity.wsdl";

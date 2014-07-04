@@ -67,7 +67,6 @@ public class NamespaceCheckerTest {
                 collector.getWarnings().get(0).getMessage());
         assertEquals("Namespace 'http://namespace3' imported but not used",
                 collector.getWarnings().get(1).getMessage());
-
     }
 
     @Test
