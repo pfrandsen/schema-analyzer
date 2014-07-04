@@ -2,6 +2,7 @@ package dk.pfrandsen.wsdl;
 
 import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import dk.pfrandsen.util.WsdlUtil;
 import dk.pfrandsen.util.XQuery;
 
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 public class BindingChecker {
     public static final String ASSERTION_ID_SOAP_ACTION = "CA12-WSDL-Binding-SoapAction-Validate";
+    public static final String ASSERTION_ID_OPERATION_FAULTS = "CA12-WSDL-Binding-SoapAction-Validate";
 
     public static void checkSoapAction(String wsdl, AnalysisInformationCollector collector) {
         Path xqLocation = Paths.get("wsdl", "binding");
@@ -26,6 +28,40 @@ public class BindingChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_SOAP_ACTION);
+        }
+    }
+
+    public static void checkFaults(String wsdl, AnalysisInformationCollector collector) {
+        Path xqLocation = Paths.get("wsdl", "binding");
+        try {
+            List<String> bindings = WsdlUtil.getBindings(wsdl);
+            for (String binding : bindings) {
+                String xq = XQuery.runXQuery(xqLocation, "operations.xq", wsdl, binding);
+                List<String> operations = XQuery.mapResult(xq, "name");
+                for (String operation : operations) {
+                    xq = XQuery.runXQuery(xqLocation, "operationFaults.xq", wsdl, binding, operation);
+                    List<Map<String, String>> faults = Xml.parseXQueryResult(xq);
+                    for (Map<String, String>  fault : faults) {
+                        String faultName = fault.get("name");
+                        String soapFaultName = fault.get("soap-fault-name");
+                        String soapFaultUse= fault.get("soap-fault-use");
+                        if (!faultName.equals(soapFaultName)) {
+                            collector.addError(ASSERTION_ID_OPERATION_FAULTS, "Fault name and soap fault name differ",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Binding '" + binding +
+                                            "', operation '" + operation + "', fault '" + faultName +
+                                            "' <> soap fault '" + soapFaultName + "'");
+                        }
+                        if (!"literal".equals(soapFaultUse)) {
+                            collector.addError(ASSERTION_ID_OPERATION_FAULTS, "Fault use attribute not \"literal\"",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Binding '" + binding +
+                                            "', operation '" + operation + "', fault '" + faultName +
+                                            "' use='" + soapFaultUse + "'");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_OPERATION_FAULTS);
         }
     }
 

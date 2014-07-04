@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1"
+                  xmlns:tns="http://service.schemas/domain/service/v1"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+    <wsdl:binding name="FirstBinding" type="tns:FirstService">
+        <wsdl:operation name="opOne">
+            <wsdl:fault name="faultNameA">
+                <soap:fault name="faultNameA" use="literal" />
+            </wsdl:fault>
+            <wsdl:fault name="faultNameB">
+                <soap:fault name="faultNameBad" use="literal" />
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="opTwo">
+            <wsdl:fault name="faultNameC">
+                <soap:fault name="faultNameC" use="literal" />
+            </wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+
+</wsdl:definitions>

@@ -69,4 +69,39 @@ public class BindingCheckerTest {
                 collector.getErrors().get(0).getDetails());
     }
 
+    @Test
+    public void testValidOperationFaults() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-valid-operation-faults-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        BindingChecker.checkFaults(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidOperationFaultsName() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-operation-faults-name-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        BindingChecker.checkFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Fault name and soap fault name differ", collector.getErrors().get(0).getMessage());
+        assertEquals("Binding 'FirstBinding', operation 'opOne', fault 'faultNameB' <> soap fault 'faultNameBad'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidOperationFaultsUse() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-operation-faults-use-simple.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        BindingChecker.checkFaults(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Fault use attribute not \"literal\"", collector.getErrors().get(0).getMessage());
+        assertEquals("Binding 'FirstBinding', operation 'opTwo', fault 'faultNameC' use='encoded'",
+                collector.getErrors().get(0).getDetails());
+    }
 }
