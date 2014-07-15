@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class XQuery {
 
@@ -159,6 +157,46 @@ public class XQuery {
             }
         }
         return retVal;
+    }
+
+    /**
+     *
+     * @param xqResult
+     * @param key
+     * @return concatenated string values for key
+     */
+    public static String mapSingleResult(String xqResult, String key) {
+        StringBuilder result = new StringBuilder();
+        List<String> res = mapResult(xqResult, key); // expects single item list but concatenate all
+        for (String item : res) {
+            result.append(item);
+        }
+        return result.toString();
+    }
+
+    public static List<Map<String, String>> mapResult(String xqResult, List<String> keys) {
+        List<Map<String, String>> result = Xml.parseXQueryResult(xqResult);
+        List<Map<String, String>> retVal = new ArrayList<>();
+        if (result.size() > 0) {
+            for (Map<String, String> element : result) {
+                Map<String, String> map = new HashMap<>();
+                for (String key : keys) {
+                    map.put(key, "" + element.get(key));
+                }
+                retVal.add(map);
+            }
+        }
+        return retVal;
+    }
+
+    public static List<Map<String, String>> mapResult(String xqResult, String... keys) {
+        return mapResult(xqResult, getKeyList(keys));
+    }
+
+    private static List<String> getKeyList(String... keys) {
+        List<String> list = new ArrayList<>();
+        list.addAll(Arrays.asList(keys));
+        return list;
     }
 
 }

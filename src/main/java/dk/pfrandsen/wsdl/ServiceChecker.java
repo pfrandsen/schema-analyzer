@@ -1,17 +1,25 @@
 package dk.pfrandsen.wsdl;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import ch.ethz.mxquery.exceptions.MXQueryException;
 import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.Service;
+import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.WsdlUtil;
+import dk.pfrandsen.util.XQuery;
+import dk.pfrandsen.wsdl.util.Wsdl;
 
 public class ServiceChecker {
     public static final String ASSERTION_ID = "CA??-WSDL-Validate-Service";
+    public static final String ASSERTION_ID_SERVICE_ENDPOINT = "CA53-WSDL-Validate-Endpoint";
     // public static final String SERVICE_PORT_POSTFIX = "WS";
 
     public static List<String> getServiceNames(Definitions definitions, boolean removeVersion) {
@@ -39,13 +47,70 @@ public class ServiceChecker {
                     collector.addError(ASSERTION_ID, "Name in wsdl:service is not upper camel case",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Name: '" + serviceName + "'");
                 }
+                checkEndpoints(wsdl, serviceName, collector);
             }
-
-            // TODO: check wsdl endpoint WSSUPPORT-52
-
         } catch (Exception e) {
-            collectException(e, collector);
+            collectException(e, collector, ASSERTION_ID);
         }
+    }
+
+    public static void checkEndpoints(String wsdl, String serviceName, AnalysisInformationCollector collector) {
+        Path xqPort = Paths.get("wsdl", "port");
+        try {
+            String portsXml = XQuery.runXQuery(xqPort, "servicePort.xq", wsdl, serviceName);
+            List<String> portNames = XQuery.mapResult(portsXml, "name");
+            for (String portName : portNames) {
+                String locationXml = XQuery.runXQuery(xqPort, "soapAddress.xq", wsdl, serviceName, portName);
+                List<String> locations = XQuery.mapResult(locationXml, "location");
+                if (locations.size() != 1) {
+                    collector.addError(ASSERTION_ID_SERVICE_ENDPOINT, "Service must define exactly one endpoint",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Service: '" + serviceName + "', " +
+                                    "port: '" + portName + "', location: [" + Utilities.join(", ", locations) + "]");
+                } else {
+                    String location = locations.get(0);
+                    String tns = WsdlUtil.getTargetNamespace(wsdl);
+                    // check pattern
+                    String prefix = "^http[s]?://[^/]+/";
+                    if (location.matches(prefix + ".*")) {
+                        String loc = location.replaceFirst(prefix, "");
+                        tns = tns.replaceFirst("^http://[^/]+/", "");
+                        if (tns.startsWith("enterprise/")) {
+                            tns = tns.substring("enterprise/".length());
+                        }
+                        String[] components = tns.split("/");
+                        if (components.length != 3) {
+                            collector.addError(ASSERTION_ID_SERVICE_ENDPOINT, "Service location must have 3 " +
+                                            "components <domain>, <service name>, and <version>",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Service: '" + serviceName +
+                                            "', " + "port: '" + portName + "', location: '" + location + "', " +
+                                            "components: [" + Utilities.join(", ", Arrays.asList(components)) + "]");
+                        }
+                        int idx = tns.lastIndexOf('/');
+                        tns = tns.replace('/', '-');
+                        if (idx >= 0)  {
+                            char[] chars = tns.toCharArray();
+                            chars[idx] = '/';
+                            tns = String.valueOf(chars);
+                        }
+                        String expected = "ws-" + tns;
+                        if (!expected.equals(loc)) {
+                            collector.addError(ASSERTION_ID_SERVICE_ENDPOINT, "Service location endpoint does not match " +
+                                    "http[s]://<server>[:port]/ws-<domain>-<service name>/<version>",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Service: '" + serviceName +
+                                    "', " + "port: '" + portName + "', location: '" + location + "', expected: '" +
+                            expected + "'");
+                        }
+                    } else {
+                        collector.addError(ASSERTION_ID_SERVICE_ENDPOINT, "Service location endpoint does not match " +
+                                prefix, AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Service: '" + serviceName +
+                                "', " + "port: '" + portName + "', location: '" + location + "'");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SERVICE_ENDPOINT);
+        }
+
     }
 
     public static void checkServiceFileName(Path fileName, String wsdl, AnalysisInformationCollector collector) {
@@ -73,7 +138,7 @@ public class ServiceChecker {
                     }
                 }
             } catch (Exception e) {
-                collectException(e, collector);
+                collectException(e, collector, ASSERTION_ID);
             }
         }
     }
@@ -102,8 +167,9 @@ public class ServiceChecker {
         return serviceNamesNoVersion;
     }
 
-    private static void collectException(Exception e, AnalysisInformationCollector collector) {
-        collector.addInfo(ASSERTION_ID, "Exception while checking services",
+
+    private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
+        collector.addInfo(assertion, "Exception while checking services",
                 AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, e.getMessage());
     }
 

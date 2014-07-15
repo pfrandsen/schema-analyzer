@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/schemaserver/xsl/annotated-xsd.xsl"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://concept.schemas.nykreditnet.net/domain/adresse/v1"
+           targetNamespace="http://concept.schemas.nykreditnet.net/domain/adresse/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:element name="ElementNameOne" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>Documentation with danish æøå and polish ęą characters</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="ElementNameTwo" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>                                                          </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>

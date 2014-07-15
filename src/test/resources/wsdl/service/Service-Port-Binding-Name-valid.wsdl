@@ -13,6 +13,7 @@
 
     <wsdl:service name="First">
         <wsdl:port name="FirstWS" binding="tns:FirstBinding">
+            <soap:address location="http://myhost.com:9090/ws-domain-service/v1" />
         </wsdl:port>
     </wsdl:service>
 

@@ -1,14 +1,19 @@
 package dk.pfrandsen.wsdl;
 
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.Documentation;
-import com.predic8.wsdl.Operation;
-import com.predic8.wsdl.PortType;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import dk.pfrandsen.util.WsdlUtil;
+import dk.pfrandsen.util.XQuery;
+import dk.pfrandsen.util.XsdUtil;
+
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 
 public class DocumentationChecker {
-    public static String ASSERTION_ID = "CA6-WSDL-Documentation-Validation";
-    private static int TEXT_LENGTH = 700;
+    public static String ASSERTION_ID_WSDL_DOC = "CA6-WSDL-Documentation-Validation";
+    public static String ASSERTION_ID_XSD_DOC = "CA17-XSD-Documentation-Validation";
+    private static int TEXT_LENGTH_MAX = 700;
+    private static int TEXT_LENGTH_MIN = 5;
 
     public static boolean isAscii(String text) {
         for (int i = 0; i < text.length(); i++) {
@@ -40,39 +45,79 @@ public class DocumentationChecker {
         return retVal.toString();
     }
 
-    private static void checkText(String text, String element, int maxLength, AnalysisInformationCollector collector) {
+    private static void checkText(String text, String element, int maxLength, int minLength,
+                                  AnalysisInformationCollector collector, String assertion) {
         String txt = text.trim();
         if (txt.length() == 0) {
-            collector.addWarning(ASSERTION_ID, "No documentation for " + element, AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
+            collector.addWarning(assertion, "No documentation",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element: " + element);
+        } else if (txt.length() < minLength) {
+            collector.addWarning(assertion, "Documentation below limit (" + minLength + ")",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element: " + element);
         }
         if (txt.length() > maxLength) {
-            collector.addWarning(ASSERTION_ID, "Documentation for " + element + " exceed limit (" + maxLength + ")",
-                    AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
+            collector.addWarning(assertion, "Documentation exceed limit (" + maxLength + ")",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Element: " + element);
         }
         // check valid characters
         String noDanish = removeDanish(txt);
         if (txt.length() > noDanish.length()) {
-            collector.addError(ASSERTION_ID, "Danish characters found in " + element, AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
+            collector.addError(assertion, "Danish characters found",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element: " + element);
         }
         if (!isAscii(noDanish)) {
-            collector.addWarning(ASSERTION_ID, "Non ASCII characters found in " + element, AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
+            collector.addWarning(assertion, "Non ASCII characters found",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element: " + element);
+        }
+        // check for "to do" text
+        if (text.toLowerCase().contains("todo")) {
+            collector.addWarning(assertion, "TODO found",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element: " + element);
         }
     }
 
-    public static void checkDocumentation(Definitions definitions, AnalysisInformationCollector collector) {
-        Documentation wsdlDocumentation = definitions.getDocumentation();
-        String wsdlDoc = wsdlDocumentation != null ? wsdlDocumentation.getContent() : "";
-        checkText(wsdlDoc, "WSDL element (top level)", TEXT_LENGTH, collector);
-        for (PortType portType : definitions.getLocalPortTypes()) {
-            // portType.getDocumentation(); -- no rule for documentation on port type
-            String portTypeName = portType.getName();
-            for (Operation operation : portType.getOperations()) {
-                String operationName = operation.getName();
-                Documentation operationDocumentation = operation.getDocumentation();
-                String element = "portType [" + portTypeName + "] operation [" + operationName + "]";
-                String opDoc = operationDocumentation != null ? operationDocumentation.getContent() : "";
-                checkText(opDoc, element, TEXT_LENGTH, collector);
+    public static void checkWsdlDocumentation(String wsdl, AnalysisInformationCollector collector) {
+        try {
+            // get top level documentation
+            String wsdlDoc = XQuery.mapSingleResult(XQuery.runXQuery(Paths.get("wsdl", "definition"),
+                    "documentation.xq", wsdl), "documentation");
+            checkText(wsdlDoc, "WSDL element (top level)", TEXT_LENGTH_MAX, TEXT_LENGTH_MIN, collector,
+                    ASSERTION_ID_WSDL_DOC);
+            // get operation documentation
+            String operationsDoc = XQuery.runXQuery(Paths.get("wsdl", "operation"), "documentation.xq", wsdl);
+            List<Map<String, String>> operations = XQuery.mapResult(operationsDoc, "name", "documentation", "portType");
+            for (Map<String, String> operation : operations) {
+                String operationName = operation.get("name");
+                String operationDoc = operation.get("documentation");
+                String element = "portType '" + operation.get("portType") + "' operation '" + operationName + "'";
+                checkText(operationDoc, element, TEXT_LENGTH_MAX, TEXT_LENGTH_MIN, collector, ASSERTION_ID_WSDL_DOC);
             }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_WSDL_DOC);
         }
     }
+
+    public static void checkConceptSchemaDocumentation(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (tns.startsWith("http://concept.")) { // only concept schemas requires documentation
+                String elementsDoc = XQuery.runXQuery(Paths.get("xsd"), "documentation.xq", xsd);
+                List<Map<String, String>> elements = XQuery.mapResult(elementsDoc, "name", "documentation");
+                for (Map<String, String> element : elements) {
+                    String elementName = element.get("name");
+                    String elementDoc = element.get("documentation");
+                    String elem = "'" + elementName + "'";
+                    checkText(elementDoc, elem, TEXT_LENGTH_MAX, TEXT_LENGTH_MIN, collector, ASSERTION_ID_WSDL_DOC);
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_XSD_DOC);
+        }
+    }
+
+    private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
+        collector.addInfo(assertion, "Exception while checking documentation",
+                AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, e.getMessage());
+    }
+
 }

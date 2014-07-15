@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/schemaserver/xsl/annotated-xsd.xsl"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://concept.schemas.nykreditnet.net/enterprise/adresse/v1"
+           targetNamespace="http://concept.schemas.nykreditnet.net/enterprise/adresse/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:element name="CoNavn" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>CoNavn, Adopted from OIO specification</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+</xs:schema>

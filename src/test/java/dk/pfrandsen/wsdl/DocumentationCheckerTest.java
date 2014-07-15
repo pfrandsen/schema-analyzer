@@ -1,122 +1,187 @@
 package dk.pfrandsen.wsdl;
 
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.WSDLParser;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class DocumentationCheckerTest {
-    private static String RELATIVE_PATH = "src/test/resources/wsdl/documentation";
-    private String fileUri;
+    private static Path RELATIVE_PATH_WSDL = Paths.get("src", "test", "resources", "wsdl", "documentation");
+    private static Path RELATIVE_PATH_SXD = Paths.get("src", "test", "resources", "xsd", "documentation");
     private AnalysisInformationCollector collector;
-    private WSDLParser parser;
 
     @Before
     public void setUp() {
-        fileUri = new File(RELATIVE_PATH).toURI().toString();
         collector = new AnalysisInformationCollector();
-        parser = new WSDLParser();
     }
 
     @Test
-    public void testValid() {
-        String uri = fileUri + "/Documentation-valid.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testValid() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-valid.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
     }
 
     @Test
-    public void testInvalidChars() {
-        String uri = fileUri + "/Documentation-invalid-chars.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testInvalidChars() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-chars.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
-        assertEquals("Danish characters found in WSDL element (top level)", collector.getErrors().get(0).getMessage());
-        assertEquals("Non ASCII characters found in WSDL element (top level)", collector.getWarnings().get(0).getMessage());
-
+        assertEquals("Danish characters found", collector.getErrors().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getErrors().get(0).getDetails());
+        assertEquals("Non ASCII characters found", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getWarnings().get(0).getDetails());
     }
 
     @Test
-    public void testInvalidDanishChars() {
-        String uri = fileUri + "/Documentation-invalid-danish-chars.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testInvalidDanishChars() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-danish-chars.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
-        assertEquals("Danish characters found in WSDL element (top level)", collector.getErrors().get(0).getMessage());
+        assertEquals("Danish characters found", collector.getErrors().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getErrors().get(0).getDetails());
     }
 
     @Test
-    public void testInvalidOnlyWhitespace() {
-        String uri = fileUri + "/Documentation-invalid-only-whitespace.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testInvalidOnlyWhitespace() throws Exception{
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-only-whitespace.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(2, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(1).getSeverity());
-        assertEquals("No documentation for WSDL element (top level)", collector.getWarnings().get(0).getMessage());
-        assertEquals("No documentation for portType [EntityService] operation [getEntity]", collector.getWarnings().get(1).getMessage());
+        assertEquals("No documentation", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getWarnings().get(0).getDetails());
+        assertEquals("No documentation", collector.getWarnings().get(1).getMessage());
+        assertEquals("Element: portType 'EntityService' operation 'getEntity'",
+                collector.getWarnings().get(1).getDetails());
     }
 
     @Test
-    public void testInvalidNotPresent() {
-        String uri = fileUri + "/Documentation-invalid-not-present.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testInvalidNotPresent() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-not-present.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(2, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(1).getSeverity());
-        assertEquals("No documentation for WSDL element (top level)", collector.getWarnings().get(0).getMessage());
-        assertEquals("No documentation for portType [EntityService] operation [getEntity]", collector.getWarnings().get(1).getMessage());
+        assertEquals("No documentation", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getWarnings().get(0).getDetails());
+        assertEquals("No documentation", collector.getWarnings().get(1).getMessage());
+        assertEquals("Element: portType 'EntityService' operation 'getEntity'",
+                collector.getWarnings().get(1).getDetails());
     }
 
     @Test
-    public void testInvalidTooLong() {
-        String uri = fileUri + "/Documentation-invalid-too-long.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testInvalidTooLong() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-too-long.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, collector.getWarnings().get(0).getSeverity());
-        assertEquals("Documentation for WSDL element (top level) exceed limit (700)", collector.getWarnings().get(0).getMessage());
+        assertEquals("Documentation exceed limit (700)", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getWarnings().get(0).getDetails());
     }
 
     @Test
-    public void testInvalidTooLongOperation() {
-        String uri = fileUri + "/Documentation-invalid-too-long-operation.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        DocumentationChecker.checkDocumentation(definition, collector);
+    public void testInvalidTooLongOperation() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-too-long-operation.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, collector.getWarnings().get(0).getSeverity());
-        assertEquals("Documentation for portType [EntityService] operation [getEntity] exceed limit (700)", collector.getWarnings().get(0).getMessage());
+        assertEquals("Documentation exceed limit (700)", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: portType 'EntityService' operation 'getEntity'",
+                collector.getWarnings().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTooShort() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-too-short.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
+        assertEquals("Documentation below limit (5)", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getWarnings().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTodo() throws Exception {
+        Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-todo.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
+        assertEquals("TODO found", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: WSDL element (top level)", collector.getWarnings().get(0).getDetails());
+    }
+
+    @Test
+    public void testSchemaValid() throws Exception {
+        Path path = RELATIVE_PATH_SXD.resolve("valid.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkConceptSchemaDocumentation(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testSchemaInvalidDanishChars() throws Exception {
+        Path path = RELATIVE_PATH_SXD.resolve("invalid-danish-characters.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkConceptSchemaDocumentation(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Danish characters found", collector.getErrors().get(0).getMessage());
+        assertEquals("Element: 'ElementNameTwo'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testSchemaInvalidCharsAndEmpty() throws Exception {
+        Path path = RELATIVE_PATH_SXD.resolve("invalid-characters-and-empty.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        DocumentationChecker.checkConceptSchemaDocumentation(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(2, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Danish characters found", collector.getErrors().get(0).getMessage());
+        assertEquals("Element: 'ElementNameOne'", collector.getErrors().get(0).getDetails());
+        assertEquals("Non ASCII characters found", collector.getWarnings().get(0).getMessage());
+        assertEquals("Element: 'ElementNameOne'", collector.getWarnings().get(0).getDetails());
+        assertEquals("No documentation", collector.getWarnings().get(1).getMessage());
+        assertEquals("Element: 'ElementNameTwo'", collector.getWarnings().get(1).getDetails());
     }
 }

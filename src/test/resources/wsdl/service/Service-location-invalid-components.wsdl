@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsdl:definitions name="Entity"
-                  targetNamespace="http://service.schemas/domain/service/v1" 
-                  xmlns:tns="http://service.schemas/domain/service/v1" 
+                  targetNamespace="http://service.schemas/domain/subdomain/service/v1"
+                  xmlns:tns="http://service.schemas/domain/subdomain/service/v1"
                   xmlns:xs="http://www.w3.org/2001/XMLSchema" 
                   xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
                   xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
@@ -11,12 +11,9 @@
         <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
     </wsdl:binding>
 
-    <wsdl:service name="First">
-        <wsdl:port name="FirstWS" binding="tns:FirstBinding">
-            <soap:address location="http://myhost.com:9090/ws-domain-service/v1" />
-        </wsdl:port>
-        <wsdl:port name="SecondWS" binding="tns:FirstBinding">
-            <soap:address location="http://myhost.com:9091/ws-domain-service/v1" />
+    <wsdl:service name="SvcName">
+        <wsdl:port name="SvcNameWS" binding="tns:FirstBinding">
+            <soap:address location="http://myhost/ws-domain-subdomain-service/v1" />
         </wsdl:port>
     </wsdl:service>
 

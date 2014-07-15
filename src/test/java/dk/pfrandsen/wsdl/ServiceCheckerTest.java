@@ -117,4 +117,65 @@ public class ServiceCheckerTest {
         assertEquals("Filename: FirstV1, service name: 'First' (FirstV1)", collector.getErrors().get(1).getDetails());
     }
 
+    @Test
+    public void testInvalidLocation() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Service-location-invalid.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        ServiceChecker.checkEndpoints(wsdl, "SvcName", collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Service location endpoint does not match http[s]://<server>[:port]/ws-<domain>-<service name>/" +
+                        "<version>", collector.getErrors().get(0).getMessage());
+        assertEquals("Service: 'SvcName', port: 'SvcNameWS', location: 'http://myhost/domain-service/v1', expected: " +
+                "'ws-domain-service/v1'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testValidLocation() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Service-location-valid.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        ServiceChecker.checkEndpoints(wsdl, "SvcName", collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidLocationEnterprise() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Service-location-valid-enterprise.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        ServiceChecker.checkEndpoints(wsdl, "SvcName", collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidLocationEnterprise() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Service-location-invalid-enterprise.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        ServiceChecker.checkEndpoints(wsdl, "SvcName", collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Service location endpoint does not match http[s]://<server>[:port]/ws-<domain>-<service name>/" +
+                "<version>", collector.getErrors().get(0).getMessage());
+        assertEquals("Service: 'SvcName', port: 'SvcNameWS', location: 'http://myhost.com:9090/ws-enterprise-domain-" +
+                "service/v1', expected: 'ws-domain-service/v1'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidLocationComponents() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Service-location-invalid-components.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        ServiceChecker.checkEndpoints(wsdl, "SvcName", collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Service location must have 3 components <domain>, <service name>, and <version>",
+                collector.getErrors().get(0).getMessage());
+        assertEquals("Service: 'SvcName', port: 'SvcNameWS', location: 'http://myhost/ws-domain-subdomain-service/v1'" +
+                ", components: [domain, subdomain, service, v1]", collector.getErrors().get(0).getDetails());
+    }
 }
