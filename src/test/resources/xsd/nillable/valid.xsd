@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:element name="ElementName">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Account" type="xs:string" />
+                <xs:element name="Balance" type="xs:int" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

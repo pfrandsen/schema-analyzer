@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 
 public class SchemaCheckerTest {
     private static Path RELATIVE_PATH_FORM_DEFAULT = Paths.get("src", "test", "resources", "xsd", "formDefault");
+    private static Path RELATIVE_PATH_NILLABLE = Paths.get("src", "test", "resources", "xsd", "nillable");
     private AnalysisInformationCollector collector;
 
     @Before
@@ -53,4 +54,30 @@ public class SchemaCheckerTest {
         assertEquals("Value of attribute attributeFormDefault must be 'unqualified'",
                 collector.getErrors().get(0).getMessage());
     }
+
+
+    @Test
+    public void testValidNillable()throws Exception {
+        Path path = RELATIVE_PATH_NILLABLE.resolve("valid.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkNillable(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidNillable()throws Exception {
+        Path path = RELATIVE_PATH_NILLABLE.resolve("invalid.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkNillable(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Element must must not have nillable attribute", collector.getErrors().get(0).getMessage());
+        assertEquals("Element 'ElementName', nillable='false'", collector.getErrors().get(0).getDetails());
+        assertEquals("Element must must not have nillable attribute", collector.getErrors().get(1).getMessage());
+        assertEquals("Element 'Balance', nillable='true'", collector.getErrors().get(1).getDetails());
+    }
+
 }
