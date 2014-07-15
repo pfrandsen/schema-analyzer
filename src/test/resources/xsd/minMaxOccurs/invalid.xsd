@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:element name="ElementName">
+        <xs:complexType>
+            <xs:sequence minOccurs="1">
+                <xs:element name="Account" type="xs:string" />
+                <xs:element name="Balance" type="xs:int" maxOccurs="1" />
+                <xs:choice minOccurs="1" maxOccurs="1">
+                    <xs:element name="Type" type="xs:string" />
+                    <xs:element name="Kind" type="xs:string" />
+                </xs:choice>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

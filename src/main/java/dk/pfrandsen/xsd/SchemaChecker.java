@@ -11,6 +11,7 @@ import java.util.Map;
 public class SchemaChecker {
     public static String ASSERTION_ID_FORM_DEFAULT = "CA20-XSD-Form-Default";
     public static String ASSERTION_ID_NILLABLE = "CA19-XSD-Nillable";
+    public static String ASSERTION_ID_MIN_MAX = "CA54-XSD-Redundant-Min-Max-Occurs";
 
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
@@ -48,6 +49,24 @@ public class SchemaChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_NILLABLE);
+        }
+    }
+
+    public static void checkMinMaxOccurs(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String minMax = XQuery.runXQuery(Paths.get("xsd"), "minMaxOccurs.xq", xsd);
+            List<Map<String,String>> items = XQuery.mapResult(minMax, "name", "node");
+            for (Map<String,String> item : items) {
+                String name = item.get("name");
+                if ("".equals(name)) {
+                    name = "<anonymous>";
+                }
+                String node = item.get("node");
+                collector.addError(ASSERTION_ID_MIN_MAX, "Redundant minOccurs/maxOccurs='1'",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Node '" + name + "' (" + node + ")");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_MIN_MAX);
         }
     }
 
