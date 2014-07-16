@@ -23,7 +23,7 @@ public class Utilities {
     }
 
     public static List<String> splitOnUppercase(String text) {
-        List<String> words = new ArrayList<String>();
+        List<String> words = new ArrayList<>();
         if (text.length() <= 1) {
             words.add(text);
         } else {

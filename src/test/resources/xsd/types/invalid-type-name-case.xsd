@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <!-- name should be upper camel case -->
+    <xs:simpleType name="balanceType">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="5" />
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

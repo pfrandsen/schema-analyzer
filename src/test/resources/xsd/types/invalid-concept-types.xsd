@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/concept/v1"
+           targetNamespace="http://domain.net/concept/v1"
+
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- no complex types allowed -->
+    <xs:complexType name="AccountCategoryType">
+        <xs:simpleContent>
+            <xs:restriction base="xs:string">
+                <xs:enumeration value="val1" />
+                <xs:enumeration value="val2" />
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- no top-level simple types allowed except enumeration -->
+    <xs:simpleType name="SomeSimpleType">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="5" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- embedded (anonymous) simple type allowed (except enumeration)  -->
+    <xs:element name="SimpleElement">
+        <xs:simpleType>
+            <xs:restriction base="xs:integer">
+                <xs:minInclusive value="5" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+
+    <!-- embedded (anonymous) complex type not allowed -->
+    <xs:element name="ComplexElement">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Account" type="xs:string" />
+                <xs:element name="Balance" type="xs:int" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- top-level enumeration allowed -->
+    <xs:simpleType name="CategorySimpleType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="val2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

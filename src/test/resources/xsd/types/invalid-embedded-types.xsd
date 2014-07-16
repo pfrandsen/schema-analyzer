@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:element name="ElementName">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Account" type="xs:string" />
+                <xs:element name="Balance" type="xs:int" />
+                <xs:element name="MinBalance">
+                    <xs:simpleType>
+                        <xs:union>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:integer">
+                                    <xs:minInclusive value="5" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="val1" />
+                                    <xs:enumeration value="val2" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:union>
+                    </xs:simpleType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="AccountType">
+        <xs:sequence>
+            <xs:element name="Account" type="xs:string" />
+            <xs:element name="Balance" type="xs:int" />
+            <xs:element name="AccountCategory">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="val1" />
+                        <xs:enumeration value="val2" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AccountCategoryType">
+        <xs:simpleContent>
+            <xs:restriction base="xs:string">
+                <xs:enumeration value="val1" />
+                <xs:enumeration value="val2" />
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- this is legal -->
+    <xs:simpleType name="CategorySimpleType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="val2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

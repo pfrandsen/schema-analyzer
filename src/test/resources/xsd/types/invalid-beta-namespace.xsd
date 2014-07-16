@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://beta-domain.net/domain/v1"
+           xmlns:imp1="http://domain.net/domain/v1"
+           xmlns:imp2="http://domain.net/domain/v2"
+           xmlns:imp3="http://beta-domain.net/domain/v3"
+           targetNamespace="http://beta-domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://beta-domain.net/domain/v1" />
+    <xs:import namespace="http://domain.net/domain/v2" />
+    <xs:include schemaLocation="http://location/1" namespace="http://beta-domain.net/domain/v2"/>
+    <xs:include schemaLocation="http://location/2" />
+
+</xs:schema>

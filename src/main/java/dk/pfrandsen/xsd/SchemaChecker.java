@@ -5,13 +5,14 @@ import dk.pfrandsen.util.XQuery;
 import dk.pfrandsen.util.XsdUtil;
 
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SchemaChecker {
     public static String ASSERTION_ID_FORM_DEFAULT = "CA20-XSD-Form-Default";
     public static String ASSERTION_ID_NILLABLE = "CA19-XSD-Nillable";
     public static String ASSERTION_ID_MIN_MAX = "CA54-XSD-Redundant-Min-Max-Occurs";
+    public static String ASSERTION_ID_TYPE = "CA24-XSD-Type-Validate";
+    public static String ASSERTION_ID_CONCEPT = "CA34-XSD-Illegal-Content-In-Concept-Scheme";
 
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
@@ -70,8 +71,73 @@ public class SchemaChecker {
         }
     }
 
+    public static void checkConceptTypes(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (XsdUtil.isConcept(tns)) {
+                // find illegal include, import, simpleType, complexType
+                String illegal = XQuery.runXQuery(Paths.get("xsd"), "illegalConceptTypes.xq", xsd);
+                List<Map<String,String>> items = XQuery.mapResult(illegal, "name", "node");
+                for (Map<String,String> item : items) {
+                    String name = item.get("name");
+                    String node = item.get("node");
+                    collector.addError(ASSERTION_ID_CONCEPT, "Illegal content in concept schema",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Node '" + name + "' (" + node + ")");
+                }
+            }
+            // check for unused legal top-level simpleType definitions (enumerations)
+
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_CONCEPT);
+        }
+    }
+
+    public static void checkTypes(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String embedded = XQuery.runXQuery(Paths.get("xsd"), "anonymousEnumeration.xq", xsd);
+            List<Map<String,String>> items = XQuery.mapResult(embedded, "name", "node");
+            for (Map<String,String> item : items) {
+                String name = item.get("name");
+                if ("".equals(name)) {
+                    name = "<anonymous>";
+                }
+                String node = item.get("node");
+                collector.addError(ASSERTION_ID_TYPE, "Embedded (anonymous) type found",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Node '" + name + "' (" + node + ")");
+            }
+            // check name for all top level types
+            String topLevel = XQuery.runXQuery(Paths.get("xsd"), "topLevelTypes.xq", xsd);
+            items = XQuery.mapResult(topLevel, "name", "node");
+            for (Map<String,String> item : items) {
+                String name = item.get("name");
+                String node = item.get("node");
+                if (!XsdUtil.isValidTypeName(name)) {
+                    collector.addError(ASSERTION_ID_TYPE, "Illegal type name",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Type '" + name + "' (" + node + ")");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_TYPE);
+        }
+    }
+
+    public static void checkBetaNamespace(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String ns = XQuery.runXQuery(Paths.get("xsd"), "namespaces.xq", xsd);
+            List<String> namespaces = XQuery.mapResult(ns, "namespace");
+            Set<String> nsSet = new LinkedHashSet<>(namespaces);
+            for (String namespace : nsSet) {
+                if (namespace.contains("beta-")) {
+                    collector.addError(ASSERTION_ID_CONCEPT, "Namespace containing 'beta-' found",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" + namespace + "'");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_CONCEPT);
+        }
+    }
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
-        collector.addInfo(assertion, "Exception while checking documentation",
+        collector.addInfo(assertion, "Exception while checking schema",
                 AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, e.getMessage());
     }
 }
