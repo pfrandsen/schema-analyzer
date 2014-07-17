@@ -23,4 +23,9 @@ public class XsdUtil {
     public static boolean isValidTypeName(String name) {
         return Utilities.isUpperCamelCaseAscii(name) && name.endsWith("Type");
     }
+
+    public static boolean isValidElementName(String name) {
+        return Utilities.isUpperCamelCaseAscii(name);
+    }
+
 }

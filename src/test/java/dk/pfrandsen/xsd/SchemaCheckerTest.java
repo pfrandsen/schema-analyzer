@@ -245,4 +245,32 @@ public class SchemaCheckerTest {
         assertEquals("Namespace 'http://beta-domain.net/domain/v3'", collector.getErrors().get(2).getDetails());
     }
 
+    @Test
+    public void testValidElementName() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-element-name.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkElements(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidElementName() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-element-name.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkElements(xsd, collector);
+        assertEquals(4, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal element name", collector.getErrors().get(0).getMessage());
+        assertEquals("Element 'elementWithWrongCaps'", collector.getErrors().get(0).getDetails());
+        assertEquals("Illegal element name", collector.getErrors().get(1).getMessage());
+        assertEquals("Element 'Søgestreng'", collector.getErrors().get(1).getDetails());
+        assertEquals("Illegal element name", collector.getErrors().get(2).getMessage());
+        assertEquals("Element 'Element-Name'", collector.getErrors().get(2).getDetails());
+        assertEquals("Illegal element name", collector.getErrors().get(3).getMessage());
+        assertEquals("Element 'Element_Name'", collector.getErrors().get(3).getDetails());
+    }
+
 }

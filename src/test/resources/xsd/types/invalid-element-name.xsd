@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:element name="elementWithWrongCaps" type="xs:string" />
+    <xs:element name="Søgestreng" type="xs:string" />
+    <xs:element name="Element-Name" type="xs:string" />
+    <xs:element name="Element_Name" type="xs:string" />
+
+</xs:schema>

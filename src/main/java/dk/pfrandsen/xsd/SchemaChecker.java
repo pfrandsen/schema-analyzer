@@ -125,6 +125,21 @@ public class SchemaChecker {
         }
     }
 
+    public static void checkElements(String xsd, AnalysisInformationCollector collector) {
+        try {
+            // check name for all explicitly named elements
+            String elementNames = XQuery.runXQuery(Paths.get("xsd"), "elementNames.xq", xsd);
+            for (String name : XQuery.mapResult(elementNames, "name")) {
+                if (!XsdUtil.isValidElementName(name)) {
+                    collector.addError(ASSERTION_ID_TYPE, "Illegal element name",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Element '" + name + "'");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_TYPE);
+        }
+    }
+
     public static void checkBetaNamespace(String xsd, AnalysisInformationCollector collector) {
         try {
             String ns = XQuery.runXQuery(Paths.get("xsd"), "namespaces.xq", xsd);
