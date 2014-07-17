@@ -84,9 +84,13 @@ public class SchemaChecker {
                     collector.addError(ASSERTION_ID_CONCEPT, "Illegal content in concept schema",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Node '" + name + "' (" + node + ")");
                 }
+                // check for unused legal top-level simpleType definitions (enumerations)
+                String unused = XQuery.runXQuery(Paths.get("xsd"), "unusedEnumeration.xq", xsd);
+                for (String name : XQuery.mapResult(unused, "name")) {
+                    collector.addError(ASSERTION_ID_CONCEPT, "Unused enumeration in concept schema",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Enumeration '" + name + "'");
+                }
             }
-            // check for unused legal top-level simpleType definitions (enumerations)
-
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_CONCEPT);
         }
@@ -125,6 +129,7 @@ public class SchemaChecker {
         try {
             String ns = XQuery.runXQuery(Paths.get("xsd"), "namespaces.xq", xsd);
             List<String> namespaces = XQuery.mapResult(ns, "namespace");
+            // remove duplicates as XQuery distinct-values does not work in the current implementation
             Set<String> nsSet = new LinkedHashSet<>(namespaces);
             for (String namespace : nsSet) {
                 if (namespace.contains("beta-")) {

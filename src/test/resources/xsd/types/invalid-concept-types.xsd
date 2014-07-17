@@ -49,4 +49,7 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <!-- make sure enum is used -->
+    <xs:element name="Category" type="tns:CategorySimpleType" />
+
 </xs:schema>

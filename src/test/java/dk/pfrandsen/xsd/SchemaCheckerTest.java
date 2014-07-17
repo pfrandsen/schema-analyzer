@@ -208,6 +208,28 @@ public class SchemaCheckerTest {
     }
 
     @Test
+    public void testValidConceptEnumUsed()throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-concept-used-enum.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkConceptTypes(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidConceptEnumNotUsed()throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-concept-unused-enum.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkConceptTypes(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Unused enumeration in concept schema", collector.getErrors().get(0).getMessage());
+        assertEquals("Enumeration 'CatEnumType'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
     public void testInvalidBetaNamespace() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-beta-namespace.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
