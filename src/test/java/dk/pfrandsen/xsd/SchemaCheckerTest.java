@@ -304,4 +304,29 @@ public class SchemaCheckerTest {
         assertEquals("element:SomeElement, value 'Val - value'", collector.getErrors().get(4).getDetails());
     }
 
+    @Test
+    public void testValidSimpleTypes() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-concept-simple-type.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkSimpleTypesInConcept(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidSimpleTypes() throws Exception {
+        String err = "Simple type must be in concept schema";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-concept-simple-type.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkSimpleTypesInConcept(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("Type 'CategoryEnumType'", collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("Type 'CatEnumType'", collector.getErrors().get(1).getDetails());
+    }
+
 }

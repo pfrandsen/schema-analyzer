@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/service/v1"
+           targetNamespace="http://domain.net/service/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- simple types not defined in concept schema -->
+    <xs:simpleType name="CategoryEnumType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="val2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CatEnumType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="val2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

@@ -85,13 +85,13 @@ public class SchemaChecker {
                     String name = item.get("name");
                     String node = item.get("node");
                     collector.addError(ASSERTION_ID_CONCEPT, "Illegal content in concept schema",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Node '" + name + "' (" + node + ")");
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Node '" + name + "' (" + node + ")");
                 }
                 // check for unused legal top-level simpleType definitions (enumerations)
                 String unused = XQuery.runXQuery(Paths.get("xsd"), "unusedEnumeration.xq", xsd);
                 for (String name : XQuery.mapResult(unused, "name")) {
                     collector.addError(ASSERTION_ID_CONCEPT, "Unused enumeration in concept schema",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Enumeration '" + name + "'");
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Enumeration '" + name + "'");
                 }
             }
         } catch (Exception e) {
@@ -110,7 +110,7 @@ public class SchemaChecker {
                 }
                 String node = item.get("node");
                 collector.addError(ASSERTION_ID_TYPE, "Embedded (anonymous) type found",
-                        AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Node '" + name + "' (" + node + ")");
+                        AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Node '" + name + "' (" + node + ")");
             }
             // check name for all top level types
             String topLevel = XQuery.runXQuery(Paths.get("xsd"), "topLevelTypes.xq", xsd);
@@ -120,7 +120,7 @@ public class SchemaChecker {
                 String node = item.get("node");
                 if (!XsdUtil.isValidTypeName(name)) {
                     collector.addError(ASSERTION_ID_TYPE, "Illegal type name",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Type '" + name + "' (" + node + ")");
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Type '" + name + "' (" + node + ")");
                 }
             }
         } catch (Exception e) {
@@ -135,7 +135,7 @@ public class SchemaChecker {
             for (String name : XQuery.mapResult(elementNames, "name")) {
                 if (!XsdUtil.isValidElementName(name)) {
                     collector.addError(ASSERTION_ID_ELEMENT, "Illegal element name",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Element '" + name + "'");
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element '" + name + "'");
                 }
             }
         } catch (Exception e) {
@@ -152,7 +152,7 @@ public class SchemaChecker {
             for (String namespace : nsSet) {
                 if (namespace.contains("beta-")) {
                     collector.addError(ASSERTION_ID_NAMESPACE, "Namespace containing 'beta-' found",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" + namespace + "'");
+                            AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Namespace '" + namespace + "'");
                 }
             }
         } catch (Exception e) {
@@ -170,12 +170,28 @@ public class SchemaChecker {
                 String value = item.get("value");
                 if (!XsdUtil.isValidEnumerationValue(value)) {
                     collector.addError(ASSERTION_ID_ENUM_VALUE, "Illegal enumeration value",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, node + ":" + name +
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, node + ":" + name +
                                     ", value '" + value + "'");
                 }
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_ENUM_VALUE);
+        }
+    }
+
+    public static void checkSimpleTypesInConcept(String xsd, AnalysisInformationCollector collector) {
+        // named simple types must be in concept schema
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (!XsdUtil.isConcept(tns)) {
+                String namedSimple = XQuery.runXQuery(Paths.get("xsd"), "namedSimpleTypes.xq", xsd);
+                for (String name : XQuery.mapResult(namedSimple, "name")) {
+                    collector.addError(ASSERTION_ID_CONCEPT, "Simple type must be in concept schema",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Type '" + name + "'");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_CONCEPT);
         }
     }
 
