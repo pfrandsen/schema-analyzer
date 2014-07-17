@@ -28,4 +28,7 @@ public class XsdUtil {
         return Utilities.isUpperCamelCaseAscii(name);
     }
 
+    public static boolean isValidEnumerationValue(String value) {
+        return value.matches("[a-zA-Z0-9_\\s]+") && !value.matches("[0-9]+.*") && !value.matches("\\s+.*");
+    }
 }

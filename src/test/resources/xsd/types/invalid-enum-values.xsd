@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/concept/v1"
+           targetNamespace="http://domain.net/concept/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- top-level enumeration allowed (used)-->
+    <xs:simpleType name="CategoryEnumType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value=" val1" />        <!-- starts with space -->
+            <xs:enumeration value="" />             <!-- empty -->
+            <xs:enumeration value="3 val" />        <!-- starts with number -->
+            <xs:enumeration value="Val æøå" />      <!-- contains non-ascii characters -->
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- it is not legal to use embedded anonymous enum - it is included here to check the XQuery script finds
+         all enumeration values -->
+    <xs:element name="SomeElement">
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+                <xs:enumeration value="Val - value" />  <!-- contains illegal character '-' -->
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+
+</xs:schema>

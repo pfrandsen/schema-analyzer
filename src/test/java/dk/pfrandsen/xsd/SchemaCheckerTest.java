@@ -273,4 +273,35 @@ public class SchemaCheckerTest {
         assertEquals("Element 'Element_Name'", collector.getErrors().get(3).getDetails());
     }
 
+    @Test
+    public void testValidEnumValues() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-enum-values.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkEnumerationValues(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidEnumValues() throws Exception {
+        String err = "Illegal enumeration value";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-enum-values.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkEnumerationValues(xsd, collector);
+        assertEquals(5, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("simpleType:CategoryEnumType, value ' val1'", collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("simpleType:CategoryEnumType, value ''", collector.getErrors().get(1).getDetails());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals("simpleType:CategoryEnumType, value '3 val'", collector.getErrors().get(2).getDetails());
+        assertEquals(err, collector.getErrors().get(3).getMessage());
+        assertEquals("simpleType:CategoryEnumType, value 'Val æøå'", collector.getErrors().get(3).getDetails());
+        assertEquals(err, collector.getErrors().get(4).getMessage());
+        assertEquals("element:SomeElement, value 'Val - value'", collector.getErrors().get(4).getDetails());
+    }
+
 }

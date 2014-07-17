@@ -13,6 +13,9 @@ public class SchemaChecker {
     public static String ASSERTION_ID_MIN_MAX = "CA54-XSD-Redundant-Min-Max-Occurs";
     public static String ASSERTION_ID_TYPE = "CA24-XSD-Type-Validate";
     public static String ASSERTION_ID_CONCEPT = "CA34-XSD-Illegal-Content-In-Concept-Scheme";
+    public static String ASSERTION_ID_ELEMENT = "CA??-XSD-Element-Validation";
+    public static String ASSERTION_ID_NAMESPACE = "CA25-XSD-Beta-Namespace-Not-Allowed";
+    public static String ASSERTION_ID_ENUM_VALUE = "CA41-XSD-Enum-Value-Validate";
 
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
@@ -131,12 +134,12 @@ public class SchemaChecker {
             String elementNames = XQuery.runXQuery(Paths.get("xsd"), "elementNames.xq", xsd);
             for (String name : XQuery.mapResult(elementNames, "name")) {
                 if (!XsdUtil.isValidElementName(name)) {
-                    collector.addError(ASSERTION_ID_TYPE, "Illegal element name",
+                    collector.addError(ASSERTION_ID_ELEMENT, "Illegal element name",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Element '" + name + "'");
                 }
             }
         } catch (Exception e) {
-            collectException(e, collector, ASSERTION_ID_TYPE);
+            collectException(e, collector, ASSERTION_ID_ELEMENT);
         }
     }
 
@@ -148,14 +151,34 @@ public class SchemaChecker {
             Set<String> nsSet = new LinkedHashSet<>(namespaces);
             for (String namespace : nsSet) {
                 if (namespace.contains("beta-")) {
-                    collector.addError(ASSERTION_ID_CONCEPT, "Namespace containing 'beta-' found",
+                    collector.addError(ASSERTION_ID_NAMESPACE, "Namespace containing 'beta-' found",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" + namespace + "'");
                 }
             }
         } catch (Exception e) {
-            collectException(e, collector, ASSERTION_ID_CONCEPT);
+            collectException(e, collector, ASSERTION_ID_NAMESPACE);
         }
     }
+
+    public static void checkEnumerationValues(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String enumValues = XQuery.runXQuery(Paths.get("xsd"), "enumerationValues.xq", xsd);
+            List<Map<String,String>> items = XQuery.mapResult(enumValues, "name", "node", "value");
+            for (Map<String,String> item : items) {
+                String name = item.get("name");
+                String node = item.get("node");
+                String value = item.get("value");
+                if (!XsdUtil.isValidEnumerationValue(value)) {
+                    collector.addError(ASSERTION_ID_ENUM_VALUE, "Illegal enumeration value",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, node + ":" + name +
+                                    ", value '" + value + "'");
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_ENUM_VALUE);
+        }
+    }
+
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
         collector.addInfo(assertion, "Exception while checking schema",
                 AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, e.getMessage());

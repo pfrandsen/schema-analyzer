@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/concept/v1"
+           targetNamespace="http://domain.net/concept/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- top-level enumeration allowed (used)-->
+    <xs:simpleType name="CategoryEnumType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="Val2" />
+            <xs:enumeration value="_ Val 3" />
+            <xs:enumeration value="Val 4 " />
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>
