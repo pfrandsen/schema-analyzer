@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/service/v1"
+           targetNamespace="http://domain.net/service/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:simpleType name="BankServiceElementType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="val2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="BankServiceElement" type="tns:BankServiceElementType" />
+
+</xs:schema>

@@ -329,4 +329,43 @@ public class SchemaCheckerTest {
         assertEquals("Type 'CatEnumType'", collector.getErrors().get(1).getDetails());
     }
 
+    @Test
+    public void testValidServiceElementDefinition() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-service-element-type.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkServiceElementDefinition(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidServiceElementDefinition() throws Exception {
+        String err = "Illegal element definition";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-service-element-type.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkServiceElementDefinition(xsd, collector);
+        assertEquals(6, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("Element 'ElementOne': Illegal namespace 'http://www.w3.org/2001/XMLSchema'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("Element 'ElementTwo': Illegal namespace 'http://service.net/bankservice/v2'",
+                collector.getErrors().get(1).getDetails());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals("Element 'UnconstrainedElement': Unconstrained without content",
+                collector.getErrors().get(2).getDetails());
+        assertEquals(err, collector.getErrors().get(3).getMessage());
+        assertEquals("Node 'complexType:Type2Type', element 'Service': Illegal namespace " +
+                "'http://service.net/bankservice/v2'", collector.getErrors().get(3).getDetails());
+        assertEquals(err, collector.getErrors().get(4).getMessage());
+        assertEquals("Node 'complexType:Type2Type', element 'StringElement': Illegal namespace " +
+                "'http://www.w3.org/2001/XMLSchema'", collector.getErrors().get(4).getDetails());
+        assertEquals(err, collector.getErrors().get(5).getMessage());
+        assertEquals("Node 'element:IllegalConstrainedElement', element 'IntElement': Illegal namespace " +
+                "'http://www.w3.org/2001/XMLSchema'", collector.getErrors().get(5).getDetails());
+    }
+
 }

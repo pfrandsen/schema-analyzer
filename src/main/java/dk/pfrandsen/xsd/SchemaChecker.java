@@ -16,6 +16,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ELEMENT = "CA??-XSD-Element-Validation";
     public static String ASSERTION_ID_NAMESPACE = "CA25-XSD-Beta-Namespace-Not-Allowed";
     public static String ASSERTION_ID_ENUM_VALUE = "CA41-XSD-Enum-Value-Validate";
+    public static String ASSERTION_ID_ELEMENT_DEFINITION = "CA26-XSD-Element-Definition-Validation";
 
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
@@ -192,6 +193,28 @@ public class SchemaChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_CONCEPT);
+        }
+    }
+
+    public static void checkServiceElementDefinition (String xsd, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (!XsdUtil.isConcept(tns)) { // only service schemas are checked
+                String topLevel = XQuery.runXQuery(Paths.get("xsd"), "illegalElementDefinitionTopLevel.xq", xsd);
+                for (Map<String,String> item : XQuery.mapResult(topLevel, "name", "message")) {
+                    collector.addError(ASSERTION_ID_ELEMENT_DEFINITION, "Illegal element definition",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Element '" + item.get("name") + "': "
+                                    + item.get("message"));
+                }
+                String embedded = XQuery.runXQuery(Paths.get("xsd"), "illegalElementDefinitionEmbedded.xq", xsd);
+                for (Map<String,String> item : XQuery.mapResult(embedded, "node", "element", "message")) {
+                    collector.addError(ASSERTION_ID_ELEMENT_DEFINITION, "Illegal element definition",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Node '" + item.get("node") +
+                                    "', element '" + item.get("element") + "': " + item.get("message"));
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_ELEMENT_DEFINITION);
         }
     }
 

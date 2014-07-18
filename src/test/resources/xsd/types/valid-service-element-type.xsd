@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/service/v1"
+           xmlns:ns1="http://concept.net/bank/v2"
+           xmlns:ns2="http://service.net/bankservice/concept/v2"
+           targetNamespace="http://domain.net/service/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- element ref: referenced element must be in a concept namespace or in the target namespace of
+         the element that references it -->
+
+    <xs:import namespace="http://service.net/bankservice/concept/v2" schemaLocation="import/bankserviceconcept.xsd" />
+    <xs:import namespace="http://concept.net/bank/v2" schemaLocation="import/bankconcept.xsd" />
+    <xs:include schemaLocation="include/element.xsd" />
+
+    <xs:element name="ElementOne" type="tns:BankServiceElementType" />  <!-- from include -->
+    <xs:element name="ElementTwo" type="ns2:ServiceConcept2Type" />
+    <xs:complexType name="Type2Type">
+        <xs:sequence>
+            <xs:element ref="ns1:BankConcept" />
+            <xs:element ref="ns2:ServiceConcept" />
+            <xs:element ref="tns:BankServiceElement" />  <!-- from include -->
+            <xs:element name="NewElement" type="tns:BankServiceElementType" />
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

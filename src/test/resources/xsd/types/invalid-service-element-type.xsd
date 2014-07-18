@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/service/v1"
+           xmlns:ns1="http://concept.net/bank/v2"
+           xmlns:ns2="http://service.net/bankservice/v2"
+           targetNamespace="http://domain.net/service/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- element ref: referenced element must be in a concept namespace or in the target namespace of
+         the element that references it -->
+
+    <xs:import namespace="http://concept.net/bank/v2" schemaLocation="import/bankconcept.xsd" />
+    <xs:import namespace="http://service.net/bankservice/v2" schemaLocation="import/bankservice.xsd" />
+
+    <xs:element name="UnconstrainedElement"> <!-- illegal unconstrained element -->
+        <!-- no type and only contains annotation and this comment -->
+        <xs:annotation><xs:documentation>txt</xs:documentation></xs:annotation>
+    </xs:element>
+
+    <xs:element name="ElementOne" type="xs:int" />  <!-- illegal namespace -->
+    <xs:element name="ElementTwo" type="ns2:Service2Type" /> <!-- illegal namespace -->
+    <xs:complexType name="Type2Type">
+        <xs:sequence>
+            <xs:element ref="ns2:Service" /> <!-- illegal namespace -->
+            <xs:element name="StringElement" type="xs:string" /> <!-- illegal namespace -->
+            <xs:element name="SomeName" type="ns1:ConceptType" /> <!-- legal namespace (concept) -->
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="IllegalConstrainedElement">
+        <xs:annotation><xs:documentation>txt</xs:documentation></xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="IntElement" type="xs:int" /> <!-- illegal namespace -->
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- this is a legal element -->
+    <xs:element name="ConstrainedElement">
+        <xs:annotation><xs:documentation>txt</xs:documentation></xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="SomeName" type="ns1:ConceptType" /> <!-- legal namespace (concept) -->
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- this is legal although Type2Type itself is not legal as the element uses a type from the target namespace -->
+    <xs:element name="ElementThree" type="tns:Type2Type" />
+
+
+</xs:schema>

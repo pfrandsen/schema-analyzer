@@ -51,6 +51,3 @@ return
   </item>
 }
 </result>
-
-  (:
-   :)
