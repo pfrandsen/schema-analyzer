@@ -25,7 +25,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testValidFormDefault()throws Exception {
+    public void testValidFormDefault() throws Exception {
         Path path = RELATIVE_PATH_FORM_DEFAULT.resolve("valid.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkFormDefault(xsd, collector);
@@ -35,7 +35,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidFormDefaultElement()throws Exception {
+    public void testInvalidFormDefaultElement() throws Exception {
         Path path = RELATIVE_PATH_FORM_DEFAULT.resolve("invalid-element.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkFormDefault(xsd, collector);
@@ -47,7 +47,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidFormDefaultAttribute()throws Exception {
+    public void testInvalidFormDefaultAttribute() throws Exception {
         Path path = RELATIVE_PATH_FORM_DEFAULT.resolve("invalid-attribute.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkFormDefault(xsd, collector);
@@ -60,7 +60,7 @@ public class SchemaCheckerTest {
 
 
     @Test
-    public void testValidNillable()throws Exception {
+    public void testValidNillable() throws Exception {
         Path path = RELATIVE_PATH_NILLABLE.resolve("valid.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkNillable(xsd, collector);
@@ -70,7 +70,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidNillable()throws Exception {
+    public void testInvalidNillable() throws Exception {
         Path path = RELATIVE_PATH_NILLABLE.resolve("invalid.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkNillable(xsd, collector);
@@ -84,7 +84,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testValidMinMax()throws Exception {
+    public void testValidMinMax() throws Exception {
         Path path = RELATIVE_PATH_MIN_MAX.resolve("valid.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkMinMaxOccurs(xsd, collector);
@@ -94,7 +94,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidMinMax()throws Exception {
+    public void testInvalidMinMax() throws Exception {
         Path path = RELATIVE_PATH_MIN_MAX.resolve("invalid.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkMinMaxOccurs(xsd, collector);
@@ -110,7 +110,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidEmbeddedTypes()throws Exception {
+    public void testInvalidEmbeddedTypes() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-embedded-types.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkTypes(xsd, collector);
@@ -126,7 +126,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidTypeNameCase()throws Exception {
+    public void testInvalidTypeNameCase() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-type-name-case.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkTypes(xsd, collector);
@@ -138,7 +138,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidTypeNameChars()throws Exception {
+    public void testInvalidTypeNameChars() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-type-name-chars.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkTypes(xsd, collector);
@@ -150,7 +150,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidTypeNameDanishChars()throws Exception {
+    public void testInvalidTypeNameDanishChars() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-type-name-danish-chars.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkTypes(xsd, collector);
@@ -162,7 +162,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidTypeNamePostfix()throws Exception {
+    public void testInvalidTypeNamePostfix() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-type-name-postfix.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkTypes(xsd, collector);
@@ -174,7 +174,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidConceptContentImportInclude()throws Exception {
+    public void testInvalidConceptContentImportInclude() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-concept-import-include.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkConceptTypes(xsd, collector);
@@ -192,7 +192,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidConceptContentTypes()throws Exception {
+    public void testInvalidConceptContentTypes() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-concept-types.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkConceptTypes(xsd, collector);
@@ -208,7 +208,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testValidConceptEnumUsed()throws Exception {
+    public void testValidConceptEnumUsed() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("valid-concept-used-enum.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkConceptTypes(xsd, collector);
@@ -218,7 +218,7 @@ public class SchemaCheckerTest {
     }
 
     @Test
-    public void testInvalidConceptEnumNotUsed()throws Exception {
+    public void testInvalidConceptEnumNotUsed() throws Exception {
         Path path = RELATIVE_PATH_TYPES.resolve("invalid-concept-unused-enum.xsd");
         String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
         SchemaChecker.checkConceptTypes(xsd, collector);
@@ -366,6 +366,21 @@ public class SchemaCheckerTest {
         assertEquals(err, collector.getErrors().get(5).getMessage());
         assertEquals("Node 'element:IllegalConstrainedElement', element 'IntElement': Illegal namespace " +
                 "'http://www.w3.org/2001/XMLSchema'", collector.getErrors().get(5).getDetails());
+    }
+
+    @Test
+    public void testInvalidRedefinition() throws Exception {
+        String err = "Illegal redefinition";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-redefine.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkRedefinition(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("schemaLocation 'location1.xsd'", collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("schemaLocation 'location2.xsd'", collector.getErrors().get(1).getDetails());
     }
 
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:redefine schemaLocation="location1.xsd">
+        <!-- redefinition would go here -->
+    </xs:redefine>
+
+    <xs:redefine schemaLocation="location2.xsd">
+        <!-- redefinition would go here -->
+    </xs:redefine>
+
+</xs:schema>

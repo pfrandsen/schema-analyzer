@@ -17,6 +17,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_NAMESPACE = "CA25-XSD-Beta-Namespace-Not-Allowed";
     public static String ASSERTION_ID_ENUM_VALUE = "CA41-XSD-Enum-Value-Validate";
     public static String ASSERTION_ID_ELEMENT_DEFINITION = "CA26-XSD-Element-Definition-Validation";
+    public static String ASSERTION_ID_REDEFINITION = "CA21-XSD-Redefinition-Validation";
 
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
@@ -196,7 +197,7 @@ public class SchemaChecker {
         }
     }
 
-    public static void checkServiceElementDefinition (String xsd, AnalysisInformationCollector collector) {
+    public static void checkServiceElementDefinition(String xsd, AnalysisInformationCollector collector) {
         try {
             String tns = XsdUtil.getTargetNamespace(xsd);
             if (!XsdUtil.isConcept(tns)) { // only service schemas are checked
@@ -215,6 +216,18 @@ public class SchemaChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_ELEMENT_DEFINITION);
+        }
+    }
+
+    public static void checkRedefinition(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String res = XQuery.runXQuery(Paths.get("xsd"), "redefine.xq", xsd);
+            for (String redefined : XQuery.mapResult(res, "location")) {
+                collector.addError(ASSERTION_ID_REDEFINITION, "Illegal redefinition",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "schemaLocation '" + redefined + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_REDEFINITION);
         }
     }
 
