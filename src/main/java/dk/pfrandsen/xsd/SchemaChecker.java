@@ -18,6 +18,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ENUM_VALUE = "CA41-XSD-Enum-Value-Validate";
     public static String ASSERTION_ID_ELEMENT_DEFINITION = "CA26-XSD-Element-Definition-Validation";
     public static String ASSERTION_ID_REDEFINITION = "CA21-XSD-Redefinition-Validation";
+    public static String ASSERTION_ID_SCHEMA_USE = "CA31-XSD-Schema-Use-Validation";
 
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
@@ -230,6 +231,38 @@ public class SchemaChecker {
             collectException(e, collector, ASSERTION_ID_REDEFINITION);
         }
     }
+
+    public static void checkSchemaUse(String xsd, AnalysisInformationCollector collector) {
+        // service schemas must not import other service schemas
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (!XsdUtil.isConcept(tns)) { // only service schemas are checked
+                String res = XQuery.runXQuery(Paths.get("xsd"), "importedNamespaces.xq", xsd);
+                for (String namespace : XQuery.mapResult(res, "namespace")) {
+                    if (!XsdUtil.isConcept(namespace) && !namespace.equals(tns)
+                            && !namespace.matches("^http://simpletype.schemas.nykreditnet.net/.*")
+                            && !namespace.matches("^http://technical.schemas.nykreditnet.net/.*")) {
+                        // handle special case for process schemas where concepts are not defined in a concept namespace
+                        if (tns.matches("^http://process.schemas.nykreditnet.net/process/.*")) {
+                            if (!namespace.matches("^http://process.schemas.nykreditnet.net/process/.*")) {
+                                collector.addError(ASSERTION_ID_SCHEMA_USE, "Illegal process namespace usage",
+                                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Imported namespace '" +
+                                                namespace + "'");
+                            }
+                        } else {
+                            collector.addError(ASSERTION_ID_SCHEMA_USE, "Illegal namespace usage",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Imported namespace '" +
+                                            namespace + "'");
+                        }
+
+                    }
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SCHEMA_USE);
+        }
+    }
+
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
         collector.addInfo(assertion, "Exception while checking schema",

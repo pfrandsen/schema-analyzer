@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/domain/v1"
+           targetNamespace="http://domain.net/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://domain.net/domain/v1" /> <!-- service schema -->
+    <xs:import namespace="http://concept.schema/bank/v1" /> <!-- concept schema -->
+    <xs:import namespace="http://domain.net/concept/v1" /> <!-- concept schema -->
+    <xs:import namespace="http://simpletype.schemas.nykreditnet.net/abc" />
+    <xs:import namespace="http://technical.schemas.nykreditnet.net/def" />
+
+</xs:schema>

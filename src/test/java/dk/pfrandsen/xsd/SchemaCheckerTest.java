@@ -383,4 +383,59 @@ public class SchemaCheckerTest {
         assertEquals("schemaLocation 'location2.xsd'", collector.getErrors().get(1).getDetails());
     }
 
+    @Test
+    public void testValidSchemaUsage() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-namespace-import.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkSchemaUse(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidProcessSchemaUsage() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-namespace-import-process.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkSchemaUse(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidProcessSchemaUsage() throws Exception {
+        String err = "Illegal process namespace usage";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-namespace-import-process.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkSchemaUse(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("Imported namespace 'http://process.schemas.nykreditnet.net/abc'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidSchemaUsage() throws Exception {
+        String err = "Illegal namespace usage";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-namespace-import.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkSchemaUse(xsd, collector);
+        assertEquals(4, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("Imported namespace 'http://domain.net/domain/v2'", collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("Imported namespace 'http://domain.net/myconcept/v1'", collector.getErrors().get(1).getDetails());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals("Imported namespace 'http://simpletype.schemas.nykreditnet.net'",
+                collector.getErrors().get(2).getDetails());
+        assertEquals(err, collector.getErrors().get(3).getMessage());
+        assertEquals("Imported namespace 'http://technical.schemas.nykreditnet.net'",
+                collector.getErrors().get(3).getDetails());
+    }
+
 }
