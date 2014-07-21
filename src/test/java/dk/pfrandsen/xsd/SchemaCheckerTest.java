@@ -438,4 +438,90 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(3).getDetails());
     }
 
+    @Test
+    public void testValidTargetNamespaceV1() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-tns-v1.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkTargetNamespaceVersion(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidTargetNamespaceV10() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-tns-v10.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkTargetNamespaceVersion(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    private void targetNamespaceHelper(String schemaName) throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve(schemaName);
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkTargetNamespaceVersion(xsd, collector);
+        assertEquals("Schema " + schemaName, 1, collector.errorCount());
+        assertEquals("Schema " + schemaName, 0, collector.warningCount());
+        assertEquals("Schema " + schemaName, 0, collector.infoCount());
+        assertEquals("Target namespace must end with version (1..)", collector.getErrors().get(0).getMessage());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace1() throws Exception {
+        targetNamespaceHelper("invalid-tns-1.xsd");
+        // caps (/V1)
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/V1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace2() throws Exception {
+        targetNamespaceHelper("invalid-tns-2.xsd");
+        // missing number after /v
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/v'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace3() throws Exception {
+        targetNamespaceHelper("invalid-tns-3.xsd");
+        // version zero /v0
+        assertEquals("Target namespace 'http://concept.schemas.nykreditnet.net/domain/v0'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace4() throws Exception {
+        targetNamespaceHelper("invalid-tns-4.xsd");
+        // trailing slash (/v1/)
+        assertEquals("Target namespace 'http://concept.schemas.nykreditnet.net/domain/v1/'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace5() throws Exception {
+        targetNamespaceHelper("invalid-tns-5.xsd");
+        // missing slash (_v1)
+        assertEquals("Target namespace 'http://technical.schemas.nykreditnet.net/domain_v1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace6() throws Exception {
+        targetNamespaceHelper("invalid-tns-6.xsd");
+        // invalid version number (01)
+        assertEquals("Target namespace 'http://technical.schemas.nykreditnet.net/domain/v01'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespace7() throws Exception {
+        targetNamespaceHelper("invalid-tns-7.xsd");
+        // trailing space
+        assertEquals("Target namespace 'http://technical.schemas.nykreditnet.net/domain/v1 '",
+                collector.getErrors().get(0).getDetails());
+    }
+
 }
