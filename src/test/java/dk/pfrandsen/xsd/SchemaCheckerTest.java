@@ -570,4 +570,27 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(2).getDetails());
     }
 
+    @Test
+    public void testValidAnyAttribute() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-anyattribute.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAnyAttribute(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidAnyAttribute() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-anyattribute.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAnyAttribute(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal anyAttribute", collector.getErrors().get(0).getMessage());
+        assertEquals("complexType NonTechnicalType namespace 'http://service.schemas.nykreditnet.net/header/v1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
 }

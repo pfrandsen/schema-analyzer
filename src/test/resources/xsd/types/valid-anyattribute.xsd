@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://technical.schemas.nykreditnet.net/header/v1"
+           targetNamespace="http://technical.schemas.nykreditnet.net/header/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- anyAttribute allowed in technical schema -->
+    <xs:complexType name="TechnicalType">
+        <xs:sequence>
+            <xs:element name="Element" type="xs:string" />
+        </xs:sequence>
+        <xs:anyAttribute namespace="http://schemas.xmlsoap.org/soap/envelope/" processContents="skip" />
+    </xs:complexType>
+
+</xs:schema>

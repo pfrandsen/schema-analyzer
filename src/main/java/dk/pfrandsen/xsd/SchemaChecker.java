@@ -21,6 +21,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_SCHEMA_USE = "CA31-XSD-Schema-Use-Validation";
     public static String ASSERTION_ID_SCHEMA_TNS_VERSION = "CA33-XSD-Namespace-Version-Validation";
     public static String ASSERTION_ID_ANY_TYPE = "CA52-XSD-AnyType-Validation";
+    public static String ASSERTION_ID_ANY_ATTRIBUTE= "CA52A-XSD-AnyAttribute-Validation";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -311,7 +312,39 @@ public class SchemaChecker {
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_ANY_TYPE);
         }
+    }
 
+    public static void checkAnyAttribute(String xsd, AnalysisInformationCollector collector) {
+        /* the exceptions to the no xsd:anyAttribute rule outside technical namespaces */
+        String[] exceptions = {
+                // currently no exceptions
+        };
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd); // allowed in technical namespaces
+            if (!XsdUtil.isTechnicalNamespace(tns)) {
+                String res = XQuery.runXQuery(Paths.get("xsd"), "anyAttribute.xq", xsd);
+                List<Map<String,String>> items = XQuery.mapResult(res, "name", "node");
+                if (items.size() > 0) {
+                    List<String> except = Arrays.asList(exceptions);
+                    for (Map<String,String> item : items) {
+                        String name = item.get("name");
+                        String node = item.get("node");
+                        if (!except.contains(node + ":" + name + ":" + tns)) {
+                            collector.addError(ASSERTION_ID_ANY_ATTRIBUTE, "Illegal anyAttribute",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, node + " " + name +
+                                            " namespace '" + tns + "'");
+                        } else {
+                        /* report usage even though it is permitted */
+                            collector.addInfo(ASSERTION_ID_ANY_ATTRIBUTE, "Use of anyAttribute (permitted)",
+                                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, node + " " + name +
+                                            " namespace '" + tns + "'");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_ANY_ATTRIBUTE);
+        }
     }
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {

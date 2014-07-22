@@ -27,6 +27,10 @@ public class XsdUtil {
                 || namespace.startsWith("http://process.schemas.nykreditnet.net/");
     }
 
+    public static boolean isTechnicalNamespace(String namespace) {
+        return namespace.startsWith("http://technical.schemas.nykreditnet.net/");
+    }
+
     public static boolean isValidTypeName(String name) {
         return Utilities.isUpperCamelCaseAscii(name) && name.endsWith("Type");
     }
