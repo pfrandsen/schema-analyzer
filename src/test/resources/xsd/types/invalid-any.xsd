@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://service/domain/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:element name="ElementWithAny">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:any processContents="lax"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="TypeWithAny">
+        <xsd:sequence>
+            <xsd:element name="Element" type="xsd:short" />
+            <xsd:any processContents="lax"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+</xsd:schema>

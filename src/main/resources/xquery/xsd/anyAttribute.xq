@@ -5,7 +5,7 @@ return list of top level nodes that have an xsd:anyAttribute somewhere in its su
 declare namespace xsd="http://www.w3.org/2001/XMLSchema";
 declare variable $xmlSource external;
 
-(: find all top-level nodes that include anyType attribute :)
+(: find all top-level nodes that include anyAttribute :)
 let $withAnyAttribute := $xmlSource/xsd:schema/*[//xsd:anyAttribute]
 
 return

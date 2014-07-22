@@ -593,4 +593,34 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(0).getDetails());
     }
 
+    @Test
+    public void testValidAny() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-any.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAny(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(1, collector.infoCount());
+        assertEquals("Use of any (permitted)", collector.getInfo().get(0).getMessage());
+        assertEquals("element DokumentData namespace 'http://service.schemas.nykreditnet.net/di/dokumentdannelse/v1'",
+                collector.getInfo().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidAny() throws Exception {
+        String err = "Illegal any";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-any.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAny(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("element ElementWithAny namespace 'http://service/domain/v1'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("complexType TypeWithAny namespace 'http://service/domain/v1'",
+                collector.getErrors().get(1).getDetails());
+    }
+
 }
