@@ -524,4 +524,50 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(0).getDetails());
     }
 
+    @Test
+    public void testValidAnyType() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-anytype.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAnyType(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(1, collector.infoCount());
+        assertEquals("Use of anyType (permitted)", collector.getInfo().get(0).getMessage());
+        assertEquals("element Payload namespace 'http://service.schemas.nykreditnet.net/customer/case/concept/task/v1'",
+                collector.getInfo().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidAnyTypeElement() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-anytype-element.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAnyType(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal anyType", collector.getErrors().get(0).getMessage());
+        assertEquals("element ElementAny namespace 'http://service/any/v1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidAnyTypeTypes() throws Exception {
+        String err = "Illegal anyType";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-anytype-types.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkAnyType(xsd, collector);
+        assertEquals(3, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("complexType ComplexAnyType namespace 'http://service/any/v1'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("complexType ComplexEmbeddedAnyType namespace 'http://service/any/v1'",
+                collector.getErrors().get(1).getDetails());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals("simpleType SimpleAnyType namespace 'http://service/any/v1'",
+                collector.getErrors().get(2).getDetails());
+    }
+
 }

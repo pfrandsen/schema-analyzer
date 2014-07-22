@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://service/any/v1"
+           targetNamespace="http://service/any/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:complexType name="ComplexAnyType">
+        <xs:complexContent>
+            <xs:restriction base="xs:anyType" />
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ComplexEmbeddedAnyType">
+        <xs:sequence>
+            <xs:element name="any" type="xs:anyType" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- does simple anyType make sense? it seems to be legal though -->
+    <xs:simpleType name="SimpleAnyType">
+        <xs:restriction base="xs:anyType" />
+    </xs:simpleType>
+
+</xs:schema>

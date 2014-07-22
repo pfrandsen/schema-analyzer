@@ -20,6 +20,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_REDEFINITION = "CA21-XSD-Redefinition-Validation";
     public static String ASSERTION_ID_SCHEMA_USE = "CA31-XSD-Schema-Use-Validation";
     public static String ASSERTION_ID_SCHEMA_TNS_VERSION = "CA33-XSD-Namespace-Version-Validation";
+    public static String ASSERTION_ID_ANY_TYPE = "CA52-XSD-AnyType-Validation";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -266,9 +267,7 @@ public class SchemaChecker {
     public static void checkTargetNamespaceVersion(String xsd, AnalysisInformationCollector collector) {
         try {
             String tns = XsdUtil.getTargetNamespace(xsd);
-            if (tns.contains("service.schemas.nykreditnet.net") ||
-                tns.contains("concept.schemas.nykreditnet.net") ||
-                tns.contains("technical.schemas.nykreditnet.net")) {
+            if (XsdUtil.isInternalNamespace(tns)) {
                 if (!tns.matches(".*/v[1-9][0-9]*$")) {
                     collector.addError(ASSERTION_ID_SCHEMA_TNS_VERSION, "Target namespace must end with version (1..)",
                             AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Target namespace '" + tns + "'");
@@ -277,6 +276,42 @@ public class SchemaChecker {
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_SCHEMA_TNS_VERSION);
         }
+    }
+
+    public static void checkAnyType(String xsd, AnalysisInformationCollector collector) {
+        /* the exceptions to the no xsd:anyType rule */
+        String[] exceptions = {
+                "element:WorkflowData:http://service.schemas.nykreditnet.net/2830/documentpreprocessor/v1",
+                "element:WorkflowData:http://service.schemas.nykreditnet.net/di/documentprocessor/v1",
+                "element:Payload:http://service.schemas.nykreditnet.net/customer/case/concept/task/v1",
+                "complexType:InactiveType:http://service.schemas.nykreditnet.net/enterprise/department/concept/department/v1",
+                "complexType:InactiveType:http://service.schemas.nykreditnet.net/enterprise/worker/concept/worker/v1"
+        };
+        try {
+            String res = XQuery.runXQuery(Paths.get("xsd"), "anyType.xq", xsd);
+            List<Map<String,String>> items = XQuery.mapResult(res, "name", "node");
+            if (items.size() > 0) {
+                String tns = XsdUtil.getTargetNamespace(xsd);
+                List<String> except = Arrays.asList(exceptions);
+                for (Map<String,String> item : items) {
+                    String name = item.get("name");
+                    String node = item.get("node");
+                    if (!except.contains(node + ":" + name + ":" + tns)) {
+                        collector.addError(ASSERTION_ID_ANY_TYPE, "Illegal anyType",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, node + " " + name +
+                                        " namespace '" + tns + "'");
+                    } else {
+                        /* report usage even though it is permitted */
+                        collector.addInfo(ASSERTION_ID_ANY_TYPE, "Use of anyType (permitted)",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, node + " " + name +
+                                        " namespace '" + tns + "'");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_ANY_TYPE);
+        }
+
     }
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {

@@ -20,6 +20,13 @@ public class XsdUtil {
         return namespace.startsWith("http://concept.") || namespace.contains("/concept/");
     }
 
+    public static boolean isInternalNamespace(String namespace) {
+        return namespace.startsWith("http://service.schemas.nykreditnet.net/")
+                || namespace.startsWith("http://concept.schemas.nykreditnet.net/")
+                || namespace.startsWith("http://technical.schemas.nykreditnet.net/")
+                || namespace.startsWith("http://process.schemas.nykreditnet.net/");
+    }
+
     public static boolean isValidTypeName(String name) {
         return Utilities.isUpperCamelCaseAscii(name) && name.endsWith("Type");
     }
