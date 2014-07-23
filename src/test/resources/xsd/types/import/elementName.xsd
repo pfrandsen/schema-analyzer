@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://concept.net/bank/v2"
+           targetNamespace="http://concept.net/bank/v2"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:simpleType name="ConceptType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="val1" />
+            <xs:enumeration value="val2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="ConceptOne" type="tns:ConceptType" />
+    <xs:element name="ConceptTwo" type="tns:ConceptType" />
+    <xs:element name="ConceptThree" type="tns:ConceptType" />
+    <xs:element name="ConceptFour" type="tns:ConceptType" />
+
+</xs:schema>

@@ -623,4 +623,34 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(1).getDetails());
     }
 
+    @Test
+    public void testValidIdenticalElements() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-element-same-name.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkIdenticalElementNames(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidIdenticalElements() throws Exception {
+        String err = "Illegal repeated element name";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-element-same-name.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkIdenticalElementNames(xsd, collector);
+        assertEquals(3, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("complexType Type2Type child node 'sequence', repeated [ServiceConcept]",
+                collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("complexType Type2Type child node 'sequence', repeated [ConceptTwo,ConceptThree]",
+                collector.getErrors().get(1).getDetails());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals("element Element4 child node 'choice', repeated [ConceptTwo]",
+                collector.getErrors().get(2).getDetails());
+    }
+
 }

@@ -1,5 +1,6 @@
 package dk.pfrandsen.xsd;
 
+import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.XQuery;
 import dk.pfrandsen.util.XsdUtil;
@@ -23,6 +24,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ANY_TYPE = "CA52-XSD-AnyType-Validation";
     public static String ASSERTION_ID_ANY = "CA52A-XSD-Any-Validation";
     public static String ASSERTION_ID_ANY_ATTRIBUTE= "CA52B-XSD-AnyAttribute-Validation";
+    public static String ASSERTION_ID_IDENTICAL_ELEMENTS= "CA51-XSD-Identical-Elements-Validation";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -376,6 +378,23 @@ public class SchemaChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_ANY_ATTRIBUTE);
+        }
+    }
+
+    public static void checkIdenticalElementNames(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String res = XQuery.runXQuery(Paths.get("xsd"), "identicalElementNames.xq", xsd);
+            for (Map<String,String> item : XQuery.mapResult(res, "name", "node", "local-node", "repeated")) {
+                String name = item.get("name");
+                String node = item.get("node");
+                String localNode = item.get("local-node");
+                String repeated = item.get("repeated");
+                collector.addError(ASSERTION_ID_ANY_ATTRIBUTE, "Illegal repeated element name",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, node + " " + name +
+                                " child node '" + localNode + "', repeated [" + repeated + "]");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_IDENTICAL_ELEMENTS);
         }
     }
 

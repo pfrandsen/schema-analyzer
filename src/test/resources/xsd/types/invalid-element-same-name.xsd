@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/service/v1"
+           xmlns:ns1="http://concept.net/bank/v2"
+           xmlns:ns2="http://service.net/bankservice/concept/v2"
+           targetNamespace="http://domain.net/service/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://service.net/bankservice/concept/v2" schemaLocation="import/bankserviceconcept.xsd" />
+    <xs:import namespace="http://concept.net/bank/v2" schemaLocation="import/elementName.xsd" />
+
+    <xs:element name="ElemOne" type="ns2:ServiceConcept2Type" />
+
+    <xs:complexType name="Type2Type">
+        <xs:sequence>
+            <xs:element ref="ns1:ConceptOne" />
+            <xs:element ref="ns2:ServiceConcept" />
+            <xs:choice>
+                <xs:sequence>
+                    <xs:element ref="ns1:ConceptOne" />
+                    <xs:element name="NameTwo" type="xs:string" />
+                </xs:sequence>
+                <xs:sequence>
+                    <xs:element ref="ns1:ConceptOne" />
+                    <xs:element ref="ns1:ConceptTwo" />
+                    <xs:element ref="ns1:ConceptThree" />
+                    <xs:element name="ConceptTwo" type="xs:integer" /> <!-- name already used -->
+                    <xs:element ref="ns1:ConceptFour" />
+                    <xs:element name="ConceptThree" type="xs:string" /> <!-- name already used -->
+                    <xs:element ref="ns1:ConceptThree" /> <!-- name already used (twice) -->
+                </xs:sequence>
+            </xs:choice>
+            <xs:element name="ConceptTwo">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element ref="ns1:ConceptTwo" />
+                        <xs:element name="aaa" type="xs:integer" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="ServiceConcept" type="xs:string" /> <!-- name already used -->
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Type3Type">
+        <xs:sequence>
+            <xs:element ref="ns1:ConceptOne" />
+            <xs:element ref="ns2:ServiceConcept" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="Element4">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="ppp" type="xs:integer" />
+                <xs:choice>
+                    <xs:element name="bbb" type="xs:integer" />
+                    <xs:element name="ConceptTwo" type="xs:integer" />
+                    <xs:element ref="ns1:ConceptOne" />
+                    <xs:element ref="ns1:ConceptTwo" /> <!-- name already used -->
+                </xs:choice>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Type5Type">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="ppp" type="xs:integer" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

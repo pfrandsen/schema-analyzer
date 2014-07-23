@@ -28,4 +28,7 @@ class Xml {
         return result;
     }
 
+    public static String asPretty(String xml) {
+        return XmlUtil.serialize(xml)
+    }
 }
