@@ -25,6 +25,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ANY = "CA52A-XSD-Any-Validation";
     public static String ASSERTION_ID_ANY_ATTRIBUTE= "CA52B-XSD-AnyAttribute-Validation";
     public static String ASSERTION_ID_IDENTICAL_ELEMENTS= "CA51-XSD-Identical-Elements-Validation";
+    public static String ASSERTION_ID_IMPORT_INCLUDE_LOCATION = "CA50-XSD-Import-Include-Schema-Location-Validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -389,12 +390,36 @@ public class SchemaChecker {
                 String node = item.get("node");
                 String localNode = item.get("local-node");
                 String repeated = item.get("repeated");
-                collector.addError(ASSERTION_ID_ANY_ATTRIBUTE, "Illegal repeated element name",
+                collector.addError(ASSERTION_ID_IDENTICAL_ELEMENTS, "Illegal repeated element name",
                         AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, node + " " + name +
                                 " child node '" + localNode + "', repeated [" + repeated + "]");
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_IDENTICAL_ELEMENTS);
+        }
+    }
+
+    public static void checkImportAndIncludeLocation(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String res = XQuery.runXQuery(Paths.get("xsd"), "importIncludeLocation.xq", xsd);
+            for (Map<String,String> item : XQuery.mapResult(res, "type", "location", "namespace")) {
+                String type = item.get("type");
+                String location = "" + item.get("location");
+                String namespace = item.get("namespace");
+                if (!location.startsWith("http://")) {
+                    if ("import".equals(type)) {
+                        collector.addError(ASSERTION_ID_IMPORT_INCLUDE_LOCATION, "Illegal schema location",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Import location '" + location +
+                                        "', namespace '" + namespace + "'");
+                    } else {
+                        collector.addError(ASSERTION_ID_IMPORT_INCLUDE_LOCATION, "Illegal schema location",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Include location '" +
+                                        location + "'");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_IMPORT_INCLUDE_LOCATION);
         }
     }
 

@@ -653,4 +653,34 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(2).getDetails());
     }
 
+    @Test
+    public void testValidImportIncludeSchemaLocation() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-import-include-schema-location.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkImportAndIncludeLocation(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidImportIncludeSchemaLocation() throws Exception {
+        String err = "Illegal schema location";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-import-include-schema-location.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkImportAndIncludeLocation(xsd, collector);
+        assertEquals(3, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals("Import location 'rel.url.location/loc1', namespace 'http://domain.net/domain/v1'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals("Import location '../rel.url.location/loc2', namespace 'http://domain.net/domain/v2'",
+                collector.getErrors().get(1).getDetails());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals("Include location 'rel.url.location/2'",
+                collector.getErrors().get(2).getDetails());
+    }
+
 }

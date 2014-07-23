@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://domain.net/concept/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://domain.net/domain/v1" schemaLocation="rel.url.location/loc1" />
+    <xs:import namespace="http://domain.net/domain/v2" schemaLocation="../rel.url.location/loc2" />
+    <xs:include schemaLocation="http://url.location/1" />
+    <xs:include schemaLocation="rel.url.location/2" />
+</xs:schema>
