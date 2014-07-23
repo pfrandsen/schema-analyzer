@@ -775,4 +775,117 @@ public class SchemaCheckerTest {
         assertEquals("Target namespace '" + ns4 + "'", collector.getErrors().get(3).getDetails());
     }
 
+    @Test
+    public void testValidEnterpriseConceptTargetNamespace() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://concept.schemas.nykreditnet.net/domain/sublevel/" + concept.toLowerCase() + "/v1";
+        SchemaChecker.checkEnterpriseConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidEnterpriseConceptTargetNamespaceName() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://concept.schemas.nykreditnet.net/domain/sublevel/concept/v1";
+        SchemaChecker.checkEnterpriseConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal concept namespace", collector.getErrors().get(0).getMessage());
+        assertEquals("Concept 'concept' does not match filename 'conceptname'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidEnterpriseConceptTargetNamespaceNameCase() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://concept.schemas.nykreditnet.net/domain/sublevel/" + concept + "/v1";
+        SchemaChecker.checkEnterpriseConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal concept namespace", collector.getErrors().get(0).getMessage());
+        assertEquals("Concept 'conceptName' does not match filename 'conceptname'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidEnterpriseConceptTargetNamespaceNoConcept() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://concept.schemas.nykreditnet.net/domain/v1";
+        SchemaChecker.checkEnterpriseConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal concept namespace", collector.getErrors().get(0).getMessage());
+        assertEquals("Concept 'domain' does not match filename 'conceptname'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals("Illegal concept namespace", collector.getWarnings().get(0).getMessage());
+        assertEquals("Namespace 'http://concept.schemas.nykreditnet.net/domain/v1' does not match http://concept." +
+                "schemas.nykreditnet.net/<domain>/<concept>/<version>", collector.getWarnings().get(0).getDetails());
+    }
+
+    @Test
+    public void testValidServiceConceptTargetNamespace() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://servive.schemas.nykreditnet.net/domain/concept/" + concept.toLowerCase() + "/v1";
+        SchemaChecker.checkServiceConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidServiceConceptTargetNamespaceName() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/concept/concept/v1";
+        SchemaChecker.checkServiceConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal service concept namespace", collector.getErrors().get(0).getMessage());
+        assertEquals("Concept 'concept' does not match filename 'conceptname'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidServiceConceptTargetNamespaceNameCase() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/concept/" + concept + "/v1";
+        SchemaChecker.checkServiceConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal service concept namespace", collector.getErrors().get(0).getMessage());
+        assertEquals("Concept 'conceptName' does not match filename 'conceptname'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidServiceConceptTargetNamespaceNoConcept() {
+        String concept = "conceptName";
+        String filename = "a/b/" + concept + ".xsd";
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/concept/v1";
+        SchemaChecker.checkServiceConceptNamespace(nsDocHelper(tns), filename, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Illegal service concept namespace", collector.getErrors().get(0).getMessage());
+        assertEquals("Concept 'concept' does not match filename 'conceptname'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals("Illegal service concept namespace", collector.getWarnings().get(0).getMessage());
+        assertEquals("Namespace 'http://service.schemas.nykreditnet.net/domain/service/concept/v1' does not match " +
+                        "http://service.schemas.nykreditnet.net/<domain>/<service>/concept/<concept>/<version>",
+                collector.getWarnings().get(0).getDetails());
+    }
+
 }

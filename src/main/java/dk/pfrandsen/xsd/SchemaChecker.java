@@ -486,21 +486,71 @@ public class SchemaChecker {
         }
     }
 
-    public static void checkEnterpriseConceptNamespace(String xsd, AnalysisInformationCollector collector) {
+    public static void checkEnterpriseConceptNamespace(String xsd, String filename,
+                                                       AnalysisInformationCollector collector) {
+        // namespace pattern: http://concept.schemas.nykreditnet.net/<domain>/[<sublevels>]/<concept>/<version>
+        String prefix = "http://concept.schemas.nykreditnet.net/";
         try {
             String tns = XsdUtil.getTargetNamespace(xsd);
             if (XsdUtil.isEnterpriseConcept(tns)) {
-
+                String[] parts = tns.replace(prefix, "").split("/");
+                if (parts.length >= 2) {
+                    String basename = FilenameUtils.getBaseName(filename);
+                    String concept = parts[parts.length - 2];
+                    if (!basename.toLowerCase().matches(concept)) {
+                        collector.addError(ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE, "Illegal concept namespace",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Concept '" + concept +
+                                        "' does not match filename '" + basename.toLowerCase() + "'");
+                    }
+                    if (parts.length < 3) {
+                        // context part should contain at least <domain>/<concept>/<version>
+                        collector.addWarning(ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE, "Illegal concept namespace",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" + tns +
+                                        "' does not match " + prefix + "<domain>/<concept>/<version>");
+                    }
+                } else {
+                    // unable to find concept from namespace
+                    collector.addError(ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE, "Illegal concept namespace",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Concept part or namespace '" + tns +
+                                    "' not found");
+                }
             }
         } catch (Exception e) {
-            collectException(e, collector, ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE);
+            collectException(e, collector, ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE);
         }
     }
 
-    public static void checkServiceConceptNamespace(String xsd, AnalysisInformationCollector collector) {
+    public static void checkServiceConceptNamespace(String xsd, String filename,
+                                                    AnalysisInformationCollector collector) {
+        // namespace pattern:
+        // http://service.schemas.nykreditnet.net/<domain>/<service>/concept/[<sublevels>]/<concept>/<version>
+        String prefix = "http://service.schemas.nykreditnet.net/";
         try {
             String tns = XsdUtil.getTargetNamespace(xsd);
             if (XsdUtil.isServiceConcept(tns)) {
+                String[] parts = tns.replace(prefix, "").split("/");
+                if (parts.length >= 2) {
+                    String basename = FilenameUtils.getBaseName(filename);
+                    String concept = parts[parts.length - 2];
+                    if (!basename.toLowerCase().matches(concept)) {
+                        collector.addError(ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE, "Illegal service concept namespace",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Concept '" + concept +
+                                        "' does not match filename '" + basename.toLowerCase() + "'");
+                    }
+                    if (parts.length < 5) {
+                        // context part should contain at least
+                        // <domain>/<service>/concept/<concept>/<version>
+                        collector.addWarning(ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE, "Illegal service concept namespace",
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" + tns +
+                                        "' does not match " + prefix  +
+                                        "<domain>/<service>/concept/<concept>/<version>");
+                    }
+                } else {
+                    // unable to find concept from namespace
+                    collector.addError(ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE, "Illegal service concept namespace",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Concept part or namespace '" + tns +
+                                    "' not found");
+                }
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE);
