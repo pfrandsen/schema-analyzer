@@ -23,12 +23,17 @@ public class SchemaChecker {
     public static String ASSERTION_ID_REDEFINITION = "CA21-XSD-Redefinition-Validation";
     public static String ASSERTION_ID_SCHEMA_USE = "CA31-XSD-Schema-Use-Validation";
     public static String ASSERTION_ID_SCHEMA_TNS_VERSION = "CA33-XSD-Namespace-Version-Validation";
+    public static String ASSERTION_ID_SCHEMA_TNS_CASE = "CA??-XSD-Namespace-Case-Validation";
+    public static String ASSERTION_ID_SCHEMA_TNS_PREFIX = "CA??-XSD-Namespace-Prefix-Validation";
+    public static String ASSERTION_ID_SCHEMA_TNS_CHARS = "CA??-XSD-Namespace-Characters-Validation";
     public static String ASSERTION_ID_ANY_TYPE = "CA52-XSD-AnyType-Validation";
     public static String ASSERTION_ID_ANY = "CA52A-XSD-Any-Validation";
     public static String ASSERTION_ID_ANY_ATTRIBUTE= "CA52B-XSD-AnyAttribute-Validation";
     public static String ASSERTION_ID_IDENTICAL_ELEMENTS= "CA51-XSD-Identical-Elements-Validation";
     public static String ASSERTION_ID_IMPORT_INCLUDE_LOCATION = "CA50-XSD-Import-Include-Schema-Location-Validate";
     public static String ASSERTION_ID_SCHEMA_FILENAME = "CA29-XSD-File-Name-Validate";
+    public static String ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE = "CA44-XSD-Enterprise-Concept-Namespace-Validate";
+    public static String ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE = "CA45-XSD-Service-Concept-Namespace-Validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -286,6 +291,45 @@ public class SchemaChecker {
         }
     }
 
+    public static void checkTargetNamespaceCase(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (!tns.matches(tns.toLowerCase())) {
+                collector.addError(ASSERTION_ID_SCHEMA_TNS_CASE, "Target namespace must be lower case",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Target namespace '" + tns + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SCHEMA_TNS_CASE);
+        }
+    }
+
+    public static void checkTargetNamespacePrefix(String xsd, AnalysisInformationCollector collector) {
+        String prefix = "http://";
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (!tns.startsWith(prefix)) {
+                collector.addError(ASSERTION_ID_SCHEMA_TNS_PREFIX, "Target namespace must start with " + prefix,
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Target namespace '" + tns + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SCHEMA_TNS_PREFIX);
+        }
+    }
+
+    public static void checkTargetNamespaceCharacters(String xsd, AnalysisInformationCollector collector) {
+        String prefix = "http://";
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            String ns = tns.toLowerCase().replace(prefix, "");
+            if (!ns.matches("[a-z\\/0-9\\.]*")) {
+                collector.addError(ASSERTION_ID_SCHEMA_TNS_CHARS, "Target namespace contains illegal characters",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Target namespace '" + tns + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SCHEMA_TNS_CHARS);
+        }
+    }
+
     public static void checkAnyType(String xsd, AnalysisInformationCollector collector) {
         /* the exceptions to the no xsd:anyType rule */
         String[] exceptions = {
@@ -439,6 +483,27 @@ public class SchemaChecker {
             collector.addError(ASSERTION_ID_SCHEMA_FILENAME, "Illegal filename. Must be upper camel case ascii",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Filename '" + name +
                             "', extension '" + extension + "'");
+        }
+    }
+
+    public static void checkEnterpriseConceptNamespace(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (XsdUtil.isEnterpriseConcept(tns)) {
+
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE);
+        }
+    }
+
+    public static void checkServiceConceptNamespace(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (XsdUtil.isServiceConcept(tns)) {
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE);
         }
     }
 

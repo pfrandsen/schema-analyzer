@@ -718,4 +718,61 @@ public class SchemaCheckerTest {
         assertEquals(basename, collector.getErrors().get(6).getMessage());
     }
 
+    private String nsDocHelper(String namespace) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        builder.append("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" ");
+        builder.append("targetNamespace=\"");
+        builder.append(namespace);
+        builder.append("\">");
+        builder.append("</xs:schema>");
+        return builder.toString();
+    }
+
+    @Test
+    public void testInvalidTargetNamespaceCase() {
+        String xsd = nsDocHelper("http://tns.With.Caps/V1");
+        SchemaChecker.checkTargetNamespaceCase(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Target namespace must be lower case", collector.getErrors().get(0).getMessage());
+        assertEquals("Target namespace 'http://tns.With.Caps/V1'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespacePrefix() {
+        String xsd = nsDocHelper("http:/tns.with.invalid.prefix/v1");
+        SchemaChecker.checkTargetNamespacePrefix(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Target namespace must start with http://", collector.getErrors().get(0).getMessage());
+        assertEquals("Target namespace 'http:/tns.with.invalid.prefix/v1'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidTargetNamespaceCharacters() {
+        String err = "Target namespace contains illegal characters";
+        String ns1 = "http://tns-with.invalid.chars/v1";     // char:  '-'
+        String ns2 = "http://tns.with.invalid.chars/æøå/v1"; // chars:  'æ', 'ø', 'å'
+        String ns3 = "http://tns.with.invalid.chars\\v1";    // char:  '\'
+        String ns4 = "http://tns.with.invalid.chars/v1 ";    // space
+        SchemaChecker.checkTargetNamespaceCharacters(nsDocHelper(ns1), collector);
+        SchemaChecker.checkTargetNamespaceCharacters(nsDocHelper(ns2), collector);
+        SchemaChecker.checkTargetNamespaceCharacters(nsDocHelper(ns3), collector);
+        SchemaChecker.checkTargetNamespaceCharacters(nsDocHelper(ns4), collector);
+        assertEquals(4, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(err, collector.getErrors().get(0).getMessage());
+        assertEquals(err, collector.getErrors().get(1).getMessage());
+        assertEquals(err, collector.getErrors().get(2).getMessage());
+        assertEquals(err, collector.getErrors().get(3).getMessage());
+        assertEquals("Target namespace '" + ns1 + "'", collector.getErrors().get(0).getDetails());
+        assertEquals("Target namespace '" + ns2 + "'", collector.getErrors().get(1).getDetails());
+        assertEquals("Target namespace '" + ns3 + "'", collector.getErrors().get(2).getDetails());
+        assertEquals("Target namespace '" + ns4 + "'", collector.getErrors().get(3).getDetails());
+    }
+
 }

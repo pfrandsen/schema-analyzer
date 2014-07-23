@@ -31,6 +31,14 @@ public class XsdUtil {
         return namespace.startsWith("http://technical.schemas.nykreditnet.net/");
     }
 
+    public static boolean isEnterpriseConcept(String namespace) {
+        return namespace.startsWith("http://concept.schemas.nykreditnet.net/");
+    }
+
+    public static boolean isServiceConcept(String namespace) {
+        return namespace.startsWith("http://service.schemas.nykreditnet.net/") && namespace.contains("/concept/");
+    }
+
     public static boolean isValidTypeName(String name) {
         return Utilities.isUpperCamelCaseAscii(name) && name.endsWith("Type");
     }
