@@ -2,8 +2,10 @@ package dk.pfrandsen.xsd;
 
 import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.XQuery;
 import dk.pfrandsen.util.XsdUtil;
+import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -26,6 +28,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ANY_ATTRIBUTE= "CA52B-XSD-AnyAttribute-Validation";
     public static String ASSERTION_ID_IDENTICAL_ELEMENTS= "CA51-XSD-Identical-Elements-Validation";
     public static String ASSERTION_ID_IMPORT_INCLUDE_LOCATION = "CA50-XSD-Import-Include-Schema-Location-Validate";
+    public static String ASSERTION_ID_SCHEMA_FILENAME = "CA29-XSD-File-Name-Validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -420,6 +423,22 @@ public class SchemaChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_IMPORT_INCLUDE_LOCATION);
+        }
+    }
+
+    public static void checkSchemaFilename(String filename, AnalysisInformationCollector collector) {
+        String baseName = FilenameUtils.getBaseName(filename);
+        String extension = FilenameUtils.getExtension(filename);
+        String name = FilenameUtils.getName(filename);
+        if (!filename.endsWith(".xsd")) {
+            collector.addError(ASSERTION_ID_SCHEMA_FILENAME, "Illegal filename extension. Must be .xsd",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Filename '" + name +
+                            "', extension '" + extension + "'");
+        }
+        if (!Utilities.isUpperCamelCaseAscii(baseName)) {
+            collector.addError(ASSERTION_ID_SCHEMA_FILENAME, "Illegal filename. Must be upper camel case ascii",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Filename '" + name +
+                            "', extension '" + extension + "'");
         }
     }
 

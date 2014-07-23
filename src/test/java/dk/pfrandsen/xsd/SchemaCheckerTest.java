@@ -683,4 +683,39 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(2).getDetails());
     }
 
+    @Test
+    public void testValidSchemaFileNames() {
+        SchemaChecker.checkSchemaFilename("Name10.xsd", collector);
+        SchemaChecker.checkSchemaFilename("Name1Name.xsd", collector);
+        SchemaChecker.checkSchemaFilename("Name.xsd", collector);
+        SchemaChecker.checkSchemaFilename("abc/def/Name1.xsd", collector);
+        SchemaChecker.checkSchemaFilename("http://abc/def/Name1.xsd", collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidSchemaFileNames() {
+        String extension = "Illegal filename extension. Must be .xsd";
+        String basename = "Illegal filename. Must be upper camel case ascii";
+        SchemaChecker.checkSchemaFilename("Name.xs", collector);
+        SchemaChecker.checkSchemaFilename("Name1Name.XSD", collector);
+        SchemaChecker.checkSchemaFilename("name.xsd", collector);
+        SchemaChecker.checkSchemaFilename("_Name.xsd", collector);
+        SchemaChecker.checkSchemaFilename("10Name.xsd", collector);
+        SchemaChecker.checkSchemaFilename("Name .xsd", collector);
+        SchemaChecker.checkSchemaFilename("Søg.xsd", collector);
+        assertEquals(7, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(extension, collector.getErrors().get(0).getMessage());
+        assertEquals(extension, collector.getErrors().get(1).getMessage());
+        assertEquals(basename, collector.getErrors().get(2).getMessage());
+        assertEquals(basename, collector.getErrors().get(3).getMessage());
+        assertEquals(basename, collector.getErrors().get(4).getMessage());
+        assertEquals(basename, collector.getErrors().get(5).getMessage());
+        assertEquals(basename, collector.getErrors().get(6).getMessage());
+    }
+
 }
