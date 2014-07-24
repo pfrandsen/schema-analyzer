@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1"
+                  xmlns:tns="http://service.schemas/domain/service/v1"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:app="http://technical.schemas.nykreditnet.net/header/application/v1"
+                  xmlns:fault="http://technical.schemas.nykreditnet.net/fault/v1"
+        >
+
+    <wsdl:message name="uncategorizedFault">
+        <wsdl:part name="uncategorizedFault" element="fault:UncategorizedFault" />
+    </wsdl:message>
+    <wsdl:message name="applications">
+        <wsdl:part name="applications" element="app:Applications" />
+    </wsdl:message>
+    <wsdl:message name="getDataRequest">
+        <wsdl:part name="getDataRequest" element="tns:GetDataRequest" />
+    </wsdl:message>
+    <wsdl:message name="getDataResponse">
+        <wsdl:part name="getDataResponse" element="tns:GetDataResponse" />
+    </wsdl:message>
+
+
+</wsdl:definitions>

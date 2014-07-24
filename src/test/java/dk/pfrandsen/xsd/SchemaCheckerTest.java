@@ -931,4 +931,51 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(0).getDetails());
     }
 
+    @Test
+    public void testValidUnusedNamespacePrefix() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-namespace-prefix.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedNamespacePrefix(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidUnusedNamespacePrefix() throws Exception {
+        String msg = "Unused namespace prefix";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-namespace-prefix.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedNamespacePrefix(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(msg, collector.getErrors().get(0).getMessage());
+        assertEquals(msg, collector.getErrors().get(1).getMessage());
+        assertEquals(msg, collector.getWarnings().get(0).getMessage());
+        assertEquals("Prefix 'xsd', namespace 'http://www.w3.org/2001/XMLSchema'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals("Prefix 'ns3', namespace 'http://service.net/bankservice/concept/v2'",
+                collector.getErrors().get(1).getDetails());
+        assertEquals("Prefix 'tns', namespace 'http://domain.net/service/v1'",
+                collector.getWarnings().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidUnusedNamespacePrefixWsdl() throws Exception {
+        String msg = "Unused namespace prefix";
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-namespace-prefix.wsdl");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedNamespacePrefix(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals(msg, collector.getErrors().get(0).getMessage());
+        assertEquals(msg, collector.getErrors().get(1).getMessage());
+        assertEquals("Prefix 'xs', namespace 'http://www.w3.org/2001/XMLSchema'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals("Prefix 'soap', namespace 'http://schemas.xmlsoap.org/wsdl/soap/'",
+                collector.getErrors().get(1).getDetails());
+    }
+
 }

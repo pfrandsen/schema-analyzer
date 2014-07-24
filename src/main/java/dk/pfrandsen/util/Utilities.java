@@ -1,8 +1,17 @@
 package dk.pfrandsen.util;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.FileInputStream;
+import java.io.StringWriter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -136,5 +145,19 @@ public class Utilities {
             return text.substring(1);
         }
         return text;
+    }
+
+    public static String removeXmlComments(String xml) throws Exception {
+        Path stylesheet = Paths.get("/", "xslt", "removeComments.xsl");
+        System.out.println(stylesheet.toString());
+        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+        //String xsl = IOUtils.toString(new FileInputStream(stylesheet.toFile()));
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
+        Transformer transformer = factory.newTransformer(xslt);
+        Source xmlSource = new StreamSource(IOUtils.toInputStream(xml));
+        StringWriter writer = new StringWriter();
+        transformer.transform(xmlSource, new StreamResult(writer));
+        return writer.toString();
     }
 }

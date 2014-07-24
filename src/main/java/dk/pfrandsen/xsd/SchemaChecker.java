@@ -35,6 +35,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE = "CA44-XSD-Enterprise-Concept-Namespace-Validate";
     public static String ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE = "CA45-XSD-Service-Concept-Namespace-Validate";
     public static String ASSERTION_ID_DEPRECATED = "CA43-XSD-Deprecated-Marker-Validate";
+    public static String ASSERTION_ID_UNUSED_NS_PREFIX = "CA70-CSD/WSDL-Unused-Namespace-Prefix-validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -570,6 +571,34 @@ public class SchemaChecker {
             collectException(e, collector, ASSERTION_ID_DEPRECATED);
         }
     }
+
+    /**
+     * Check for unused namespace prefixes in xsd or wsdl
+     * @param xsd this can be either wsdl or xsd data
+     * @param collector
+     */
+    public static void checkUnusedNamespacePrefix(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String res = XQuery.runXQuery(Paths.get(""), "unusedPrefix.xq", xsd);
+            for (Map<String,String> item : XQuery.mapResult(res, "prefix", "namespace")) {
+                String prefix = item.get("prefix");
+                String namespace = item.get("namespace");
+                if ("tns".equals(prefix)) {
+                    collector.addWarning(ASSERTION_ID_UNUSED_NS_PREFIX, "Unused namespace prefix",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Prefix '" + prefix + "', namespace '" +
+                                    namespace + "'");
+                } else {
+                    collector.addError(ASSERTION_ID_UNUSED_NS_PREFIX, "Unused namespace prefix",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Prefix '" + prefix + "', namespace '" +
+                                   namespace + "'");
+                }
+            }
+
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_UNUSED_NS_PREFIX);
+        }
+    }
+
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
         collector.addInfo(assertion, "Exception while checking schema",
