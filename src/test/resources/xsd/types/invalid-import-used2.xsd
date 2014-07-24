@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://domain.net/service/v1"
+           xmlns:ns1="http://concept.net/bank/v2"
+           xmlns:ns2="http://service.net/bankservice/concept/v2"
+           targetNamespace="http://domain.net/service/v1"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://service.net/bankservice/concept/v2" schemaLocation="import/bankserviceconcept.xsd" />
+    <xs:import namespace="http://concept.net/bank/v2" schemaLocation="import/elementName.xsd" />
+
+    <xs:complexType name="Type2Type">
+        <xs:sequence>
+            <xs:element name="a" />
+            <xs:element name="b" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BaseType">
+        <xs:simpleContent>
+            <xs:restriction base="xs:string" />
+        </xs:simpleContent>
+    </xs:complexType>
+
+</xs:schema>

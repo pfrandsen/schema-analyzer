@@ -35,7 +35,8 @@ public class SchemaChecker {
     public static String ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE = "CA44-XSD-Enterprise-Concept-Namespace-Validate";
     public static String ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE = "CA45-XSD-Service-Concept-Namespace-Validate";
     public static String ASSERTION_ID_DEPRECATED = "CA43-XSD-Deprecated-Marker-Validate";
-    public static String ASSERTION_ID_UNUSED_NS_PREFIX = "CA70-CSD/WSDL-Unused-Namespace-Prefix-validate";
+    public static String ASSERTION_ID_UNUSED_NS_PREFIX = "CA70-XSD/WSDL-Unused-Namespace-Prefix-validate";
+    public static String ASSERTION_ID_UNUSED_IMPORT = "CA47-XSD/WSDL-Unused-Import-validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -599,6 +600,23 @@ public class SchemaChecker {
         }
     }
 
+    /**
+     * Check for unused namespace import in xsd or wsdl
+     * @param xsd this can be either wsdl or xsd data
+     * @param collector
+     */
+    public static void checkUnusedImport(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String res = XQuery.runXQuery(Paths.get(""), "unusedImport.xq", xsd);
+            for (String namespace : XQuery.mapResult(res, "namespace")) {
+                collector.addError(ASSERTION_ID_UNUSED_IMPORT, "Unused import",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Namespace '" + namespace + "'");
+            }
+
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_UNUSED_IMPORT);
+        }
+    }
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
         collector.addInfo(assertion, "Exception while checking schema",

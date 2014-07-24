@@ -978,4 +978,54 @@ public class SchemaCheckerTest {
                 collector.getErrors().get(1).getDetails());
     }
 
+    @Test
+    public void testValidUnusedImport() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-import-used.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedImport(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidUnusedImport() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-import-used.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedImport(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Unused import", collector.getErrors().get(0).getMessage());
+        assertEquals("Namespace 'http://service.net/bankservice/concept/v2'", collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidUnusedImportTwo() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-import-used2.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedImport(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Unused import", collector.getErrors().get(0).getMessage());
+        assertEquals("Namespace 'http://service.net/bankservice/concept/v2'", collector.getErrors().get(0).getDetails());
+        assertEquals("Unused import", collector.getErrors().get(1).getMessage());
+        assertEquals("Namespace 'http://concept.net/bank/v2'", collector.getErrors().get(1).getDetails());
+    }
+
+    @Test
+    public void testInvalidUnusedImportWsdl() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-import-used.wsdl");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkUnusedImport(xsd, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Unused import", collector.getErrors().get(0).getMessage());
+        assertEquals("Namespace 'http://namespace5'", collector.getErrors().get(0).getDetails());
+        assertEquals("Unused import", collector.getErrors().get(1).getMessage());
+        assertEquals("Namespace 'http://namespace3'", collector.getErrors().get(1).getDetails());
+    }
+
 }

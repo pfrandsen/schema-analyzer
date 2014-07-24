@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Entity"
+                  targetNamespace="http://service.schemas/domain/service/v1"
+                  xmlns:tns="http://service.schemas/domain/service/v1"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:ns1="http://namespace1"
+                  xmlns:ns2="http://namespace2"
+                  xmlns:ns3="http://namespace3"
+                  xmlns:ns4="http://namespace4"
+                  xmlns:ns5="http://namespace5"
+        >
+    <wsdl:import namespace="http://namespace5" location="http://location5" />
+    <wsdl:types>
+        <xs:schema elementFormDefault="qualified" attributeFormDefault="unqualified">
+            <xs:import namespace="http://namespace1" schemaLocation="http://location1" />
+            <xs:import namespace="http://namespace2" schemaLocation="http://location2" />
+            <xs:import namespace="http://namespace3" schemaLocation="http://location3" />
+            <xs:import namespace="http://namespace4" schemaLocation="http://location4" />
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="msg1">
+        <wsdl:part name="parameters" element="ns1:someElement"/>
+    </wsdl:message>
+    <wsdl:message name="msg2">
+        <wsdl:part name="parameters" type="ns2:someType"/>
+    </wsdl:message>
+
+
+    <wsdl:binding name="EntityBinding" type="ns4:someType">
+    </wsdl:binding>
+
+</wsdl:definitions>
