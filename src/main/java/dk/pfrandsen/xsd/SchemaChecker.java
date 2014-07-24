@@ -34,6 +34,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_SCHEMA_FILENAME = "CA29-XSD-File-Name-Validate";
     public static String ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE = "CA44-XSD-Enterprise-Concept-Namespace-Validate";
     public static String ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE = "CA45-XSD-Service-Concept-Namespace-Validate";
+    public static String ASSERTION_ID_DEPRECATED = "CA43-XSD-Deprecated-Marker-Validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -554,6 +555,19 @@ public class SchemaChecker {
             }
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_SERVICE_CONCEPT_NAMESPACE);
+        }
+    }
+
+    public static void checkDeprecated(String xsd, AnalysisInformationCollector collector) {
+        try {
+            String res = XQuery.runXQuery(Paths.get("xsd"), "deprecated.xq", xsd);
+            String ns = XQuery.mapSingleResult(res, "namespace");
+            if (ns.length() > 0) {
+                collector.addError(ASSERTION_ID_DEPRECATED, "Deprecated schema",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Namespace '" + ns + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_DEPRECATED);
         }
     }
 

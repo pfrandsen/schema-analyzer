@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://domain.net/domain/v1">
+    <xs:annotation>
+        <xs:documentation>
+            DEPRECATED - Use ... instead
+        </xs:documentation>
+    </xs:annotation>
+</xs:schema>

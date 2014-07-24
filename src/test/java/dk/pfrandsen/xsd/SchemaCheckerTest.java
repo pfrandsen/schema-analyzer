@@ -888,4 +888,47 @@ public class SchemaCheckerTest {
                 collector.getWarnings().get(0).getDetails());
     }
 
+    @Test
+    public void testValidDeprecated() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-deprecated.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkDeprecated(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidDeprecatedNs1() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-deprecated-ns1.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkDeprecated(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidDeprecatedNs2() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("valid-deprecated-ns2.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkDeprecated(xsd, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidDeprecated() throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("invalid-deprecated.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        SchemaChecker.checkDeprecated(xsd, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Deprecated schema", collector.getErrors().get(0).getMessage());
+        assertEquals("Namespace 'http://domain.net/domain/v1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
 }
