@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileInputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -149,6 +150,45 @@ public class WsdlCheckerTest {
         assertEquals(0, collector.infoCount());
         assertEquals("Illegal service namespace", collector.getErrors().get(0).getMessage());
         assertEquals("Service part or namespace 'http://service.schemas.nykreditnet.net/v1' not found",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testValidPathUrl() throws Exception {
+        URL url = new URL("http://service.schemas.nykreditnet.net/service/v1");
+        WsdlChecker.checkPath(url, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidPathUrlCaps() throws Exception {
+        URL url = new URL("http://service.schemas.nykreditnet.net/Service/v1");
+        WsdlChecker.checkPath(url, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidPathFile()  {
+        Path path = Paths.get("service.schemas.nykreditnet.net", "domain","service", "v1");
+        WsdlChecker.checkPath(path, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidPathFile()  {
+        Path path = Paths.get("serviceø", "domain-_æøåÆØÅ","Service", "v1");
+        WsdlChecker.checkPath(path, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Invalid characters in path", collector.getErrors().get(0).getMessage());
+        assertEquals("Path 'serviceø/domain-_æøåÆØÅ/Service/v1', illegal [ø-_æøåÆØÅ]",
                 collector.getErrors().get(0).getDetails());
     }
 

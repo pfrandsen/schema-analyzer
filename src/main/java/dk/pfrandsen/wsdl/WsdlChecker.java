@@ -6,11 +6,26 @@ import dk.pfrandsen.util.WsdlUtil;
 import dk.pfrandsen.util.XsdUtil;
 import org.apache.commons.io.FilenameUtils;
 
+import java.net.URL;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 public class WsdlChecker {
-
     public static String ASSERTION_ID_SERVICE_NAMESPACE = "CA27-WSDL-Filename-And-Namespace-Validate";
+    public static String ASSERTION_ID_PATH = "CA37-WSDL-File-Path-Validate";
+    public static String ASSERTION_ID_NAMESPACE_MATCH_PATH = "CA39-WSDL-Namespace-Match-Path-Validate";
+
+    private static String removePrefix(String targetNamespace) {
+        String servicePrefix = "http://service.schemas.nykreditnet.net/";
+        String processPrefix = "http://process.schemas.nykreditnet.net/";
+        if (targetNamespace.startsWith(servicePrefix)) {
+            return targetNamespace.replace(servicePrefix, "");
+        }
+        if (targetNamespace.startsWith(processPrefix)) {
+            return targetNamespace.replace(processPrefix, "");
+        }
+        return targetNamespace;
+    }
 
     public static void checkServiceNamespace(String wsdl, String filename,
                                                        AnalysisInformationCollector collector) {
@@ -18,8 +33,6 @@ public class WsdlChecker {
         // namespace pattern:
         // http://service.schemas.nykreditnet.net/<domain>/[<sublevels>]/<service>/<version>
         // http://process.schemas.nykreditnet.net/<domain>/[<sublevels>]/<service>/<version>
-        String prefix1 = "http://service.schemas.nykreditnet.net/";
-        String prefix2 = "http://process.schemas.nykreditnet.net/";
         String basename = FilenameUtils.getBaseName(filename);
         try {
             String tns = WsdlUtil.getTargetNamespace(wsdl);
@@ -27,7 +40,7 @@ public class WsdlChecker {
                 collector.addError(ASSERTION_ID_SERVICE_NAMESPACE, err,
                         AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Namespace '" + tns + "'");
             } else {
-                String[] parts = tns.replace(prefix1, "").replace(prefix2, "").split("/");
+                String[] parts = removePrefix(tns).split("/");
                 if (parts.length >= 2) {
                     String service = parts[parts.length - 2];
                     if (service.matches("[a-z][\\-a-z0-9]*") && !service.endsWith("-")) {
@@ -70,6 +83,26 @@ public class WsdlChecker {
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_SERVICE_NAMESPACE);
         }
+    }
+
+    private static void checkPath(String path, AnalysisInformationCollector collector) {
+        String regexp = "(?i)[a-z0-9\\:\\/\\.]+";
+        if (!path.matches(regexp)) {
+            String illegal = "[" + path.replaceAll(regexp, "") + "]";
+            collector.addError(ASSERTION_ID_PATH, "Invalid characters in path",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Path '" + path + "', illegal " + illegal);
+            //System.out.println("@-" + path.replaceAll(regexp, "") + "-@");
+            ///System.out.println(path);
+        }
+    }
+
+    public static void checkPath(Path path, AnalysisInformationCollector collector) {
+        checkPath(path.toString().replace("\\", "/"), collector);
+    }
+
+    public static void checkPath(URL url, AnalysisInformationCollector collector) {
+        checkPath(url.toString(), collector);
+
     }
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
