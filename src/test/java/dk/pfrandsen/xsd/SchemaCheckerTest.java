@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileInputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -1026,6 +1027,62 @@ public class SchemaCheckerTest {
         assertEquals("Namespace 'http://namespace5'", collector.getErrors().get(0).getDetails());
         assertEquals("Unused import", collector.getErrors().get(1).getMessage());
         assertEquals("Namespace 'http://namespace3'", collector.getErrors().get(1).getDetails());
+    }
+
+    private String targetNamespaceXsd(String namespace) throws Exception {
+        Path path = RELATIVE_PATH_TYPES.resolve("targetNamespaceTemplate.xsd");
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        return xsd.replace("@TNS@", namespace);
+    }
+
+    @Test
+    public void testValidPathMatchesTargetNamespaceUrl() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String xsd = targetNamespaceXsd(tns);
+        SchemaChecker.checkPathAndTargetNamespace(xsd, new URL(tns), collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidPathMatchesTargetNamespacePath() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String xsd = targetNamespaceXsd(tns);
+        Path path = Paths.get("service.schemas.nykreditnet.net", "domain", "service", "v1");
+        SchemaChecker.checkPathAndTargetNamespace(xsd, path, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidPathMatchesTargetNamespaceUrl() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String location = "http://service.schemas.nykreditnet.net/service/v1";
+        String xsd = targetNamespaceXsd(tns);
+        SchemaChecker.checkPathAndTargetNamespace(xsd, new URL(location), collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Target namespace must match path", collector.getErrors().get(0).getMessage());
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/service/v1', path " +
+                        "'http://service.schemas.nykreditnet.net/service/v1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidPathMatchesTargetNamespacePath() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String xsd = targetNamespaceXsd(tns);
+        Path path = Paths.get("domain", "service", "v1");
+        SchemaChecker.checkPathAndTargetNamespace(xsd, path, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Target namespace must match path", collector.getErrors().get(0).getMessage());
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/service/v1', path " +
+                "'http://domain/service/v1'", collector.getErrors().get(0).getDetails());
     }
 
 }

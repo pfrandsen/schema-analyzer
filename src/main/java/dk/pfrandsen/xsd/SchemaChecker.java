@@ -7,6 +7,8 @@ import dk.pfrandsen.util.XQuery;
 import dk.pfrandsen.util.XsdUtil;
 import org.apache.commons.io.FilenameUtils;
 
+import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -37,6 +39,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_DEPRECATED = "CA43-XSD-Deprecated-Marker-Validate";
     public static String ASSERTION_ID_UNUSED_NS_PREFIX = "CA70-XSD/WSDL-Unused-Namespace-Prefix-validate";
     public static String ASSERTION_ID_UNUSED_IMPORT = "CA47-XSD/WSDL-Unused-Import-validate";
+    public static String ASSERTION_ID_NAMESPACE_MATCH_PATH = "CA35-XSD-Target-Namespace-Match-Path-Validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -616,6 +619,29 @@ public class SchemaChecker {
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_UNUSED_IMPORT);
         }
+    }
+
+    private static void checkPathAndTargetNamespace(String xsd, String path, AnalysisInformationCollector collector) {
+        try {
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (!path.equals(tns)) {
+                collector.addError(ASSERTION_ID_NAMESPACE_MATCH_PATH, "Target namespace must match path",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Target namespace '" + tns + "', path '" +
+                                path + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_NAMESPACE_MATCH_PATH);
+        }
+    }
+
+    public static void checkPathAndTargetNamespace(String wsdl, Path relativePath,
+                                                   AnalysisInformationCollector collector) {
+        checkPathAndTargetNamespace(wsdl, "http://" + relativePath.toString().replace("\\", "/"), collector);
+    }
+
+    public static void checkPathAndTargetNamespace(String wsdl, URL url, AnalysisInformationCollector collector) {
+        checkPathAndTargetNamespace(wsdl, url.toString(), collector);
+
     }
 
     private static void collectException(Exception e, AnalysisInformationCollector collector, String assertion) {
