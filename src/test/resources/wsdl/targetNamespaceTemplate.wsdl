@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+                  targetNamespace="@TNS@"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+</wsdl:definitions>

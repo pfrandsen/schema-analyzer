@@ -27,6 +27,11 @@ public class XsdUtil {
                 || namespace.startsWith("http://process.schemas.nykreditnet.net/");
     }
 
+    public static boolean isInternalServiceNamespace(String namespace) {
+        return namespace.startsWith("http://service.schemas.nykreditnet.net/")
+                || namespace.startsWith("http://process.schemas.nykreditnet.net/");
+    }
+
     public static boolean isTechnicalNamespace(String namespace) {
         return namespace.startsWith("http://technical.schemas.nykreditnet.net/");
     }

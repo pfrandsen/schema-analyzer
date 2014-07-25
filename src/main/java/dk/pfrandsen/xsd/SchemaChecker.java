@@ -502,7 +502,7 @@ public class SchemaChecker {
                     String concept = parts[parts.length - 2];
                     if (!basename.toLowerCase().matches(concept)) {
                         collector.addError(ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE, "Illegal concept namespace",
-                                AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Concept '" + concept +
+                                AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Concept '" + concept +
                                         "' does not match filename '" + basename.toLowerCase() + "'");
                     }
                     if (parts.length < 3) {
@@ -514,7 +514,7 @@ public class SchemaChecker {
                 } else {
                     // unable to find concept from namespace
                     collector.addError(ASSERTION_ID_ENTERPRISE_CONCEPT_NAMESPACE, "Illegal concept namespace",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Concept part or namespace '" + tns +
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Concept part or namespace '" + tns +
                                     "' not found");
                 }
             }
