@@ -91,17 +91,38 @@ public class WsdlChecker {
             String illegal = "[" + path.replaceAll(regexp, "") + "]";
             collector.addError(ASSERTION_ID_PATH, "Invalid characters in path",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Path '" + path + "', illegal " + illegal);
-            //System.out.println("@-" + path.replaceAll(regexp, "") + "-@");
-            ///System.out.println(path);
         }
     }
 
-    public static void checkPath(Path path, AnalysisInformationCollector collector) {
-        checkPath(path.toString().replace("\\", "/"), collector);
+    public static void checkPath(Path relativePath, AnalysisInformationCollector collector) {
+        checkPath(relativePath.toString().replace("\\", "/"), collector);
     }
 
     public static void checkPath(URL url, AnalysisInformationCollector collector) {
         checkPath(url.toString(), collector);
+
+    }
+
+    private static void checkPathAndTargetNamespace(String wsdl, String path, AnalysisInformationCollector collector) {
+        try {
+            String tns = WsdlUtil.getTargetNamespace(wsdl);
+            if (!path.equals(tns)) {
+                collector.addError(ASSERTION_ID_NAMESPACE_MATCH_PATH, "Target namespace must match path",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Target namespace '" + tns + "', path '" +
+                                path + "'");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_NAMESPACE_MATCH_PATH);
+        }
+    }
+
+    public static void checkPathAndTargetNamespace(String wsdl, Path relativePath,
+                                                   AnalysisInformationCollector collector) {
+        checkPathAndTargetNamespace(wsdl, "http://" + relativePath.toString().replace("\\", "/"), collector);
+    }
+
+    public static void checkPathAndTargetNamespace(String wsdl, URL url, AnalysisInformationCollector collector) {
+        checkPathAndTargetNamespace(wsdl, url.toString(), collector);
 
     }
 

@@ -192,4 +192,54 @@ public class WsdlCheckerTest {
                 collector.getErrors().get(0).getDetails());
     }
 
+    @Test
+    public void testValidPathMatchesTargetNamespaceUrl() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String wsdl = targetNamespaceWsdl(tns);
+        WsdlChecker.checkPathAndTargetNamespace(wsdl, new URL(tns), collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testValidPathMatchesTargetNamespacePath() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String wsdl = targetNamespaceWsdl(tns);
+        Path path = Paths.get("service.schemas.nykreditnet.net", "domain", "service", "v1");
+        WsdlChecker.checkPathAndTargetNamespace(wsdl, path, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+    }
+
+    @Test
+    public void testInvalidPathMatchesTargetNamespaceUrl() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String location = "http://service.schemas.nykreditnet.net/service/v1";
+        String wsdl = targetNamespaceWsdl(tns);
+        WsdlChecker.checkPathAndTargetNamespace(wsdl, new URL(location), collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Target namespace must match path", collector.getErrors().get(0).getMessage());
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/service/v1', path " +
+                        "'http://service.schemas.nykreditnet.net/service/v1'",
+                collector.getErrors().get(0).getDetails());
+    }
+
+    @Test
+    public void testInvalidPathMatchesTargetNamespacePath() throws Exception {
+        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String wsdl = targetNamespaceWsdl(tns);
+        Path path = Paths.get("domain", "service", "v1");
+        WsdlChecker.checkPathAndTargetNamespace(wsdl, path, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Target namespace must match path", collector.getErrors().get(0).getMessage());
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/service/v1', path " +
+                        "'http://domain/service/v1'", collector.getErrors().get(0).getDetails());
+    }
+
 }
