@@ -1,8 +1,7 @@
 Schema analyzer
 ===============
 
-A set of tools to analyze schemas (xsd and wsdl) and report errors and warning according to a set of
-compliance rules.
+A set of tools to analyze schemas (xsd and wsdl) and report errors and warning according to a set of compliance rules.
 
 Miscellaneous
 -------------
