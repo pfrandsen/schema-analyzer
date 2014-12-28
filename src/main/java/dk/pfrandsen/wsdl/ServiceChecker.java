@@ -1,38 +1,19 @@
 package dk.pfrandsen.wsdl;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import ch.ethz.mxquery.exceptions.MXQueryException;
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.Service;
-import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.WsdlUtil;
 import dk.pfrandsen.util.XQuery;
-import dk.pfrandsen.wsdl.util.Wsdl;
 
 public class ServiceChecker {
     public static final String ASSERTION_ID = "CA??-WSDL-Validate-Service";
     public static final String ASSERTION_ID_SERVICE_ENDPOINT = "CA53-WSDL-Validate-Endpoint";
-    // public static final String SERVICE_PORT_POSTFIX = "WS";
-
-    public static List<String> getServiceNames(Definitions definitions, boolean removeVersion) {
-        List<String> serviceNames = new ArrayList<String>();
-        for (Service service : definitions.getLocalServices()) {
-            String name = service.getName();
-            if (removeVersion) {
-                name = Utilities.removeVersion(name);
-            }
-            serviceNames.add(name);
-        }
-        return serviceNames;
-    }
 
     public static void checkServices(String wsdl, AnalysisInformationCollector collector) {
         try {

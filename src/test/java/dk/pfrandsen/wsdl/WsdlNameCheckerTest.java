@@ -1,68 +1,60 @@
 package dk.pfrandsen.wsdl;
 
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.WSDLParser;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class WsdlNameCheckerTest {
-    private static String RELATIVE_PATH = "src/test/resources/wsdl/name";
-    private String fileUri;
+    private static Path RELATIVE_PATH = Paths.get("src", "test", "resources", "wsdl", "name");
     private AnalysisInformationCollector collector;
-    private WSDLParser parser;
 
     @Before
     public void setUp() {
-        fileUri = new File(RELATIVE_PATH).toURI().toString();
         collector = new AnalysisInformationCollector();
-        parser = new WSDLParser();
     }
 
     @Test
-    public void testValid() {
-        String uri = fileUri + "/Name-valid.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        WsdlNameChecker.checkName(definition, collector);
+    public void testValid() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Name-valid.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        WsdlNameChecker.checkName(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
     }
 
     @Test
-    public void testValidNoName() {
-        String uri = fileUri + "/Name-valid-no-name.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        WsdlNameChecker.checkName(definition, collector);
+    public void testValidNoName() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Name-valid-no-name.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        WsdlNameChecker.checkName(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
     }
 
     @Test
-    public void testValidWithVersion() {
-        String uri = fileUri + "/Name-valid-with-version.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        WsdlNameChecker.checkName(definition, collector);
+    public void testValidWithVersion() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Name-valid-with-version.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        WsdlNameChecker.checkName(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
     }
 
     @Test
-    public void testInvalidCaps() {
-        String uri = fileUri + "/Name-invalid-caps.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        WsdlNameChecker.checkName(definition, collector);
+    public void testInvalidCaps() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Name-invalid-caps.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        WsdlNameChecker.checkName(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -71,11 +63,10 @@ public class WsdlNameCheckerTest {
     }
 
     @Test
-    public void testInvalidChars() {
-        String uri = fileUri + "/Name-invalid-chars.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        WsdlNameChecker.checkName(definition, collector);
+    public void testInvalidChars() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Name-invalid-chars.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        WsdlNameChecker.checkName(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -84,11 +75,10 @@ public class WsdlNameCheckerTest {
     }
 
     @Test
-    public void testInvalidWithVersion() {
-        String uri = fileUri + "/Name-invalid-with-version.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        WsdlNameChecker.checkName(definition, collector);
+    public void testInvalidWithVersion() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Name-invalid-with-version.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        WsdlNameChecker.checkName(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());

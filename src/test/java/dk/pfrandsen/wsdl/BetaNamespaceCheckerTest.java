@@ -1,8 +1,6 @@
 package dk.pfrandsen.wsdl;
 
 
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.WSDLParser;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;

@@ -1,15 +1,9 @@
 package dk.pfrandsen.wsdl;
 
-import ch.ethz.mxquery.exceptions.MXQueryException;
-import com.predic8.wsdl.Definitions;
-import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.XQuery;
-import org.apache.commons.io.IOUtils;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -26,6 +20,9 @@ public class NamespaceChecker {
     public static final String NS_XSD = "xsd";
     public static final String NS_XSD_VALUE = "http://www.w3.org/2001/XMLSchema";
     public static final String NS_PREFIX = "http://";
+    private static final String TNS_PREFIX = "tns";
+    private static final String TARGET_NAMESPACE = "targetNamespace";
+    private static final String XML_NS_NAMESPACE = "http://www.w3.org/XML/1998/namespace"; // implicit namespace
 
     public static void checkUnusedImports(String wsdl, AnalysisInformationCollector collector) {
         Path xq = Paths.get("wsdl", "namespace");
@@ -57,23 +54,39 @@ public class NamespaceChecker {
     }
 
 
-    public static void checkNamespace(Definitions definitions, AnalysisInformationCollector collector) {
-        String tns = definitions.getTargetNamespacePrefix();
-        String targetNamespace = definitions.getTargetNamespace();
-
-        // find all the wsdl element namespaces
-        Map<String, String> wsdlElementNS = getWsdlElementNamespaces(definitions);
-        checkStandardWsdlElementNS(wsdlElementNS, definitions, collector);
-        checkUsageAndCase(wsdlElementNS, definitions, collector);
+    public static void checkNamespace(String wsdl, AnalysisInformationCollector collector) {
+        Path xq = Paths.get("wsdl", "definition");
+        try {
+            String targetNamespace = "<unknown>";
+            String namespaceXml = XQuery.runXQuery(xq, "namespace.xq", wsdl);
+            List<Map<String, String>> ns = XQuery.mapResult(namespaceXml, "prefix", "namespaceUri");
+            Map<String, String> namespaces = new HashMap<>();
+            for (Map<String, String> namespace : ns) {
+                String prefix = namespace.get("prefix");
+                String uri = namespace.get("namespaceUri");
+                if (!XML_NS_NAMESPACE.equals(uri)) { // ignore implicit xml ns namespace
+                    if (TARGET_NAMESPACE.equals(prefix)) {
+                        targetNamespace = uri;
+                    } else {
+                        // copy all namespace definitions except implicit xml ns and targetNamespace
+                        namespaces.put(prefix, uri);
+                    }
+                }
+            }
+            checkStandardWsdlElementNS(namespaces, targetNamespace, collector);
+            checkUsageAndCase(namespaces, wsdl, collector);
+        } catch (Exception e) {
+            collectException(e, collector);
+        }
     }
 
-    private static void checkStandardWsdlElementNS(Map<String, String> namespaces, Definitions definitions,
+    private static void checkStandardWsdlElementNS(Map<String, String> namespaces, String targetNamespace,
                                                    AnalysisInformationCollector collector) {
-        // tns namespace should be defined
-        if (namespaces.containsKey("tns")) {
-            if (!namespaces.get("tns").equals(definitions.getTargetNamespace())) {
+        // tns namespace must be defined and uri must be equal to target namespace
+        if (namespaces.containsKey(TNS_PREFIX)) {
+            if (!namespaces.get(TNS_PREFIX).equals(targetNamespace)) {
                 collector.addError(ASSERTION_ID, "Namespace tns '" + namespaces.get("tns") +
-                                "' does not match targetNamespace '" + definitions.getTargetNamespace() + "'",
+                                "' does not match targetNamespace '" + targetNamespace + "'",
                         AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             }
         } else {
@@ -83,7 +96,7 @@ public class NamespaceChecker {
         // check that correct names are used
         // xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
         String wsdlNS = Utilities.getKeyForValue(NS_WSDL_VALUE, namespaces);
-        if (! NS_WSDL.equals(wsdlNS)) {
+        if (!NS_WSDL.equals(wsdlNS)) {
             if (namespaces.containsValue(NS_WSDL_VALUE)) {
                 collector.addWarning(ASSERTION_ID, "Expected namespace '" + NS_WSDL + "' but found '" + wsdlNS +
                                 "' (" + NS_WSDL_VALUE + ")",
@@ -96,7 +109,7 @@ public class NamespaceChecker {
         }
         // xmlns:soap="http://schemas.xmlsoap.org/wsdl/"
         String soapNS = Utilities.getKeyForValue(NS_SOAP_VALUE, namespaces);
-        if (! NS_SOAP.equals(soapNS)) {
+        if (!NS_SOAP.equals(soapNS)) {
             if (namespaces.containsValue(NS_SOAP_VALUE)) {
                 collector.addWarning(ASSERTION_ID, "Expected namespace '" + NS_SOAP + "' but found '" + soapNS +
                                 "' (" + NS_SOAP_VALUE + ")",
@@ -122,28 +135,24 @@ public class NamespaceChecker {
         }
     }
 
-    private static void checkUsageAndCase(Map<String, String> namespaces, Definitions definitions,
+    private static void checkUsageAndCase(Map<String, String> namespaces, String wsdl,
                                           AnalysisInformationCollector collector) {
         // find the namespaces that are defined but not used by matching strings in the text representation of the wsdl
         // and check that all namespace values are in lowercase
+        // comment and documentation nodes are removed from the text representation of the wsdl before checking
 
-        String wsdlNS = Utilities.getKeyForValue(NS_WSDL_VALUE, namespaces);
-        String xsdNS = Utilities.getKeyForValue(NS_XSD_VALUE, namespaces);
-
-        String xml = definitions.getAsString();
+        String xml = wsdl;
+        try {
+            xml = Utilities.removeXmlComments(Utilities.removeXmlDocumentation(wsdl));
+        } catch (Exception ignored) {
+            // just use xml with comment and documentation nodes
+        }
         for (String key : namespaces.keySet()) {
             String value = namespaces.get(key);
-            // the prefix wsdl is stripped from the string representation so do not try to match this; and the xml
-            // schema namespace is represented as xsd:
-            if (!key.equals(wsdlNS)) {
-                String message = "Namespace xmlns:" + key + "='" + value + "' not used.";
-                if (key.equals(xsdNS)) {
-                    key = "xsd"; // the string representation of the wsdl uses xsd: for http://www.w3.org/2001/XMLSchema
-                }
-                String toMatch = "(?s).*['<]" + key + ":(?s).*";  // 'ns:' or '<ns:'
-                if (!xml.matches(toMatch)) {
-                    collector.addWarning(ASSERTION_ID, message, AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
-                }
+            String message = "Namespace xmlns:" + key + "='" + value + "' not used.";
+            String toMatch = "(?s).*[\"'<]" + key + ":(?s).*";  // "ns: or 'ns: or <ns:
+            if (!xml.matches(toMatch)) {
+                collector.addWarning(ASSERTION_ID, message, AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
             }
             // check case
             if (!(NS_XSD_VALUE.equals(value) || NS_WSDL_VALUE.equals(value) || NS_SOAP_VALUE.equals(value))) {
@@ -161,28 +170,6 @@ public class NamespaceChecker {
                         AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
             }
         }
-    }
-
-    public static Map<String, String> getWsdlElementNamespaces(Definitions definitions) {
-        return getNamespaceMap(definitions.getNamespaceContext());
-    }
-
-    /*
-    Extract namespaces map defined as Map<String, String> in com.predic8.soamodel.XMLElement (Groovy class)
-    The issue with the definition i Groovy is that the return value in un-typed
-     */
-    private static Map<String, String> getNamespaceMap(Object context) {
-        Map<String, String> namespaces = new HashMap<String, String>();
-        if (context instanceof Map) {
-            Map source = (Map)context;
-            for (Object key : source.keySet()) {
-                Object value = source.get(key);
-                if (key instanceof String && value instanceof String) {
-                    namespaces.put((String)key, (String)value);
-                }
-            }
-        }
-        return namespaces;
     }
 
     private static void collectException(Exception e, AnalysisInformationCollector collector) {

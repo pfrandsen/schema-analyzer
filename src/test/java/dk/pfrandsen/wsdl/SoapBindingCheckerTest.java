@@ -1,72 +1,64 @@
 package dk.pfrandsen.wsdl;
 
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.WSDLParser;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class SoapBindingCheckerTest {
-    private static String RELATIVE_PATH = "src/test/resources/wsdl/binding";
-    private String fileUri;
+    private static Path RELATIVE_PATH = Paths.get("src", "test", "resources", "wsdl", "binding");
     private AnalysisInformationCollector collector;
-    private WSDLParser parser;
 
     @Before
     public void setUp() {
-        fileUri = new File(RELATIVE_PATH).toURI().toString();
         collector = new AnalysisInformationCollector();
-        parser = new WSDLParser();
     }
 
     @Test
-    public void testValid() {
-        String uri = fileUri + "/Binding-valid.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testValid() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-valid.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
     }
 
     @Test
-    public void testValidVersionedServiceName() {
-        String uri = fileUri + "/Binding-valid-versioned-service-name.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testValidVersionedServiceName() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-valid-versioned-service-name.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
     }
 
     @Test
-    public void testInvalidRpcStyle() {
-        String uri = fileUri + "/Binding-invalid-rpc-style.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidRpcStyle() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-rpc-style.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(1, collector.errorCount());
-        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
-        assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, collector.getErrors().get(0).getSeverity());
-        assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
-        assertEquals("Binding is not Document/Literal", collector.getErrors().get(0).getMessage());
-        assertEquals("SOAP binding style is not document", collector.getWarnings().get(0).getMessage());
+        //assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, collector.getErrors().get(0).getSeverity());
+        assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getErrors().get(0).getSeverity());
+        //assertEquals("Binding is not Document/Literal", collector.getErrors().get(0).getMessage());
+        assertEquals("SOAP binding style is not document", collector.getErrors().get(0).getMessage());
     }
 
     @Test
-    public void testInvalidTransport() {
-        String uri = fileUri + "/Binding-invalid-transport.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidTransport() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-transport.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -76,11 +68,10 @@ public class SoapBindingCheckerTest {
     }
 
     @Test
-    public void testInvalidSoap12() {
-        String uri = fileUri + "/Binding-invalid-soap12.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidSoap12() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-soap12.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -89,11 +80,10 @@ public class SoapBindingCheckerTest {
     }
 
     @Test
-    public void testInvalidMultipleBindings() {
-        String uri = fileUri + "/Binding-invalid-multiple-bindings.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidMultipleBindings() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-multiple-bindings.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(2, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -105,11 +95,10 @@ public class SoapBindingCheckerTest {
     }
 
     @Test
-    public void testInvalidNoBinding() {
-        String uri = fileUri + "/Binding-invalid-no-binding.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidNoBinding() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-no-binding.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -118,11 +107,10 @@ public class SoapBindingCheckerTest {
     }
 
     @Test
-    public void testInvalidName() {
-        String uri = fileUri + "/Binding-invalid-name.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidName() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-name.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -132,30 +120,30 @@ public class SoapBindingCheckerTest {
     }
 
     @Test
-    public void testInvalidNamespacePrefix() {
-        String uri = fileUri + "/Binding-invalid-namespace-prefix.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
+    public void testInvalidNamespacePrefix() throws Exception {
+        Path path = RELATIVE_PATH.resolve("Binding-invalid-namespace-prefix.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, collector.getWarnings().get(0).getSeverity());
-        assertEquals("WSDL binding type does not use tns namespace prefix", collector.getWarnings().get(0).getMessage());
-        assertEquals("Namespace prefix used 'tnsinvalid'", collector.getWarnings().get(0).getDetails());
+        assertEquals("WSDL binding 'EntityBinding' type does not use tns namespace prefix", collector.getWarnings().get(0).getMessage());
+        assertEquals("Prefix used is 'tnsinvalid'", collector.getWarnings().get(0).getDetails());
     }
 
     @Test
     public void testInvalidEncoded() {
-        String uri = fileUri + "/Binding-invalid-encoded.wsdl";
-        Definitions definition = parser.parse(uri);
-        assertTrue(definition != null);
-        SoapBindingChecker.checkBindings(definition, collector);
-        assertEquals(1, collector.errorCount());
-        assertEquals(0, collector.warningCount());
+        //Path path = RELATIVE_PATH.resolve("Binding-invalid-encoded.wsdl");
+        // TODO: Check this wsdl with WS-I - that test checks for Document/Literal
+        /* String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        SoapBindingChecker.checkBindings(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, collector.getErrors().get(0).getSeverity());
         assertEquals("Binding is not Document/Literal", collector.getErrors().get(0).getMessage());
         assertEquals("Binding detected as [Document/Encoded]", collector.getErrors().get(0).getDetails());
+        */
     }
 }

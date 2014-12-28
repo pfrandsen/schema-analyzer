@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://service.schemas/domain/service/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" name="Entity" targetNamespace="http://service.schemas/domain/service/v1">
+    <wsdl:documentation> doc </wsdl:documentation>
+    <wsdl:message name="getEntityRequest">
+        <wsdl:part name="parameters" element="tns:GetEntityRequest" />
+    </wsdl:message>
+    <wsdl:message name="getEntityResponse">
+        <wsdl:part name="parameters" element="tns:GetEntityResponse" />
+    </wsdl:message>
+    <wsdl:portType name="EntityService">
+        <wsdl:documentation> doc </wsdl:documentation>
+        <wsdl:operation name="getEntity">
+            <wsdl:documentation> documentation </wsdl:documentation>
+            <wsdl:input message="tns:getEntityRequest" />
+            <wsdl:output message="tns:getEntityResponse" />
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

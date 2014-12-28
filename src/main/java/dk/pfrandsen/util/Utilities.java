@@ -2,14 +2,19 @@ package dk.pfrandsen.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.w3c.dom.Document;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.FileInputStream;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -149,9 +154,7 @@ public class Utilities {
 
     public static String removeXmlComments(String xml) throws Exception {
         Path stylesheet = Paths.get("/", "xslt", "removeComments.xsl");
-        System.out.println(stylesheet.toString());
         String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
-        //String xsl = IOUtils.toString(new FileInputStream(stylesheet.toFile()));
         TransformerFactory factory = TransformerFactory.newInstance();
         Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
         Transformer transformer = factory.newTransformer(xslt);
@@ -160,4 +163,30 @@ public class Utilities {
         transformer.transform(xmlSource, new StreamResult(writer));
         return writer.toString();
     }
+
+    public static String removeXmlDocumentation(String xml) throws Exception {
+        Path stylesheet = Paths.get("/", "xslt", "removeDocumentation.xsl");
+        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
+        Transformer transformer = factory.newTransformer(xslt);
+        Source xmlSource = new StreamSource(IOUtils.toInputStream(xml));
+        StringWriter writer = new StringWriter();
+        transformer.transform(xmlSource, new StreamResult(writer));
+        return writer.toString();
+    }
+
+    public static String prettyPrint(String xml) throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setValidating(false);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.parse(IOUtils.toInputStream(xml, "UTF-8"));
+        Transformer tf = TransformerFactory.newInstance().newTransformer();
+        tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        tf.setOutputProperty(OutputKeys.INDENT, "yes");
+        Writer out = new StringWriter();
+        tf.transform(new DOMSource(doc), new StreamResult(out));
+        return out.toString();
+    }
+
 }

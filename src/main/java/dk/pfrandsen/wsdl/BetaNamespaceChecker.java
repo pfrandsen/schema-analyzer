@@ -1,25 +1,12 @@
 package dk.pfrandsen.wsdl;
 
-import ch.ethz.mxquery.query.XQCompiler;
-import ch.ethz.mxquery.query.PreparedStatement;
-import ch.ethz.mxquery.query.impl.CompilerImpl;
-import ch.ethz.mxquery.contextConfig.CompilerOptions;
-import ch.ethz.mxquery.contextConfig.Context;
-import ch.ethz.mxquery.datamodel.QName;
 import ch.ethz.mxquery.exceptions.MXQueryException;
-import ch.ethz.mxquery.exceptions.QueryLocation;
-import ch.ethz.mxquery.model.XDMIterator;
-import ch.ethz.mxquery.xdmio.XDMInputFactory;
-import ch.ethz.mxquery.xdmio.XDMSerializer;
-import ch.ethz.mxquery.xdmio.XMLSource;
 
-import com.predic8.wsdl.Definitions;
 import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.XQuery;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
