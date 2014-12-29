@@ -4,47 +4,66 @@ import dk.pfrandsen.check.AnalysisInformationCollector;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 public class Utf8Test {
 
-    private static String RELATIVE_PATH = "src/test/resources/utf8/";
-    private String path;
+    private static Path RELATIVE_PATH = Paths.get("src", "test", "resources", "utf8");
     private AnalysisInformationCollector collector;
 
 
     @Before
     public void setUp() {
-        path = System.getProperty("user.dir") + File.separator + RELATIVE_PATH;
         collector = new AnalysisInformationCollector();
     }
 
     @Test
     public void testValidFile() {
-        assertTrue(Utf8.checkUtf8File(path + "utf8.xml", collector));
+        Path path = RELATIVE_PATH.resolve("utf8.xml").toAbsolutePath();
+        Utf8.checkUtf8File(path, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
     }
 
     @Test
     public void testFileWithBOM() {
-        assertFalse(Utf8.checkUtf8File(path + "utf8-with-bom.xml", collector));
+        Path path = RELATIVE_PATH.resolve("utf8-with-bom.xml").toAbsolutePath();
+        Utf8.checkUtf8File(path, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertTrue(collector.getErrors().get(0).getMessage().startsWith("UTF-8 byte order mark found in "));
     }
 
     @Test
     public void testInvalidFile() {
-        assertFalse(Utf8.checkUtf8File(path + "not-utf8.xml", collector));
+        Path path = RELATIVE_PATH.resolve("not-utf8.xml.xml").toAbsolutePath();
+        Utf8.checkUtf8File(path, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(2, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertTrue(collector.getErrors().get(0).getMessage().endsWith(" is not recognized as UTF-8."));
+        assertTrue(collector.getWarnings().get(0).getMessage()
+                .startsWith("IOException thrown while reading BOM (ByteOrderMark) from "));
+        assertTrue(collector.getWarnings().get(1).getMessage()
+                .startsWith("IOException thrown while reading bytes from "));
     }
 
 
     @Test
     public void testVerifyByteOrderMarkInFileWithUtf8BOM() {
-        assertTrue(Utf8.hasUTF8ByteOrderMark(path + "utf8-with-bom.xml", collector));
+        Path path = RELATIVE_PATH.resolve("utf8-with-bom.xml").toAbsolutePath();
+        assertTrue(Utf8.hasUTF8ByteOrderMark(path, collector));
     }
 
     @Test
     public void testUtfDateInFileWithUtf8ByteOrderMark() {
-        assertTrue(Utf8.isValidUTF8WithByteOrderMark(path + "utf8-with-bom.xml", collector));
+        Path path = RELATIVE_PATH.resolve("utf8-with-bom.xml").toAbsolutePath();
+        assertTrue(Utf8.isValidUTF8WithByteOrderMark(path, collector));
     }
 }
