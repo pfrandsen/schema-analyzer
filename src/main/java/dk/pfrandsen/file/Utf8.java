@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import dk.pfrandsen.check.AnalysisInformationCollector;
 
@@ -29,9 +29,9 @@ public class Utf8 {
         return true;
     }
 
-    public static boolean isValidUTF8WithByteOrderMark(String filePath, AnalysisInformationCollector collector) {
+    public static boolean isValidUTF8WithByteOrderMark(Path filePath, AnalysisInformationCollector collector) {
         try {
-            byte[] data = Files.readAllBytes(Paths.get(filePath));
+            byte[] data = Files.readAllBytes(filePath);
             if (!hasUTF8ByteOrderMark(data)) {
                 return false;
             }
@@ -50,9 +50,9 @@ public class Utf8 {
         }
     }
 
-    public static boolean isValidUTF8(String filePath, AnalysisInformationCollector collector) {
+    public static boolean isValidUTF8(Path filePath, AnalysisInformationCollector collector) {
         try {
-            byte[] data = Files.readAllBytes(Paths.get(filePath));
+            byte[] data = Files.readAllBytes(filePath);
             try {
                 Charset.availableCharsets().get("UTF-8").newDecoder().decode(ByteBuffer.wrap(data));
             } catch (CharacterCodingException e) {
@@ -66,9 +66,9 @@ public class Utf8 {
         }
     }
 
-    public static boolean hasUTF8ByteOrderMark(String filePath, AnalysisInformationCollector collector) {
+    public static boolean hasUTF8ByteOrderMark(Path filePath, AnalysisInformationCollector collector) {
         try {
-            return hasUTF8ByteOrderMark(Files.readAllBytes(Paths.get(filePath)));
+            return hasUTF8ByteOrderMark(Files.readAllBytes(filePath));
         } catch (IOException e) {
             collector.addWarning(ASSERTION_ID, "IOException thrown while reading BOM (ByteOrderMark) from '" + filePath + "'.",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
@@ -76,8 +76,7 @@ public class Utf8 {
         }
     }
 
-    public static boolean checkUtf8File(String filePath, AnalysisInformationCollector collector) {
-        int errorCount = collector.errorCount();
+    public static void checkUtf8File(Path filePath, AnalysisInformationCollector collector) {
         boolean bom = hasUTF8ByteOrderMark(filePath, collector);
         if (bom) {
             collector.addError(ASSERTION_ID, "UTF-8 byte order mark found in '" + filePath + "'.",
@@ -87,16 +86,15 @@ public class Utf8 {
             // check if the data after the byte order mark is UTF-8
             // i.e., file may both have UTF-8 BOM and contain invalid data
             if (!isValidUTF8WithByteOrderMark(filePath, collector)) {
-                collector.addError(ASSERTION_ID, "File '" + filePath + "' not recognized as UTF-8.",
+                collector.addError(ASSERTION_ID, "File '" + filePath + "' is not recognized as UTF-8.",
                         AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
                         "File has UTF-8 byte order mark.");
             }
         } else {
             if (!isValidUTF8(filePath, collector)) {
-                collector.addError(ASSERTION_ID, "File '" + filePath + "' in not recognized as UTF-8.",
+                collector.addError(ASSERTION_ID, "File '" + filePath + "' is not recognized as UTF-8.",
                         AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             }
         }
-        return collector.errorCount() == errorCount;
     }
 }
