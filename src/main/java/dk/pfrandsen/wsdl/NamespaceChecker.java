@@ -3,12 +3,11 @@ package dk.pfrandsen.wsdl;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.XQuery;
+import dk.pfrandsen.xsd.SchemaChecker;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class NamespaceChecker {
     public static final String ASSERTION_ID = "CA28A-WSDL-NAMESPACE-NAMING-AND-USAGE";
@@ -74,7 +73,9 @@ public class NamespaceChecker {
                 }
             }
             checkStandardWsdlElementNS(namespaces, targetNamespace, collector);
-            checkUsageAndCase(namespaces, wsdl, collector);
+            SchemaChecker.checkUnusedNamespacePrefix(wsdl, collector);
+            checkCase(namespaces, collector);
+            checkDuplicate(namespaces, collector);
         } catch (Exception e) {
             collectException(e, collector);
         }
@@ -135,25 +136,9 @@ public class NamespaceChecker {
         }
     }
 
-    private static void checkUsageAndCase(Map<String, String> namespaces, String wsdl,
-                                          AnalysisInformationCollector collector) {
-        // find the namespaces that are defined but not used by matching strings in the text representation of the wsdl
-        // and check that all namespace values are in lowercase
-        // comment and documentation nodes are removed from the text representation of the wsdl before checking
-
-        String xml = wsdl;
-        try {
-            xml = Utilities.removeXmlComments(Utilities.removeXmlDocumentation(wsdl));
-        } catch (Exception ignored) {
-            // just use xml with comment and documentation nodes
-        }
+    private static void checkCase(Map<String, String> namespaces, AnalysisInformationCollector collector) {
         for (String key : namespaces.keySet()) {
             String value = namespaces.get(key);
-            String message = "Namespace xmlns:" + key + "='" + value + "' not used.";
-            String toMatch = "(?s).*[\"'<]" + key + ":(?s).*";  // "ns: or 'ns: or <ns:
-            if (!xml.matches(toMatch)) {
-                collector.addWarning(ASSERTION_ID, message, AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
-            }
             // check case
             if (!(NS_XSD_VALUE.equals(value) || NS_WSDL_VALUE.equals(value) || NS_SOAP_VALUE.equals(value))) {
                 if (!value.equals(value.toLowerCase())) {
@@ -169,6 +154,28 @@ public class NamespaceChecker {
                 collector.addWarning(ASSERTION_ID, "Namespace must start with " + NS_PREFIX + " (" + value + ")",
                         AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
             }
+        }
+    }
+
+    private static void checkDuplicate(Map<String, String> namespaces, AnalysisInformationCollector collector) {
+        // check if namespace uris are duplicated - collect and report prefixes for these
+        List<String> duplicate = new ArrayList<>();
+        for (String key : namespaces.keySet()) {
+            int count = 0;
+            String value = namespaces.get(key);
+            for (String key2 : namespaces.keySet()) {
+                if (value.equals(namespaces.get(key2))) {
+                    count++;
+                }
+            }
+            if (count > 1) {
+                duplicate.add(key);
+            }
+        }
+        if (duplicate.size() > 0) {
+            Collections.sort(duplicate);
+            collector.addWarning(ASSERTION_ID, "Duplicate namespaces found",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Prefixes: " + Utilities.join(",", duplicate));
         }
     }
 

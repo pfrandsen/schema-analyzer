@@ -36,9 +36,45 @@ public class NamespaceCheckerTest {
         Path path = RELATIVE_PATH.resolve("Namespace-invalid.wsdl");
         String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
         NamespaceChecker.checkNamespace(wsdl, collector);
-        assertEquals(0, collector.errorCount());
-        assertEquals(5, collector.warningCount());
+        assertEquals(1, collector.errorCount());
+        assertEquals(4, collector.warningCount());
         assertEquals(0, collector.infoCount());
+        assertEquals("Unused namespace prefix",
+                collector.getErrors().get(0).getMessage());
+        assertEquals("Prefix 'unused', namespace 'unused.com'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals("Namespace must be in lowercase (http://Service.schemas/domain/service/v1)",
+                collector.getWarnings().get(1).getMessage());
+        assertEquals("Namespace must start with http:// (unused.com)",
+                collector.getWarnings().get(2).getMessage());
+        assertEquals("Namespace prefix must be in lowercase (Soapsoap)",
+                collector.getWarnings().get(3).getMessage());
+    }
+
+    @Test
+    public void testInvalidTns() throws IOException {
+        Path path = RELATIVE_PATH.resolve("Namespace-invalid-tns.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        NamespaceChecker.checkNamespace(wsdl, collector);
+        assertEquals(1, collector.errorCount());
+        assertEquals(0, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Namespace 'tns' not found top level <wsdl> element.",
+                collector.getErrors().get(0).getMessage());
+    }
+
+    @Test
+    public void testInvalidMultipleDefinitions() throws IOException {
+        Path path = RELATIVE_PATH.resolve("Namespace-invalid-multiple-definitions.wsdl");
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        NamespaceChecker.checkNamespace(wsdl, collector);
+        assertEquals(0, collector.errorCount());
+        assertEquals(1, collector.warningCount());
+        assertEquals(0, collector.infoCount());
+        assertEquals("Duplicate namespaces found",
+                collector.getWarnings().get(0).getMessage());
+        assertEquals("Prefixes: tn,tns,xs,xsd",
+                collector.getWarnings().get(0).getDetails());
     }
 
     @Test
