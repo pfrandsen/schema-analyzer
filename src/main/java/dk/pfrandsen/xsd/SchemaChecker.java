@@ -636,7 +636,7 @@ public class SchemaChecker {
 
     public static void checkPathAndTargetNamespace(String wsdl, Path relativePath,
                                                    AnalysisInformationCollector collector) {
-        checkPathAndTargetNamespace(wsdl, "http://" + relativePath.toString().replace("\\", "/"), collector);
+        checkPathAndTargetNamespace(wsdl, Utilities.pathToNamespace(relativePath), collector);
     }
 
     public static void checkPathAndTargetNamespace(String wsdl, URL url, AnalysisInformationCollector collector) {

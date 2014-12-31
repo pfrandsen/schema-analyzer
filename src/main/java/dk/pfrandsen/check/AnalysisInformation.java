@@ -1,5 +1,7 @@
 package dk.pfrandsen.check;
 
+import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+
 public class AnalysisInformation {
     private String assertion;
     private String message;
@@ -75,5 +77,16 @@ public class AnalysisInformation {
                 ", severity=" + severity +
                 ", details='" + details + '\'' +
                 '}';
+    }
+
+    public String toHtmlTableRow() {
+        StringBuilder html = new StringBuilder();
+        html.append("<tr>");
+        html.append("<td>").append(escapeHtml(assertion)).append("</td>");
+        html.append("<td>").append(escapeHtml(message)).append("</td>");
+        html.append("<td>").append(severity).append("</td>");
+        html.append("<td>").append(escapeHtml(details)).append("</td>");
+        html.append("</tr>");
+        return html.toString();
     }
 }

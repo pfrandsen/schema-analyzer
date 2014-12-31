@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+
 public class AnalysisInformationCollector {
     public static int SEVERITY_LEVEL_UNKNOWN = -1;
+    public static int SEVERITY_LEVEL_FATAL = 0;
     public static int SEVERITY_LEVEL_CRITICAL = 1;
     public static int SEVERITY_LEVEL_MAJOR = 2;
     public static int SEVERITY_LEVEL_MINOR = 3;
@@ -114,4 +117,28 @@ public class AnalysisInformationCollector {
     private void add(List<AnalysisInformation> collection, String assertion, String message, int severity, String details) {
         collection.add(new AnalysisInformation(assertion, message, severity, details));
     }
+
+    public String toHtmlTableFragment(List<AnalysisInformation> collection, String caption, boolean includeEmpty) {
+        StringBuilder html = new StringBuilder();
+        if (collection.size() > 0 || includeEmpty ) {
+            html.append("<tr>");
+            html.append("<td colspan='4'>").append(escapeHtml(caption)).append("</td>");
+            html.append("</tr>");
+            for (AnalysisInformation inf : collection) {
+                html.append(inf.toHtmlTableRow());
+            }
+        }
+        return html.toString();
+    }
+
+    public String toHtmlTable(boolean includeEmpty) {
+        StringBuilder html = new StringBuilder();
+        html.append("<table>");
+        html.append(toHtmlTableFragment(errors, "Errors:", includeEmpty));
+        html.append(toHtmlTableFragment(warnings, "Warnings:", includeEmpty));
+        html.append(toHtmlTableFragment(info, "Information:", includeEmpty));
+        html.append("</able>");
+        return html.toString();
+    }
+
 }

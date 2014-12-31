@@ -1,5 +1,7 @@
 package dk.pfrandsen.util;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -117,6 +119,24 @@ public class UtilitiesTest {
         List<String> lcc = Utilities.toLowerCamelCase(Arrays.asList(capitalized));
         assertEquals(unCapitalized[0], lcc.get(0));
         assertEquals(unCapitalized[1], lcc.get(1));
+    }
+
+    @Test
+    public void testPathToNamespace() {
+        Path path = Paths.get("abc", "def", "ghi");
+        assertEquals(Utilities.pathToNamespace(path), "http://abc/def/ghi");
+    }
+
+    @Test
+    public void testPathToNamespaceSingle() {
+        Path path = Paths.get("abc");
+        assertEquals(Utilities.pathToNamespace(path), "http://abc");
+    }
+
+    @Test
+    public void testPathToNamespaceEmpty() {
+        Path path = Paths.get("");
+        assertEquals(Utilities.pathToNamespace(path), "http://");
     }
 
 }

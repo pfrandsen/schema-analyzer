@@ -13,8 +13,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -33,6 +32,17 @@ public class Utilities {
                 builder.append(separator);
             }
         }
+        return builder.toString();
+    }
+
+    public static String pathToNamespace(Path path) {
+        int parts = path.getNameCount();
+        StringBuilder builder = new StringBuilder();
+        builder.append("http://");
+        for (int idx = 0; idx < parts - 1; idx++) {
+            builder.append(path.getName(idx)).append("/");
+        }
+        builder.append(path.getName(parts - 1));
         return builder.toString();
     }
 
@@ -187,6 +197,12 @@ public class Utilities {
         Writer out = new StringWriter();
         tf.transform(new DOMSource(doc), new StreamResult(out));
         return out.toString();
+    }
+
+    private static String readFileContents(File file) throws IOException {
+        try (FileInputStream is = new FileInputStream(file)) {
+            return IOUtils.toString(is);
+        }
     }
 
 }
