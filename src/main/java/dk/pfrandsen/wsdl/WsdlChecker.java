@@ -85,7 +85,7 @@ public class WsdlChecker {
         }
     }
 
-    private static void checkPath(String path, AnalysisInformationCollector collector) {
+    public static void checkPathCharacters(String path, AnalysisInformationCollector collector) {
         String regexp = "(?i)[a-z0-9\\:\\/\\.]+";
         if (!path.matches(regexp)) {
             String illegal = "[" + path.replaceAll(regexp, "") + "]";
@@ -95,11 +95,11 @@ public class WsdlChecker {
     }
 
     public static void checkPath(Path relativePath, AnalysisInformationCollector collector) {
-        checkPath(relativePath.toString().replace("\\", "/"), collector);
+        checkPathCharacters(relativePath.toString().replace("\\", "/"), collector);
     }
 
     public static void checkPath(URL url, AnalysisInformationCollector collector) {
-        checkPath(url.toString(), collector);
+        checkPathCharacters(url.toString(), collector);
 
     }
 
@@ -116,9 +116,9 @@ public class WsdlChecker {
         }
     }
 
-    public static void checkPathAndTargetNamespace(String wsdl, Path relativePath,
+    public static void checkPathAndTargetNamespace(String wsdl, String domain, Path relativePath,
                                                    AnalysisInformationCollector collector) {
-        checkPathAndTargetNamespace(wsdl, "http://" + relativePath.toString().replace("\\", "/"), collector);
+        checkPathAndTargetNamespace(wsdl, Utilities.pathToNamespace(domain, relativePath), collector);
     }
 
     public static void checkPathAndTargetNamespace(String wsdl, URL url, AnalysisInformationCollector collector) {
