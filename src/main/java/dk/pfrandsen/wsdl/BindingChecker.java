@@ -65,7 +65,7 @@ public class BindingChecker {
         }
     }
 
-    public static void checkSoapActionForBinding(String bindingName, String portTypeName, String wsdl,
+    private static void checkSoapActionForBinding(String bindingName, String portTypeName, String wsdl,
                                                  AnalysisInformationCollector collector) {
         Path xqBinding = Paths.get("wsdl", "binding");
         Path xqPortType = Paths.get("wsdl", "porttype");
