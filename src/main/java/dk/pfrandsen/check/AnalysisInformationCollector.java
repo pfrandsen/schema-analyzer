@@ -19,15 +19,15 @@ public class AnalysisInformationCollector {
     private List<AnalysisInformation> info;
 
     public AnalysisInformationCollector() {
-        errors = new ArrayList<AnalysisInformation>();
-        warnings = new ArrayList<AnalysisInformation>();
-        info = new ArrayList<AnalysisInformation>();
+        errors = new ArrayList<>();
+        warnings = new ArrayList<>();
+        info = new ArrayList<>();
     }
 
     public AnalysisInformationCollector(AnalysisInformationCollector collector) {
-        errors = new ArrayList<AnalysisInformation>();
-        warnings = new ArrayList<AnalysisInformation>();
-        info = new ArrayList<AnalysisInformation>();
+        errors = new ArrayList<>();
+        warnings = new ArrayList<>();
+        info = new ArrayList<>();
         for (AnalysisInformation error : collector.errors) {
             errors.add(new AnalysisInformation(error));
         }
@@ -118,11 +118,13 @@ public class AnalysisInformationCollector {
         collection.add(new AnalysisInformation(assertion, message, severity, details));
     }
 
-    public String toHtmlTableFragment(List<AnalysisInformation> collection, String caption, boolean includeEmpty) {
+    private String toHtmlTableFragment(List<AnalysisInformation> collection, String caption, boolean includeEmpty,
+                                       String cssClasses) {
         StringBuilder html = new StringBuilder();
         if (collection.size() > 0 || includeEmpty ) {
             html.append("<tr>");
-            html.append("<td colspan='4'>").append(escapeHtml(caption)).append("</td>");
+            html.append("<td colspan='4' class='").append(cssClasses).append("'>").append(escapeHtml(caption))
+                    .append("</td>");
             html.append("</tr>");
             for (AnalysisInformation inf : collection) {
                 html.append(inf.toHtmlTableRow());
@@ -133,11 +135,11 @@ public class AnalysisInformationCollector {
 
     public String toHtmlTable(boolean includeEmpty) {
         StringBuilder html = new StringBuilder();
-        html.append("<table>");
-        html.append(toHtmlTableFragment(errors, "Errors:", includeEmpty));
-        html.append(toHtmlTableFragment(warnings, "Warnings:", includeEmpty));
-        html.append(toHtmlTableFragment(info, "Information:", includeEmpty));
-        html.append("</able>");
+        html.append("<table summary='Analysis result'>");
+        html.append(toHtmlTableFragment(errors, "Errors:", includeEmpty, "tblheader error"));
+        html.append(toHtmlTableFragment(warnings, "Warnings:", includeEmpty, "tblheader warning"));
+        html.append(toHtmlTableFragment(info, "Information:", includeEmpty, "tblheader info"));
+        html.append("</table>");
         return html.toString();
     }
 
