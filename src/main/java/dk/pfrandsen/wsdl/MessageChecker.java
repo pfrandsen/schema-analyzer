@@ -19,25 +19,25 @@ public class MessageChecker {
     public static final String validResponsePostfix = "Response";
     public static final String validFaultPostfix = "Fault";
 
-    public static List<String> getKnownFaultNames() {
+    private static List<String> getKnownFaultNames() {
         String [] faults = new String[] {
                 "ValidationFault", "NotFoundFault", "StaleDataFault", "UncategorizedFault"
         };
         return Arrays.asList(faults);
     }
 
-    public static List<String> getKnownFaultNamespaces() {
+    private static List<String> getKnownFaultNamespaces() {
         String [] faults = new String[] {
                 "http://technical.schemas.nykreditnet.net/fault/v1"
         };
         return Arrays.asList(faults);
     }
 
-    public static String getValidFaultNamespacePrefix() {
+    private static String getValidFaultNamespacePrefix() {
         return "http://technical.schemas.nykreditnet.net/fault";
     }
 
-    public static List<String> getKnownHeaderNames() {
+    private static List<String> getKnownHeaderNames() {
         String [] headers = new String[] {
                 "Applications",
                 "User", "Proxy", "ServiceConsumer", // caller
@@ -46,7 +46,7 @@ public class MessageChecker {
         return Arrays.asList(headers);
     }
 
-    public static List<String> getKnownHeaderNamespaces() {
+    private static List<String> getKnownHeaderNamespaces() {
         String [] headers = new String[] {
                 "http://technical.schemas.nykreditnet.net/header/application/v1",
                 "http://technical.schemas.nykreditnet.net/header/caller/v1",
