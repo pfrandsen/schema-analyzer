@@ -35,14 +35,14 @@ public class Utilities {
         return builder.toString();
     }
 
-    public static String pathToNamespace(Path path) {
-        int parts = path.getNameCount();
+    public static String pathToNamespace(String domain, Path relPath) {
+        int parts = relPath.getNameCount();
         StringBuilder builder = new StringBuilder();
-        builder.append("http://");
+        builder.append("http://").append(domain).append("/");
         for (int idx = 0; idx < parts - 1; idx++) {
-            builder.append(path.getName(idx)).append("/");
+            builder.append(relPath.getName(idx)).append("/");
         }
-        builder.append(path.getName(parts - 1));
+        builder.append(relPath.getName(parts - 1));
         return builder.toString();
     }
 

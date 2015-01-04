@@ -1047,10 +1047,11 @@ public class SchemaCheckerTest {
 
     @Test
     public void testValidPathMatchesTargetNamespacePath() throws Exception {
-        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String tns = "http://service.schemas.nykreditnet.net/businessdomain/service/v1";
         String xsd = targetNamespaceXsd(tns);
-        Path path = Paths.get("service.schemas.nykreditnet.net", "domain", "service", "v1");
-        SchemaChecker.checkPathAndTargetNamespace(xsd, path, collector);
+        Path path = Paths.get("businessdomain", "service", "v1");
+        String domain = "service.schemas.nykreditnet.net";
+        SchemaChecker.checkPathAndTargetNamespace(xsd, domain, path, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -1073,16 +1074,17 @@ public class SchemaCheckerTest {
 
     @Test
     public void testInvalidPathMatchesTargetNamespacePath() throws Exception {
-        String tns = "http://service.schemas.nykreditnet.net/domain/service/v1";
+        String tns = "http://service.schemas.nykreditnet.net/businessdomain/service/v1";
         String xsd = targetNamespaceXsd(tns);
-        Path path = Paths.get("domain", "service", "v1");
-        SchemaChecker.checkPathAndTargetNamespace(xsd, path, collector);
+        Path path = Paths.get("businessdomain", "service", "v1");
+        String domain = "domain";
+        SchemaChecker.checkPathAndTargetNamespace(xsd, domain, path, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertEquals("Target namespace must match path", collector.getErrors().get(0).getMessage());
-        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/domain/service/v1', path " +
-                "'http://domain/service/v1'", collector.getErrors().get(0).getDetails());
+        assertEquals("Target namespace 'http://service.schemas.nykreditnet.net/businessdomain/service/v1', path " +
+                "'http://domain/businessdomain/service/v1'", collector.getErrors().get(0).getDetails());
     }
 
 }

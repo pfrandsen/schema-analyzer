@@ -124,19 +124,19 @@ public class UtilitiesTest {
     @Test
     public void testPathToNamespace() {
         Path path = Paths.get("abc", "def", "ghi");
-        assertEquals(Utilities.pathToNamespace(path), "http://abc/def/ghi");
+        assertEquals(Utilities.pathToNamespace("x.y", path), "http://x.y/abc/def/ghi");
     }
 
     @Test
     public void testPathToNamespaceSingle() {
         Path path = Paths.get("abc");
-        assertEquals(Utilities.pathToNamespace(path), "http://abc");
+        assertEquals(Utilities.pathToNamespace("x.y.z", path), "http://x.y.z/abc");
     }
 
     @Test
     public void testPathToNamespaceEmpty() {
         Path path = Paths.get("");
-        assertEquals(Utilities.pathToNamespace(path), "http://");
+        assertEquals(Utilities.pathToNamespace("", path), "http:///");
     }
 
 }

@@ -108,9 +108,10 @@ public class XQueryTest {
     @Test
     public void testUnusedImports() throws IOException, MXQueryException {
         Path resource = Paths.get("src", "test", "resources", "wsdl", "namespace", "Namespace-unused-imports.wsdl");
-        Path xq = Paths.get("wsdl", "namespace");
+        //Path xq = Paths.get("wsdl", "namespace");
+        Path xq = Paths.get("");
         String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
-        String xqResult = XQuery.runXQuery(xq, "unusedImports.xq", wsdl);
+        String xqResult = XQuery.runXQuery(xq, "unusedImport.xq", wsdl);
         List<Map<String, String>> result = Xml.parseXQueryResult(xqResult);
         System.out.println(xqResult);
         assertEquals(2, result.size());

@@ -1,6 +1,7 @@
 package dk.pfrandsen.wsdl;
 
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import dk.pfrandsen.xsd.SchemaChecker;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,14 +82,18 @@ public class NamespaceCheckerTest {
     public void testInvalidUnusedImports() throws IOException {
         Path path = RELATIVE_PATH.resolve("Namespace-unused-imports.wsdl");
         String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
-        NamespaceChecker.checkUnusedImports(wsdl, collector);
-        assertEquals(0, collector.errorCount());
-        assertEquals(2, collector.warningCount());
+        SchemaChecker.checkUnusedImport(wsdl, collector);
+        assertEquals(2, collector.errorCount());
+        assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
-        assertEquals("Namespace 'http://namespace5' imported but not used",
-                collector.getWarnings().get(0).getMessage());
-        assertEquals("Namespace 'http://namespace3' imported but not used",
-                collector.getWarnings().get(1).getMessage());
+        assertEquals("Unused import",
+                collector.getErrors().get(0).getMessage());
+        assertEquals("Namespace 'http://namespace5'",
+                collector.getErrors().get(0).getDetails());
+        assertEquals("Unused import",
+                collector.getErrors().get(1).getMessage());
+        assertEquals("Namespace 'http://namespace3'",
+                collector.getErrors().get(1).getDetails());
     }
 
     @Test

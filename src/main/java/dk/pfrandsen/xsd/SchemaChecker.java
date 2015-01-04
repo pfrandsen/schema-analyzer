@@ -634,13 +634,13 @@ public class SchemaChecker {
         }
     }
 
-    public static void checkPathAndTargetNamespace(String wsdl, Path relativePath,
+    public static void checkPathAndTargetNamespace(String xsd, String domain, Path relativePath,
                                                    AnalysisInformationCollector collector) {
-        checkPathAndTargetNamespace(wsdl, Utilities.pathToNamespace(relativePath), collector);
+        checkPathAndTargetNamespace(xsd, Utilities.pathToNamespace(domain, relativePath), collector);
     }
 
-    public static void checkPathAndTargetNamespace(String wsdl, URL url, AnalysisInformationCollector collector) {
-        checkPathAndTargetNamespace(wsdl, url.toString(), collector);
+    public static void checkPathAndTargetNamespace(String xsd, URL url, AnalysisInformationCollector collector) {
+        checkPathAndTargetNamespace(xsd, url.toString(), collector);
 
     }
 

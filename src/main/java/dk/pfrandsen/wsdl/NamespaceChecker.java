@@ -23,20 +23,6 @@ public class NamespaceChecker {
     private static final String TARGET_NAMESPACE = "targetNamespace";
     private static final String XML_NS_NAMESPACE = "http://www.w3.org/XML/1998/namespace"; // implicit namespace
 
-    public static void checkUnusedImports(String wsdl, AnalysisInformationCollector collector) {
-        Path xq = Paths.get("wsdl", "namespace");
-        try {
-            String xqResult = XQuery.runXQuery(xq, "unusedImports.xq", wsdl);
-            List<String> unused = XQuery.mapResult(xqResult, "namespace");
-            for (String ns : unused) {
-                collector.addWarning(ASSERTION_ID, "Namespace '" + ns + "' imported but not used",
-                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
-            }
-        } catch (Exception e) {
-            collectException(e, collector);
-        }
-    }
-
     public static void checkInvalidImports(String wsdl, AnalysisInformationCollector collector) {
         Path xq = Paths.get("wsdl", "namespace");
         try {
