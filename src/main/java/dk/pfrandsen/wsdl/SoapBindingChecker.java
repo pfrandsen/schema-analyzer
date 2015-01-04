@@ -66,7 +66,7 @@ public class SoapBindingChecker {
         }
     }
 
-    public static void checkBindings(String wsdl, AnalysisInformationCollector collector) throws IOException {
+    public static void checkBindings(String wsdl, AnalysisInformationCollector collector) {
         try {
             Path xqLocation = Paths.get("wsdl", "binding");
             String bindingsXml = XQuery.runXQuery(xqLocation, "binding.xq", wsdl);
