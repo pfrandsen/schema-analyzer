@@ -15,7 +15,7 @@ public class DocumentationChecker {
     private static int TEXT_LENGTH_MAX = 700;
     private static int TEXT_LENGTH_MIN = 5;
 
-    public static boolean isAscii(String text) {
+    private static boolean isAscii(String text) {
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) > 127) {
                 return false;
