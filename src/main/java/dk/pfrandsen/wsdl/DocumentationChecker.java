@@ -107,7 +107,7 @@ public class DocumentationChecker {
                     String elementName = element.get("name");
                     String elementDoc = element.get("documentation");
                     String elem = "'" + elementName + "'";
-                    checkText(elementDoc, elem, TEXT_LENGTH_MAX, TEXT_LENGTH_MIN, collector, ASSERTION_ID_WSDL_DOC);
+                    checkText(elementDoc, elem, TEXT_LENGTH_MAX, TEXT_LENGTH_MIN, collector, ASSERTION_ID_XSD_DOC);
                 }
             }
         } catch (Exception e) {
