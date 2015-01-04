@@ -124,7 +124,7 @@ public class ServiceChecker {
         }
     }
 
-    public static void checkCardinality(List<String> serviceNames, AnalysisInformationCollector collector) {
+    private static void checkCardinality(List<String> serviceNames, AnalysisInformationCollector collector) {
         if (serviceNames.size() > 1) {
             collector.addError(ASSERTION_ID, "Found more than one wsdl:service name",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
