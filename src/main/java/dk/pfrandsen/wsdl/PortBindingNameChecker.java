@@ -49,7 +49,7 @@ public class PortBindingNameChecker {
         }
     }
 
-    public static void checkBindingServiceName(List<String> serviceNames, String wsdl,
+    private static void checkBindingServiceName(List<String> serviceNames, String wsdl,
                                                AnalysisInformationCollector collector) {
         try {
             List<String> bindings = WsdlUtil.getBindings(wsdl);
@@ -66,7 +66,7 @@ public class PortBindingNameChecker {
         }
     }
 
-    public static void checkPortServiceName(List<String> serviceNames, String wsdl,
+    private static void checkPortServiceName(List<String> serviceNames, String wsdl,
                                             AnalysisInformationCollector collector) {
         try {
             for (String serviceName : serviceNames) {
