@@ -116,7 +116,7 @@ public class Sample {
                     Path target = targetRoot.resolve(srcRoot.relativize(filePath));
                     System.out.println(target);
                     createDirs(target.getParent());
-                    String domain = dirToNamespace(rootDirectory.getFileName());
+                    String domain = dirToNamespace(rootDirectory);
                     Path relPath = rootDirectory.relativize(filePath).getParent();
                     if (copySrc) {
                         Files.copy(file, target);
