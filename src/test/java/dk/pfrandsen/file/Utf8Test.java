@@ -13,18 +13,20 @@ import static org.junit.Assert.assertTrue;
 public class Utf8Test {
 
     private static Path RELATIVE_PATH = Paths.get("src", "test", "resources", "utf8");
+    private static Path rootPath;
     private AnalysisInformationCollector collector;
 
 
     @Before
     public void setUp() {
         collector = new AnalysisInformationCollector();
+        rootPath = RELATIVE_PATH.toAbsolutePath();
     }
 
     @Test
     public void testValidFile() {
         Path path = RELATIVE_PATH.resolve("utf8.xml").toAbsolutePath();
-        Utf8.checkUtf8File(path, collector);
+        Utf8.checkUtf8File(rootPath, path, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -33,7 +35,7 @@ public class Utf8Test {
     @Test
     public void testFileWithBOM() {
         Path path = RELATIVE_PATH.resolve("utf8-with-bom.xml").toAbsolutePath();
-        Utf8.checkUtf8File(path, collector);
+        Utf8.checkUtf8File(rootPath, path, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -42,28 +44,29 @@ public class Utf8Test {
 
     @Test
     public void testInvalidFile() {
-        Path path = RELATIVE_PATH.resolve("not-utf8.xml.xml").toAbsolutePath();
-        Utf8.checkUtf8File(path, collector);
+        final String fileName = "not-utf8.xml.xml";
+        Path path = RELATIVE_PATH.resolve(fileName).toAbsolutePath();
+        Utf8.checkUtf8File(rootPath, path, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(2, collector.warningCount());
         assertEquals(0, collector.infoCount());
         assertTrue(collector.getErrors().get(0).getMessage().endsWith(" is not recognized as UTF-8."));
         assertTrue(collector.getWarnings().get(0).getMessage()
                 .startsWith("IOException thrown while reading BOM (ByteOrderMark) from "));
-        assertTrue(collector.getWarnings().get(1).getMessage()
-                .startsWith("IOException thrown while reading bytes from "));
+        assertEquals(collector.getWarnings().get(1).getMessage(),
+                "IOException thrown while reading bytes from '" + fileName + "'.");
     }
 
 
     @Test
     public void testVerifyByteOrderMarkInFileWithUtf8BOM() {
         Path path = RELATIVE_PATH.resolve("utf8-with-bom.xml").toAbsolutePath();
-        assertTrue(Utf8.hasUTF8ByteOrderMark(path, collector));
+        assertTrue(Utf8.hasUTF8ByteOrderMark(rootPath, path, collector));
     }
 
     @Test
     public void testUtfDateInFileWithUtf8ByteOrderMark() {
         Path path = RELATIVE_PATH.resolve("utf8-with-bom.xml").toAbsolutePath();
-        assertTrue(Utf8.isValidUTF8WithByteOrderMark(path, collector));
+        assertTrue(Utf8.isValidUTF8WithByteOrderMark(rootPath, path, collector));
     }
 }

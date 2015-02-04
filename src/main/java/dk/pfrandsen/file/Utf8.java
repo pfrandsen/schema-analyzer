@@ -29,7 +29,8 @@ public class Utf8 {
         return true;
     }
 
-    public static boolean isValidUTF8WithByteOrderMark(Path filePath, AnalysisInformationCollector collector) {
+    public static boolean isValidUTF8WithByteOrderMark(Path rootPath, Path filePath,
+                                                       AnalysisInformationCollector collector) {
         try {
             byte[] data = Files.readAllBytes(filePath);
             if (!hasUTF8ByteOrderMark(data)) {
@@ -44,13 +45,14 @@ public class Utf8 {
             }
             return true;
         } catch (IOException e) {
-            collector.addWarning(ASSERTION_ID, "IOException thrown while reading bytes from '" + filePath + "'.",
+            collector.addWarning(ASSERTION_ID, "IOException thrown while reading bytes from '" +
+                            rootPath.relativize(filePath) + "'.",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             return false; // assume file is not OK
         }
     }
 
-    public static boolean isValidUTF8(Path filePath, AnalysisInformationCollector collector) {
+    public static boolean isValidUTF8(Path rootPath, Path filePath, AnalysisInformationCollector collector) {
         try {
             byte[] data = Files.readAllBytes(filePath);
             try {
@@ -60,40 +62,42 @@ public class Utf8 {
             }
             return true;
         } catch (IOException e) {
-            collector.addWarning(ASSERTION_ID, "IOException thrown while reading bytes from '" + filePath + "'.",
+            collector.addWarning(ASSERTION_ID, "IOException thrown while reading bytes from '" +
+                            rootPath.relativize(filePath) + "'.",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             return false; // assume file not OK
         }
     }
 
-    public static boolean hasUTF8ByteOrderMark(Path filePath, AnalysisInformationCollector collector) {
+    public static boolean hasUTF8ByteOrderMark(Path rootPath, Path filePath, AnalysisInformationCollector collector) {
         try {
             return hasUTF8ByteOrderMark(Files.readAllBytes(filePath));
         } catch (IOException e) {
-            collector.addWarning(ASSERTION_ID, "IOException thrown while reading BOM (ByteOrderMark) from '" + filePath + "'.",
+            collector.addWarning(ASSERTION_ID, "IOException thrown while reading BOM (ByteOrderMark) from '" +
+                            rootPath.relativize(filePath) + "'.",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             return false; // assume no UTF-8 BOM
         }
     }
 
-    public static void checkUtf8File(Path filePath, AnalysisInformationCollector collector) {
-        boolean bom = hasUTF8ByteOrderMark(filePath, collector);
+    public static void checkUtf8File(Path rootPath, Path filePath, AnalysisInformationCollector collector) {
+        boolean bom = hasUTF8ByteOrderMark(rootPath, filePath, collector);
         if (bom) {
-            collector.addError(ASSERTION_ID, "UTF-8 byte order mark found in '" + filePath + "'.",
+            collector.addError(ASSERTION_ID, "UTF-8 byte order mark found in '" + filePath.relativize(rootPath) + "'.",
                     AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
         }
         if (bom) {
             // check if the data after the byte order mark is UTF-8
             // i.e., file may both have UTF-8 BOM and contain invalid data
-            if (!isValidUTF8WithByteOrderMark(filePath, collector)) {
-                collector.addError(ASSERTION_ID, "File '" + filePath + "' is not recognized as UTF-8.",
-                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
+            if (!isValidUTF8WithByteOrderMark(rootPath, filePath, collector)) {
+                collector.addError(ASSERTION_ID, "File '" + rootPath.relativize(filePath) +
+                                "' is not recognized as UTF-8.", AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR,
                         "File has UTF-8 byte order mark.");
             }
         } else {
-            if (!isValidUTF8(filePath, collector)) {
-                collector.addError(ASSERTION_ID, "File '" + filePath + "' is not recognized as UTF-8.",
-                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
+            if (!isValidUTF8(rootPath, filePath, collector)) {
+                collector.addError(ASSERTION_ID, "File '" + rootPath.relativize(filePath) +
+                                "' is not recognized as UTF-8.", AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
             }
         }
     }

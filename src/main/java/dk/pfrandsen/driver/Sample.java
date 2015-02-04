@@ -124,7 +124,7 @@ public class Sample {
                     AnalysisInformationCollector collector = new AnalysisInformationCollector();
                     try (FileInputStream is = new FileInputStream(file.toFile())) {
                         String fileContents = IOUtils.toString(is);
-                        Utf8.checkUtf8File(filePath, collector);
+                        Utf8.checkUtf8File(rootDirectory, filePath, collector);
                         if (Utilities.hasUtf8Bom(fileContents)) {
                             // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
                             fileContents = Utilities.removeUtf8Bom(fileContents);
@@ -143,7 +143,7 @@ public class Sample {
                     other++;
                     errors.addError("", "File with invalid extension found. Valid extensions are {xsd,wsdl}",
                             AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL,
-                            "File: '" + file + "'.");
+                            "File: '" + rootDirectory.relativize(file) + "'.");
                 }
                 return FileVisitResult.CONTINUE;
             }
@@ -179,11 +179,11 @@ public class Sample {
                         checkFiles(entry, srcRoot, targetRoot, true);
                     } else {
                         System.out.println("Skipping " + entry);
-                        errors.addInfo("", "Skipping directory in root folder",
+                        errors.addInfo("", "Skipping directory '" + entry +"' in root folder",
                                 AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN);
                     }
                 } else {
-                    errors.addError("", "Ignoring file in ",
+                    errors.addError("", "Ignoring file '" + entry +"' in root folder",
                             AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL);
                 }
             }
