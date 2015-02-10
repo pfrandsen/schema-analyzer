@@ -205,4 +205,10 @@ public class Utilities {
         }
     }
 
+    public static void createDirs(Path path) {
+        if (!path.toFile().exists()) {
+            path.toFile().mkdirs();
+        }
+    }
+
 }

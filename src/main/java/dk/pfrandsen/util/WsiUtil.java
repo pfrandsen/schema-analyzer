@@ -15,6 +15,23 @@ public class WsiUtil {
     public static final String REPORT_FILENAME = "wsi-report.xml";
     public static final String SUMMARY_FILENAME = "wsi-summary.json";
 
+    private static String generateName(String base, String filename) {
+        String[] parts = base.split("\\.");
+        return parts[0] + "-" + filename + "." + parts[1];
+    }
+
+    public static String getConfigFilename(String wsdlName) {
+        return generateName(CONFIG_FILENAME, wsdlName);
+    }
+
+    public static String getReportFilename(String wsdlName) {
+        return generateName(REPORT_FILENAME, wsdlName);
+    }
+
+    public static String getSummaryFilename(String wsdlName) {
+        return generateName(SUMMARY_FILENAME, wsdlName);
+    }
+
     /**
      *
      * @param toolJar path to wsi-checker jar file
