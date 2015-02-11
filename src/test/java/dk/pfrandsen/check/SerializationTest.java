@@ -22,7 +22,7 @@ public class SerializationTest {
         AnalysisInformationCollector collector = new AnalysisInformationCollector();
         collector.addError("Assertion id 1", "Error message 1", AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL);
         collector.addError("Assertion id 2", "Error message 2", AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
-        String json = JSON.std.asString(collector);
+        String json = collector.toJson(false);
         assertTrue(json.startsWith("{\"errors\":[{\"assertion\":\"Assertion id 1\""));
         assertTrue(json.endsWith("\"info\":[],\"warnings\":[]}"));
         assertTrue(json.contains(",{\"assertion\":\"Assertion id 2\",\"details\":\"\",\"message\"" +
@@ -35,7 +35,7 @@ public class SerializationTest {
                 "[{\"assertion\":\"Assertion id 1\",\"details\":\"\",\"message\":\"Error message 1\",\"severity\":1}," +
                 "{\"assertion\":\"Assertion id 2\",\"details\":\"\",\"message\":\"Error message 2\",\"severity\":2}]," +
                 "\"info\":[],\"warnings\":[]}";
-        AnalysisInformationCollector collector = JSON.std.beanFrom(AnalysisInformationCollector.class, json);
+        AnalysisInformationCollector collector = AnalysisInformationCollector.fromJson(json);
         assertEquals(2, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -45,8 +45,8 @@ public class SerializationTest {
     @Test
     public void testCollectorParseFromFile() throws IOException, URISyntaxException {
         String jsonFile = getLocation("/json/serialized.json");
-        AnalysisInformationCollector collector = JSON.std.beanFrom(AnalysisInformationCollector.class,
-                new FileInputStream(Paths.get(jsonFile).toFile()));
+        AnalysisInformationCollector collector =
+                AnalysisInformationCollector.fromJson(new FileInputStream(Paths.get(jsonFile).toFile()));
         assertEquals(5, collector.errorCount());
         assertEquals(2, collector.warningCount());
         assertEquals(1, collector.infoCount());
@@ -58,8 +58,8 @@ public class SerializationTest {
     @Test
     public void testCollectorParseEmptyFromFile() throws IOException, URISyntaxException {
         String jsonFile = getLocation("/json/empty.json");
-        AnalysisInformationCollector collector = JSON.std.beanFrom(AnalysisInformationCollector.class,
-                new FileInputStream(Paths.get(jsonFile).toFile()));
+        AnalysisInformationCollector collector =
+                AnalysisInformationCollector.fromJson(new FileInputStream(Paths.get(jsonFile).toFile()));
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
         assertEquals(0, collector.infoCount());
@@ -69,7 +69,7 @@ public class SerializationTest {
     public void testSimple() throws IOException {
         AnalysisInformation info = new AnalysisInformation("Assertion id", "Message",
                 AnalysisInformationCollector.SEVERITY_LEVEL_MINOR);
-        String json = JSON.std.asString(info);
+        String json = info.toJson(false);
         assertEquals("{\"assertion\":\"Assertion id\",\"details\":\"\",\"message\":\"Message\",\"severity\":3}", json);
     }
 
@@ -77,14 +77,14 @@ public class SerializationTest {
     public void testSimpleDetails() throws IOException {
         AnalysisInformation info = new AnalysisInformation("id", "msg",
                 AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "detail msg");
-        String json = JSON.std.without(JSON.Feature.WRITE_NULL_PROPERTIES).asString(info);
+        String json = info.toJson(true);
         assertEquals("{\"assertion\":\"id\",\"details\":\"detail msg\",\"message\":\"msg\",\"severity\":3}", json);
     }
 
     @Test
     public void testParseSimple() throws IOException {
         String json = "{\"assertion\":\"Assertion id\",\"details\":\"dtl\",\"message\":\"Message\",\"severity\":3}";
-        AnalysisInformation info = JSON.std.beanFrom(AnalysisInformation.class, json);
+        AnalysisInformation info = AnalysisInformation.fromJson(json);
         assertEquals("Assertion id", info.getAssertion());
         assertEquals("Message", info.getMessage());
         assertEquals(AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, info.getSeverity());

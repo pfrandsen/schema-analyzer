@@ -1,5 +1,10 @@
 package dk.pfrandsen.check;
 
+import com.fasterxml.jackson.jr.ob.JSON;
+
+import java.io.IOException;
+import java.io.InputStream;
+
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 public class AnalysisInformation {
@@ -31,6 +36,45 @@ public class AnalysisInformation {
         this.message = info.message;
         this.severity = info.severity;
         this.details = info.details;
+    }
+
+    public String toJson(boolean writeNullProperties) throws IOException {
+        if (writeNullProperties) {
+            return JSON.std.with(JSON.Feature.WRITE_NULL_PROPERTIES).asString(this);
+        }
+        return JSON.std.asString(this);
+    }
+
+    public static AnalysisInformation fromJson(String json) throws IOException {
+        return JSON.std.beanFrom(AnalysisInformation.class, json);
+    }
+
+    public static AnalysisInformation fromJson(InputStream inputStream) throws IOException {
+        return JSON.std.beanFrom(AnalysisInformation.class, inputStream);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AnalysisInformation that = (AnalysisInformation) o;
+
+        if (severity != that.severity) return false;
+        if (assertion != null ? !assertion.equals(that.assertion) : that.assertion != null) return false;
+        if (details != null ? !details.equals(that.details) : that.details != null) return false;
+        if (message != null ? !message.equals(that.message) : that.message != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = assertion != null ? assertion.hashCode() : 0;
+        result = 31 * result + (message != null ? message.hashCode() : 0);
+        result = 31 * result + severity;
+        result = 31 * result + (details != null ? details.hashCode() : 0);
+        return result;
     }
 
     public String getAssertion() {

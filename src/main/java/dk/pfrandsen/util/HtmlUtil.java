@@ -54,9 +54,11 @@ public class HtmlUtil {
         return html.toString();
     }
 
-    public static String toHtml(AnalysisInformationCollector collector, boolean includeEmpty, boolean tidyUp, String filename,
-                         String ext) {
-        String head = "<head><title>" + escapeHtml(filename) + "</title>" +
+    // public static String toHtml(AnalysisInformationCollector collector, boolean includeEmpty, boolean tidyUp,
+    public static String toHtml(String htmlContent, boolean includeEmpty, boolean tidyUp,
+                                String baseName, String ext) {
+        String fileName = escapeHtml(baseName + "." + ext);
+        String head = "<head><title>" + fileName + "</title>" +
                 "<style type=\"text/css\">" +
                 "table {border-collapse: collapse;}\n" +
                 "table, th, td {border: 1px solid black;}\n" +
@@ -72,11 +74,9 @@ public class HtmlUtil {
         html.append("<html>");
         html.append(head);
         html.append("<body>");
-        html.append(toHtmlTable(collector, includeEmpty));
-        /*html.append("<div><a href='").append(filename).append("'>")
-                .append("wsdl".equalsIgnoreCase(ext) ? "WSDL" : "Schema").append("</a></div>");
-        html.append("<div><a href='").append(filename + ".json").append("'>")
-                .append("JSON report").append("</a></div>");*/
+        html.append("<div>" + fileName + "</div>");
+        html.append(htmlContent);
+        //html.append("<div><a href='").append(baseName + ".json").append("'>JSON report</a></div>");
         html.append("</body>");
         html.append("</html>");
         return tidyUp ? doTidy(html.toString()) : html.toString();

@@ -1,5 +1,10 @@
 package dk.pfrandsen.check;
 
+import com.fasterxml.jackson.jr.ob.JSON;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +44,21 @@ public class AnalysisInformationCollector {
         }
     }
 
+    public String toJson(boolean prettyPrint) throws IOException {
+        if (prettyPrint) {
+            return JSON.std.with(JSON.Feature.PRETTY_PRINT_OUTPUT).asString(this);
+        }
+        return JSON.std.asString(this);
+    }
+
+    public static AnalysisInformationCollector fromJson(String json) throws IOException {
+        return JSON.std.beanFrom(AnalysisInformationCollector.class, json);
+    }
+
+    public static AnalysisInformationCollector fromJson(InputStream inputStream) throws IOException {
+        return JSON.std.beanFrom(AnalysisInformationCollector.class, inputStream);
+    }
+
     public void add(AnalysisInformationCollector collector) {
         for (AnalysisInformation error : collector.errors) {
             errors.add(new AnalysisInformation(error));
@@ -49,6 +69,32 @@ public class AnalysisInformationCollector {
         for (AnalysisInformation i : collector.info) {
             info.add(new AnalysisInformation(i));
         }
+    }
+
+    /**
+     * Compute the relative complement ot two collections (like SQL EXCEPT operator)
+     *
+     * @param collector
+     * @return the elements of this collection that does not exist in collector
+     */
+    public AnalysisInformationCollector except(AnalysisInformationCollector collector) {
+        AnalysisInformationCollector notIn = new AnalysisInformationCollector();
+        for (AnalysisInformation e : errors) {
+            if (!collector.getErrors().contains(e)) {
+                notIn.addError(e.getAssertion(), e.getMessage(), e.getSeverity(), e.getDetails());
+            }
+        }
+        for (AnalysisInformation w : warnings) {
+            if (!collector.getWarnings().contains(w)) {
+                notIn.addWarning(w.getAssertion(), w.getMessage(), w.getSeverity(), w.getDetails());
+            }
+        }
+        for (AnalysisInformation i : info) {
+            if (!collector.getInfo().contains(i)) {
+                notIn.addInfo(i.getAssertion(), i.getMessage(), i.getSeverity(), i.getDetails());
+            }
+        }
+        return notIn;
     }
 
     public List<AnalysisInformation> getErrors() {
@@ -112,6 +158,10 @@ public class AnalysisInformationCollector {
 
     public void addInfo(String assertion, String message, int severity, String details) {
         add(info, assertion, message, severity, details);
+    }
+
+    public boolean isEmpty() {
+        return errorCount() == 0 && warningCount() == 0 && infoCount() == 0;
     }
 
     private void add(List<AnalysisInformation> collection, String assertion, String message, int severity, String details) {

@@ -14,6 +14,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -45,6 +46,16 @@ public class Utilities {
         builder.append(relPath.getName(parts - 1));
         return builder.toString();
     }
+
+    public static URI appendPath(URI uri, Path relPath) {
+        int parts = relPath.getNameCount();
+        StringBuilder builder = new StringBuilder(uri.getPath());
+        for (int idx = 0; idx < parts; idx++) {
+            builder.append("/").append(relPath.getName(idx));
+        }
+        return uri.resolve(builder.toString());
+    }
+
 
     public static List<String> splitOnUppercase(String text) {
         List<String> words = new ArrayList<>();
@@ -208,6 +219,17 @@ public class Utilities {
     public static void createDirs(Path path) {
         if (!path.toFile().exists()) {
             path.toFile().mkdirs();
+        }
+    }
+
+    public static String getContentWithoutUtf8Bom(Path file) throws IOException {
+        try (FileInputStream is = new FileInputStream(file.toFile())) {
+            String fileContents = IOUtils.toString(is);
+            if (Utilities.hasUtf8Bom(fileContents)) {
+                // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
+                fileContents = Utilities.removeUtf8Bom(fileContents);
+            }
+            return fileContents;
         }
     }
 
