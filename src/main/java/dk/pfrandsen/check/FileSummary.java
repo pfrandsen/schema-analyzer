@@ -14,6 +14,8 @@ public class FileSummary {
     Path fullReportHtml = null;
     Path addedReport = null;
     Path diffReportHtml = null;
+    AssertionStatistics errors = new AssertionStatistics();
+    AssertionStatistics warnings = new AssertionStatistics();
 
     protected FileSummary(Path fullPath, AnalysisInformationCollector added, AnalysisInformationCollector resolved) {
         this.filePath = fullPath;
@@ -94,5 +96,21 @@ public class FileSummary {
 
     public void setDiffReportHtml(Path diffReportHtml) {
         this.diffReportHtml = diffReportHtml;
+    }
+
+    public AssertionStatistics getErrors() {
+        return errors;
+    }
+
+    public void setErrors(AssertionStatistics errors) {
+        this.errors = errors != null ? errors : new AssertionStatistics();
+    }
+
+    public AssertionStatistics getWarnings() {
+        return warnings;
+    }
+
+    public void setWarnings(AssertionStatistics warnings) {
+        this.warnings = warnings != null ? warnings : new AssertionStatistics();
     }
 }
