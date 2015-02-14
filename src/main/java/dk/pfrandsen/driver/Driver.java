@@ -7,6 +7,7 @@ import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.check.AssertionStatistics;
 import dk.pfrandsen.check.FileSummary;
 import dk.pfrandsen.check.SchemaSummary;
+import dk.pfrandsen.check.WsdlSummary;
 import dk.pfrandsen.file.Utf8;
 import dk.pfrandsen.util.HtmlUtil;
 import dk.pfrandsen.util.Utilities;
@@ -33,9 +34,11 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
@@ -46,10 +49,16 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 public class Driver {
 
@@ -90,10 +99,37 @@ public class Driver {
     // error related to running the tool
     AnalysisInformationCollector errors = new AnalysisInformationCollector();
     List<SchemaSummary> schemasSummary = new ArrayList<>();
-    List<SchemaSummary> wsdlSummary = new ArrayList<>();
+    List<WsdlSummary> wsdlSummary = new ArrayList<>();
+
+    public static String getHtmlTemplate(String templateFilename) throws IOException {
+        String separator = System.getProperty("line.separator");
+        StringBuilder template = new StringBuilder();
+        InputStream stream = Driver.class.getResourceAsStream("/html/templates/" + templateFilename);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                template.append(line).append(separator);
+            }
+        }
+        return template.toString();
+    }
+
 
     public static void runner() { // for testing
+
         Driver driver = new Driver();
+        String footer = "";
+        String template;
+        try {
+            footer = driver.timing(0);
+            template = getHtmlTemplate("FinalReport.html");
+        } catch (IOException e) {
+            e.printStackTrace();
+            template = "Error";
+        }
+        System.out.println(template);
+        System.out.println(footer);
+
         driver.chatty = true;
         driver.empty = true;
         driver.copySourceFiles = true;
@@ -105,8 +141,8 @@ public class Driver {
     }
 
     public static void main(String[] args) {
+        runner();
         Driver driver = new Driver();
-
         CommandLine cmd;
         try {
             CommandLineParser parser = new GnuParser(); // replace with BasicParser when Apache commons-cli is released
@@ -278,7 +314,7 @@ public class Driver {
             logMsg("Analyzing " + wsdl.size() + " wsdls");
             analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
                     toolRoot);
-            generateFinalReport(start);
+            return generateFinalReport(start);
 
         } catch (IOException e) {
             logMsg("Exception while processing files, " +  e.getMessage());
@@ -288,17 +324,37 @@ public class Driver {
         return true;
     }
 
-    private void generateFinalReport(long start) {
-        long duration = System.currentTimeMillis() - start;
-        long millis = duration % 1000;
-        long seconds = duration / 1000 % 60;
-        long minutes = duration / (60 * 1000) % 60;
-        logMsg("\n" + schemasSummary.size() + " files processed in " + minutes + "m " + seconds + "s " + millis + "ms");
+    private boolean generateFinalReport(long start) throws IOException {
         // generate overall report
+        logMsg("Generating final report");
+        boolean retVal = true;
+        String template = getHtmlTemplate("FinalReport.html");
+        AssertionStatistics wsdlTotalErrors = new AssertionStatistics();
+        AssertionStatistics wsdlTotalWarnings = new AssertionStatistics();
         AssertionStatistics schemaTotalErrors = new AssertionStatistics();
         AssertionStatistics schemaTotalWarnings = new AssertionStatistics();
+        int wsdlErrors = 0, wsdlWarnings = 0, wsdlErrorsAdded = 0, wsdlWarningsAdded = 0,
+                wsdlErrorsResolved = 0, wsdlWarningsResolved = 0;
         int schemaErrors = 0, schemaWarnings = 0, schemaErrorsAdded = 0, schemaWarningsAdded = 0,
                 schemaErrorsResolved = 0, schemaWarningsResolved = 0;
+
+        for (WsdlSummary summary : wsdlSummary) {
+            wsdlTotalErrors.add(summary.getErrors());
+            wsdlTotalWarnings.add(summary.getWarnings());
+            wsdlErrors += summary.getErrors().count();
+            wsdlWarnings += summary.getWarnings().count();
+            wsdlErrorsAdded += summary.getErrorsAdded();
+            wsdlWarningsAdded += summary.getWarningsAdded();
+            wsdlErrorsResolved += summary.getErrorsResolved();
+            wsdlWarningsResolved += summary.getWarningsResolved();
+        }
+        if (wsdlErrorsAdded > 0 || wsdlWarningsAdded > 0) {
+            retVal = false;
+        }
+
+
+
+
         for (SchemaSummary summary : schemasSummary) {
             schemaTotalErrors.add(summary.getErrors());
             schemaTotalWarnings.add(summary.getWarnings());
@@ -309,10 +365,14 @@ public class Driver {
             schemaErrorsResolved += summary.getErrorsResolved();
             schemaWarningsResolved += summary.getWarningsResolved();
         }
+        if (schemaErrorsAdded > 0 || schemaWarningsAdded > 0) {
+            retVal = false;
+        }
         logMsg("Schema errors: " + schemaErrors + " total, " + schemaErrorsAdded + " added, "
                 + schemaErrorsResolved + " resolved.");
         logMsg("Schema warnings: " + schemaWarnings + " total, " + schemaWarningsAdded + " added, "
                 + schemaWarningsResolved + " resolved.");
+
         logMsg("\nErrors in schemas:");
         for (Map.Entry<String, Integer> entry : schemaTotalErrors.getSortedByValue()) {
             logMsg(entry.getValue() + " " + entry.getKey());
@@ -341,6 +401,75 @@ public class Driver {
                 }
             }
         }
+
+        String summaryTable = getAnalysisSummaryHtml(wsdlErrors, wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded,
+        wsdlErrorsResolved, wsdlWarningsResolved, schemaErrors,
+        schemaWarnings, schemaErrorsAdded, schemaWarningsAdded,
+        schemaErrorsResolved, schemaWarningsResolved);
+        template = template.replace("{{summary}}", summaryTable);
+        if (retVal) {
+            template = template.replace("{{result}}", "<span class='result-ok'>OK</span>");
+        } else {
+            template = template.replace("{{result}}", "<span class='result-failed'>Failed</span>");
+        }
+        String footer = timing(start);
+
+        return retVal;
+    }
+
+    String getAnalysisSummaryHtml(int wsdlErrors, int wsdlWarnings, int wsdlErrorsAdded, int wsdlWarningsAdded,
+                                  int wsdlErrorsResolved, int wsdlWarningsResolved, int schemaErrors,
+                                  int schemaWarnings, int schemaErrorsAdded, int schemaWarningsAdded,
+                                  int schemaErrorsResolved, int schemaWarningsResolved) throws IOException {
+        String template = getHtmlTemplate("SummaryTable.html");
+        // WSDL table row
+        template = template.replace("{{WSDL_ERR_ADDED}}", "" + wsdlErrorsAdded);
+        template = template.replace("{{WSDL_ERR_RESOLVED}}", "" + wsdlErrorsResolved);
+        template = template.replace("{{WSDL_WARN_ADDED}}", "" + wsdlWarningsAdded);
+        template = template.replace("{{WSDL_WARN_RESOLVED}}", "" + wsdlWarningsResolved);
+        template = template.replace("{{WSDL_ERR_TOTAL}}", "" + wsdlErrors);
+        template = template.replace("{{WSDL_WARN_TOTAL}}", "" + wsdlWarnings);
+        // schema table row
+        template = template.replace("{{SCHEMA_ERR_ADDED}}", "" + schemaErrorsAdded);
+        template = template.replace("{{SCHEMA_ERR_RESOLVED}}", "" + schemaErrorsResolved);
+        template = template.replace("{{SCHEMA_WARN_ADDED}}", "" + schemaWarningsAdded);
+        template = template.replace("{{SCHEMA_WARN_RESOLVED}}", "" + schemaWarningsResolved);
+        template = template.replace("{{SCHEMA_ERR_TOTAL}}", "" + schemaErrors);
+        template = template.replace("{{SCHEMA_WARN_TOTAL}}", "" + schemaWarnings);
+        return template;
+    }
+
+    private String timing(long start) throws IOException {
+        String template = getHtmlTemplate("FinalReportFooter.html");
+        long duration = System.currentTimeMillis() - start;
+        long ms = duration % 1000;
+        long s = duration / 1000 % 60;
+        long m = duration / (60 * 1000) % 60;
+        int files = wsdlSummary.size() + schemasSummary.size();
+        String version = "version not determined";
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+
+        // try to load version info from maven properties
+        try {
+            Properties p = new Properties();
+            InputStream is = getClass().
+                    getResourceAsStream("/META-INF/maven/pfrandsen/schema-analyzer/pom.properties");
+            if (is != null) {
+                p.load(is);
+                version = p.getProperty("version", "");
+            }
+        } catch (Exception ignore) {
+        }
+
+        template = template.replace("{{files}}", "" + files);
+        template = template.replace("{{minutes}}", "" + m);
+        template = template.replace("{{seconds}}", "" + s);
+        template = template.replace("{{milliseconds}}", "" + ms);
+        template = template.replace("{{version}}", "" + escapeHtml(version));
+        template = template.replace("{{time}}", "" + dateFormat.format(date));
+        logMsg("\n" + files + " files processed in " + m + "m " + s + "s " + ms + "ms");
+        return template;
     }
 
     private void analyzeSchemas(Path root, Path xsdTarget, List<Path> schema, URI compareRoot, Path diffTarget,
