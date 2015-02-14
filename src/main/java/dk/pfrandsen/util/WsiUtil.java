@@ -1,7 +1,10 @@
 package dk.pfrandsen.util;
 
 import com.fasterxml.jackson.jr.ob.JSON;
+import dk.pfrandsen.GenerateConfigFile;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import dk.pfrandsen.wsdl.wsi.BasicProfileConfig;
+import dk.pfrandsen.wsdl.wsi.WsiProfile;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -30,6 +33,17 @@ public class WsiUtil {
 
     public static String getSummaryFilename(String wsdlName) {
         return generateName(SUMMARY_FILENAME, wsdlName);
+    }
+
+    public static boolean generateConfigurationFile(Path toolRoot, Path wsdl, Path report, Path config) {
+        GenerateConfigFile tool = new GenerateConfigFile();
+        String template = tool.getDefaultTemplate();
+        Path stylesheet = BasicProfileConfig.appendDefaultStylesheet(toolRoot);
+        String profileFilename = BasicProfileConfig.profileTemplateFilename(WsiProfile.BASIC_PROFILE_11_SOAP_10.name());
+        String description = BasicProfileConfig.profileDescription(WsiProfile.BASIC_PROFILE_11_SOAP_10.name());
+        Path assertionsFile = BasicProfileConfig.appendProfile(toolRoot, profileFilename);
+        return tool.generateBindingConfigFileFromTemplate(template, toolRoot, wsdl.toString(), 0, config, report,
+                stylesheet, assertionsFile, description);
     }
 
     /**

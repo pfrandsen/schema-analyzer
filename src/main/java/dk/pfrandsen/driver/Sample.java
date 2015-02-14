@@ -2,6 +2,7 @@ package dk.pfrandsen.driver;
 
 
 import com.fasterxml.jackson.jr.ob.JSON;
+import dk.pfrandsen.UnpackTool;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.file.Utf8;
 import dk.pfrandsen.util.Utilities;
@@ -353,9 +354,12 @@ public class Sample {
         //Path relativePath = Paths.get("tmp", "schemaroot");
         Path outPath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("out");
         // extract wsi-tool
-        toolJar = Paths.get("lib", "wsi-checker-1.0-SNAPSHOT.jar");
+        //toolJar = Paths.get("lib", "wsi-checker-1.0-SNAPSHOT.jar");
         toolRoot = outPath.resolve("wsi-tool");
-        boolean status = WsiUtil.unpackCheckerTool(toolJar, toolRoot);
+        UnpackTool unpackTool = new UnpackTool();
+        boolean status =  unpackTool.extractTool(toolRoot);
+
+        //boolean status = WsiUtil.unpackCheckerTool(toolJar, toolRoot);
         if (status != true) {
             // terminate - fatal error
         }

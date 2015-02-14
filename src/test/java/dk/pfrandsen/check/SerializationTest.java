@@ -23,7 +23,7 @@ public class SerializationTest {
         collector.addError("Assertion id 1", "Error message 1", AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL);
         collector.addError("Assertion id 2", "Error message 2", AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
         String json = collector.toJson(false);
-        assertTrue(json.startsWith("{\"errors\":[{\"assertion\":\"Assertion id 1\""));
+        assertTrue(json.contains("\"errors\":[{\"assertion\":\"Assertion id 1\""));
         assertTrue(json.endsWith("\"info\":[],\"warnings\":[]}"));
         assertTrue(json.contains(",{\"assertion\":\"Assertion id 2\",\"details\":\"\",\"message\"" +
                 ":\"Error message 2\",\"severity\":2}],"));

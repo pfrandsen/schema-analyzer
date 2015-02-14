@@ -1,7 +1,8 @@
 package dk.pfrandsen.driver;
 
 import com.fasterxml.jackson.jr.ob.JSON;
-import dk.pfrandsen.check.AnalysisInformation;
+import dk.pfrandsen.AnalyzeWsdl;
+import dk.pfrandsen.UnpackTool;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.check.AssertionStatistics;
 import dk.pfrandsen.check.FileSummary;
@@ -10,10 +11,25 @@ import dk.pfrandsen.file.Utf8;
 import dk.pfrandsen.util.HtmlUtil;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.WsiUtil;
+import dk.pfrandsen.wsdl.BetaNamespaceChecker;
+import dk.pfrandsen.wsdl.BindingChecker;
 import dk.pfrandsen.wsdl.DocumentationChecker;
+import dk.pfrandsen.wsdl.MessageChecker;
+import dk.pfrandsen.wsdl.NamespaceChecker;
+import dk.pfrandsen.wsdl.OperationChecker;
+import dk.pfrandsen.wsdl.SchemaTypesChecker;
+import dk.pfrandsen.wsdl.ServiceChecker;
+import dk.pfrandsen.wsdl.SoapBindingChecker;
+import dk.pfrandsen.wsdl.WsdlChecker;
+import dk.pfrandsen.wsdl.WsdlNameChecker;
 import dk.pfrandsen.xsd.SchemaChecker;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -21,86 +37,176 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 public class Driver {
 
+    private static String arg(String argument) {
+        return "-" + argument;
+    }
     // commandline options
-    public static String USAGE = "Usage: java -jar <jar-file> ";
-    public static String OPTION_HELP = "help";
-    public static String OPTIONS_SOURCE_PATH = "sourcePath";
-    public static String OPTIONS_OUTPUT_PATH = "outputPath";
-    public static String OPTIONS_WSI_TOOL = "wsiToolJar";
-    public static String OPTIONS_COMPARE_ROOT = "compareRootUri";
-    public static String OPTIONS_COPY_SRC = "copySource";
-    public static String OPTIONS_OUTPUT_EMPTY = "outputEmptyReports";
-    public static String OPTIONS_CHATTY = "chatty";
+    public static final String OPTION_HELP = "help";
+    public static final String OPTIONS_SOURCE_PATH = "sourcePath";
+    public static final String OPTIONS_OUTPUT_PATH = "outputPath";
+    public static final String OPTIONS_COMPARE_ROOT = "compareRootUri";
+    public static final String OPTIONS_COPY_SRC = "copySource";
+    public static final String OPTIONS_SKIP_WSI = "skipWSI";
+    public static final String OPTIONS_OUTPUT_EMPTY = "outputEmptyReports";
+    public static final String OPTIONS_NO_OVERWRITE = "noOverwrite";
+    public static final String OPTIONS_SKIP_DIRS = "skipDirectories";
+    public static final String OPTIONS_CHATTY = "chatty";
+    public static final String USAGE = "Usage: java -jar <jar-file> "
+            + arg(OPTIONS_SOURCE_PATH) + " <directory> "
+            + arg(OPTIONS_OUTPUT_PATH) + " <directory> "
+            + "[" + arg(OPTIONS_COMPARE_ROOT) + " <uri>] "
+            + "[" + arg(OPTIONS_COPY_SRC) + "] "
+            + "[" + arg(OPTIONS_SKIP_WSI) + "] "
+            + "[" + arg(OPTIONS_OUTPUT_EMPTY) + "] "
+            + "[" + arg(OPTIONS_NO_OVERWRITE) + "] "
+            + "[" + arg(OPTIONS_CHATTY) + "] "
+            + "[" +  arg(OPTIONS_SKIP_DIRS) + " <subdir>[,<subdir>]*] ";
 
-    //static private Path toolJar, toolRoot;
-    //static int errorCount, warningCount, infoCount;
     int xsd, wsdl, other;
     // top-level directories to include in analysis
     List<String> includeDirs = Arrays.asList("concept", "process", "service", "simpletype", "technical");
     // top-level directories that are skipped without generating error
     List<String> skipDirs = new ArrayList<>(); // Arrays.asList("external");
-    boolean chatty;
-    private boolean empty;
+    private boolean chatty = false;
+    private boolean empty = false;
+    private boolean copySourceFiles = false;
+    private boolean skipWsi = false;
     // error related to running the tool
     AnalysisInformationCollector errors = new AnalysisInformationCollector();
     List<SchemaSummary> schemasSummary = new ArrayList<>();
+    List<SchemaSummary> wsdlSummary = new ArrayList<>();
 
-    private Options getCommandlineOptions() {
+    public static void runner() { // for testing
+        Driver driver = new Driver();
+        driver.chatty = true;
+        driver.empty = true;
+        driver.copySourceFiles = true;
+        Path  sourcePath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("testdata");
+        Path outputPath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("out");
+
+        URI uri = null; //Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("compare").toUri();
+        driver.analyze(sourcePath, outputPath, uri);
+    }
+
+    public static void main(String[] args) {
+        Driver driver = new Driver();
+
+        CommandLine cmd;
+        try {
+            CommandLineParser parser = new GnuParser(); // replace with BasicParser when Apache commons-cli is released
+            cmd = parser.parse(getCommandlineOptions(), args);
+
+        } catch (ParseException e) {
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(USAGE, getCommandlineOptions());
+            return;
+        }
+
+        Path sourcePath = Paths.get(cmd.getOptionValue(OPTIONS_SOURCE_PATH));
+        if (!(sourcePath.toFile().exists() && sourcePath.toFile().isDirectory())) {
+            System.err.println("Fatal error: Source directory must exist, " + sourcePath);
+            return;
+        }
+        Path outputPath = Paths.get(cmd.getOptionValue(OPTIONS_OUTPUT_PATH));
+        if (cmd.hasOption(OPTIONS_NO_OVERWRITE)) {
+            if (outputPath.toFile().exists()) {
+                System.err.println("Fatal error: Output directory already exists, " + outputPath);
+                return;
+            }
+        }
+        if (cmd.hasOption(OPTIONS_SKIP_DIRS)) {
+            String[] dirs = cmd.getOptionValues(OPTIONS_SKIP_DIRS);
+            List<String> valid = driver.getRootDirectories(sourcePath);
+            for (String dir : dirs) {
+                if (valid.contains(dir)) {
+                    driver.skipDirs.add(dir);
+                } else {
+                    driver.logMsg("Warning: " + OPTIONS_SKIP_DIRS + " argument " + dir + " does not exist in source"
+                            + " root.");
+                }
+            }
+        }
+        driver.copySourceFiles = cmd.hasOption(OPTIONS_COPY_SRC);
+        driver.empty = cmd.hasOption(OPTIONS_OUTPUT_EMPTY);
+        driver.chatty = cmd.hasOption(OPTIONS_CHATTY);
+        driver.skipWsi = cmd.hasOption(OPTIONS_SKIP_WSI);
+        URI uri = null;
+        if (cmd.hasOption(OPTIONS_COMPARE_ROOT)) {
+            try {
+                uri = new URI(cmd.getOptionValue(OPTIONS_COMPARE_ROOT));
+            } catch (URISyntaxException e) {
+                System.err.println("Fatal error: Invalid " + OPTIONS_COMPARE_ROOT + "("
+                        + cmd.getOptionValue(OPTIONS_COMPARE_ROOT) + "), exception: " + e.getMessage());
+                return;
+            }
+        }
+        if (!driver.analyze(sourcePath, outputPath, uri)) {
+            System.out.println("Analysis had errors, see result in " + outputPath);
+        } else {
+            System.out.println("Analysis succeeded");
+        }
+    }
+
+    private static Options getCommandlineOptions() {
         Options options = new Options();
 
         Option help = new Option(OPTION_HELP, "Show usage information.");
-
         Option source = new Option(OPTIONS_SOURCE_PATH, true, "Root directory containing schema and wsdl source.");
         source.setRequired(true);
-        Option target = new Option(OPTIONS_OUTPUT_PATH, true, "Root directory for analysis result. Must not exist.");
+        Option target = new Option(OPTIONS_OUTPUT_PATH, true, "Root directory for analysis result. Created if it does."
+            + " not exist. Files will be overwritten unless -" + OPTIONS_NO_OVERWRITE + " is provided.");
         target.setRequired(true);
-        Option wsiJar = new Option(OPTIONS_WSI_TOOL, true, "Path to WS-I tools jar file.");
-        wsiJar.setRequired(true);
-
-        Option compare = new Option(OPTIONS_COMPARE_ROOT, true, "URI to analysis comparison files. Optional.");
+        Option skipDirectories = new Option(OPTIONS_SKIP_DIRS, true, "Optional. List of top-level directories in root"
+                + " directory to skip during analysis (comma separated).");
+        skipDirectories.setRequired(false);
+        Option compare = new Option(OPTIONS_COMPARE_ROOT, true, "Optional. URI to existing errors/warnings comparison"
+                + " files. If present, reports of new and resolved errors/warnings will be generated.");
         compare.setRequired(false);
-
-        Option copy = new Option(OPTIONS_COPY_SRC, false, "If present source files will be copied to target."
-                + " Optional.");
+        Option noOverwrite = new Option(OPTIONS_NO_OVERWRITE, false, "Optional. If present, tool will terminate if"
+                + " output directory exists.");
+        noOverwrite.setRequired(false);
+        Option copy = new Option(OPTIONS_COPY_SRC, false, "Optional. If present, source files will be copied to"
+                + " target.");
         copy.setRequired(false);
-        Option empty = new Option(OPTIONS_OUTPUT_EMPTY, false, "If present empty reports are included in output."
-                + " Default is to only output reports with errors/warnings. Optional.");
+        Option skipWsi = new Option(OPTIONS_SKIP_WSI, false, "Optional. If present, WS-I checks are skipped."
+                + " Default include WS-I checks. Option is included because the WS-I tools on rare occations does not"
+                + " terminate.");
+        skipWsi.setRequired(false);
+        Option empty = new Option(OPTIONS_OUTPUT_EMPTY, false, "Optional. If present, empty reports are included in"
+                + " output. Default is to only output reports with errors/warnings.");
         empty.setRequired(false);
-        Option chatty = new Option(OPTIONS_CHATTY, false, "If present progress messages wil be printed. Optional.");
+        Option chatty = new Option(OPTIONS_CHATTY, false, "Optional. If present, progress messages wil be printed.");
         chatty.setRequired(false);
 
         options.addOption(help);
         options.addOption(source);
         options.addOption(target);
-        options.addOption(wsiJar);
         options.addOption(compare);
         options.addOption(copy);
+        options.addOption(noOverwrite);
+        options.addOption(skipWsi);
         options.addOption(empty);
         options.addOption(chatty);
         return options;
     }
 
-    public boolean analyze(Path sourcePath, Path outputPath, Path wsiToolJar, URI compareToRoot) {
-        return analyze(sourcePath, outputPath, wsiToolJar, compareToRoot, true, true, false);
-    }
-
-    public boolean analyze(Path sourcePath, Path outputPath, Path wsiToolJar, URI compareToRoot,
-                                  boolean copySourceFiles, boolean chatty, boolean empty) {
+    public boolean analyze(Path sourcePath, Path outputPath, URI compareToRoot) {
         long start = System.currentTimeMillis();
         Path relTargetSrc = Paths.get("src");
         Path relResult = Paths.get("result");
@@ -115,23 +221,22 @@ public class Driver {
         if (copySourceFiles) {
             resultToSrc = outputPath.resolve(relResult).relativize(outputPath.resolve(relTargetSrc));
         }
-        this.chatty = chatty;
-        this.empty = empty;
         if (!(sourcePath.toFile().exists() && sourcePath.toFile().isDirectory())) {
             System.err.println("Fatal error: Source directory must exist, " + sourcePath);
             return false;
         }
-        if (outputPath.toFile().exists()) {
-            System.err.println("Fatal error: Output directory already exists, " + outputPath);
-            return false;
+        if (!outputPath.toFile().exists()) {
+            try {
+                Files.createDirectory(outputPath);
+            } catch (IOException e) {
+                System.err.println("Fatal error: Could not create output directory, " + outputPath);
+                return false;
+            }
         }
-        if (!(wsiToolJar.toFile().exists() && wsiToolJar.toFile().isFile())) {
-            System.err.println("Fatal error: WS-I tool jar must exist, " + wsiToolJar);
-            return false;
-        }
-        boolean unpacked = WsiUtil.unpackCheckerTool(wsiToolJar, toolRoot);
+        UnpackTool unpackTool = new UnpackTool();
+        boolean unpacked =  unpackTool.extractTool(toolRoot);
         if (!unpacked) {
-            System.err.println("Fatal error: Could not unpack WS-I tool '" + wsiToolJar + "' to " + toolRoot);
+            System.err.println("Fatal error: Could not unpack WS-I tool to " + toolRoot);
             return false;
         }
 
@@ -156,8 +261,8 @@ public class Driver {
             analyzeSchemas(sourcePath, outputPath.resolve(relResultSchema), schema, compare,
                     outputPath.resolve(relResultSchemaDiff), resultToSrc);
             logMsg("Analyzing " + wsdl.size() + " wsdls");
-            analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl);
-
+            analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
+                    toolRoot);
             generateFinalReport(start);
 
         } catch (IOException e) {
@@ -222,15 +327,6 @@ public class Driver {
                 }
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Driver driver = new Driver();
-        Path  sourcePath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("testdata");
-        Path outputPath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("out");
-
-        URI uri = null; //Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("compare").toUri();
-        driver.analyze(sourcePath, outputPath, Paths.get("lib", "wsi-checker-1.0-SNAPSHOT.jar"), uri);
     }
 
     private void analyzeSchemas(Path root, Path xsdTarget, List<Path> schema, URI compareRoot, Path diffTarget,
@@ -301,8 +397,30 @@ public class Driver {
         summary.setWarnings(warningStatistics);
     }
 
-    private void analyzeWsdls(Path root, Path wsdlTarget,Path wsiTarget,  List<Path> schema) {
+    //Path root, Path wsdlTarget, List<Path> wsdl, URI compareRoot, Path diffTarget,
+    //Path resultToSrc
+    private void analyzeWsdls(Path root, Path wsdlTarget, Path wsiTarget,  List<Path> wsdl, Path toolRoot)
+                              throws IOException {
+        int count = 1;
+        for (Path file : wsdl) {
+            logMsg(".", count++ % 50 == 0);
+            AnalysisInformationCollector collector = new AnalysisInformationCollector();
+            Path relPath = root.relativize(file);
+            Path topLevel = relPath.subpath(0, 1); // top level is logically equal to domain (prefix of domain)
+            Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
+            Utf8.checkUtf8File(root, file, collector);
+            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
+            String fileContents = Utilities.getContentWithoutUtf8Bom(file);
+            String fileName = file.toFile().getName();
+            String domain = dirToNamespace(topLevel);
 
+            if (!skipWsi) {
+                Path location = wsiTarget.resolve(relPath).getParent();
+                checkWsdlWsi(file, collector, fileName, relPath, domain, location, toolRoot);
+            }
+            // first do ws-i check the do the other wsdl checks
+            //checkWsdl(fileContents, collector, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
+        }
     }
 
     private void checkSchema(String schema, AnalysisInformationCollector collector, String fileName,
@@ -336,6 +454,120 @@ public class Driver {
         SchemaChecker.checkEnterpriseConceptNamespace(schema, fileName, collector);
         SchemaChecker.checkServiceConceptNamespace(schema, fileName, collector);
         SchemaChecker.checkPathAndTargetNamespace(schema, domain, relPath, collector);
+    }
+
+    private void checkWsdlWsi(Path wsdl, AnalysisInformationCollector collector, String fileName,
+                           Path relPath, String domain, Path location, Path toolRoot) {
+        String baseName = FilenameUtils.getBaseName(fileName);
+        Utilities.createDirs(location);
+        Path report = location.resolve(WsiUtil.getReportFilename(baseName));
+        //Path report = Paths.get(WsiUtil.getReportFilename(baseName));
+        Path config = location.resolve(WsiUtil.getConfigFilename(baseName));
+        Path summary = location.resolve(WsiUtil.getSummaryFilename(baseName));
+        boolean success = WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config);
+        if (success) {
+            logMsg("SUCCESS generating ws-i config file");
+            AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
+            if (!wsiAnalyzer.analyzeWsdl(toolRoot, config, collector)) {
+                logMsg("Error running ws-i analysis");
+            } else {
+                logMsg("SUCCESS running ws-i analysis");
+            }
+        } else {
+            logMsg("Error generating ws-i config file");
+        }
+    }
+
+    private void checkWsdl(String wsdl, AnalysisInformationCollector collector, String fileName,
+                                  Path relPath, String domain, Path location, Path toolRoot) {
+
+
+        // TODO: add missing checks (WS-I)
+        System.out.println("wsdl BetaNamespaceChecker.checkBetaNamespace");
+        BetaNamespaceChecker.checkBetaNamespace(wsdl, collector);
+        System.out.println("wsdl BetaNamespaceChecker.checkBetaNamespaceDefinitions");
+        BetaNamespaceChecker.checkBetaNamespaceDefinitions(wsdl, collector);
+        System.out.println("wsdl BetaNamespaceChecker.checkBetaNamespaceImports");
+        BetaNamespaceChecker.checkBetaNamespaceImports(wsdl, collector);
+        System.out.println("wsdl BindingChecker.checkFaults");
+        BindingChecker.checkFaults(wsdl, collector);
+        //System.out.println("wsdl BindingChecker.checkSoapAction");
+        //BindingChecker.checkSoapAction(wsdl, collector);
+        //System.out.println("wsdl DocumentationChecker.checkWsdlDocumentation");
+        //DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
+        System.out.println("wsdl MessageChecker.checkMessageNames");
+        MessageChecker.checkMessageNames(wsdl, collector);
+        System.out.println("wsdl MessageChecker.checkMessageParts");
+        MessageChecker.checkMessageParts(wsdl, collector);
+        System.out.println("wsdl MessageChecker.checkUnusedMessages");
+        MessageChecker.checkUnusedMessages(wsdl, collector);
+        System.out.println("wsdl NamespaceChecker.checkInvalidImports");
+        NamespaceChecker.checkInvalidImports(wsdl, collector);
+        System.out.println("wsdl NamespaceChecker.checkNamespace");
+        NamespaceChecker.checkNamespace(wsdl, collector);
+        System.out.println("wsdl SchemaChecker.checkUnusedImport");
+        SchemaChecker.checkUnusedImport(wsdl, collector);
+        //System.out.println("wsdl OperationChecker.checkOperationNames");
+        //OperationChecker.checkOperationNames(wsdl, collector);
+        System.out.println("wsdl OperationChecker.checkPortTypeAndBinding");
+        OperationChecker.checkPortTypeAndBinding(wsdl, collector);
+        //System.out.println("wsdl PortBindingNameChecker.checkNames");
+        //PortBindingNameChecker.checkNames(wsdl, collector);
+        //System.out.println("wsdl PortTypeChecker.checkCardinality");
+        //PortTypeChecker.checkCardinality(wsdl, collector);
+        //System.out.println("wsdl PortTypeChecker.checkInputOutputMessagesAndFaults");
+        //PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        //System.out.println("wsdl PortTypeChecker.checkName");
+        //PortTypeChecker.checkName(wsdl, collector);
+        System.out.println("wsdl SchemaTypesChecker.checkSchemaTypes");
+        SchemaTypesChecker.checkSchemaTypes(wsdl, collector);
+        System.out.println("wsdl ServiceChecker.checkServices");
+        ServiceChecker.checkServices(wsdl, collector);
+        System.out.println("wsdl SoapBindingChecker.checkBindings");
+        SoapBindingChecker.checkBindings(wsdl, collector);
+        System.out.println("wsdl WsdlNameChecker.checkName");
+        WsdlNameChecker.checkName(wsdl, collector);
+
+        // WS-I checks
+        Path wsdlFile = location.resolve(fileName);
+
+        //Path relOutputPath = Paths.get("rel", "path");
+        /*boolean success = WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config);
+        if (success) {
+            String p = wsdlFile.toString();
+            if (p.endsWith(Paths.get("bank", "guarantee", "v1", "Guarantee.wsdl").toString())
+                    || p.endsWith(Paths.get("enterprise", "worker", "v2", "Worker.wsdl").toString())
+                    || p.endsWith(Paths.get("enterprise", "adresse", "v1", "ws", "AdresseStamdata.wsdl").toString())
+                    || p.endsWith(Paths.get("enterprise", "adresse", "v2", "ws", "AdresseStamdata.wsdl").toString())
+                    || p.endsWith(Paths.get("enterprise", "adresse", "v3", "ws", "AdresseStamdata.wsdl").toString())) {
+                errors.addError("", "WS-I analysis disabled for '" + fileName + "'",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Config file '" + config + "'");
+                System.out.println("WSDL " + p);
+            } else {
+                return;
+            }
+            AnalysisInformationCollector wsiCollector = new AnalysisInformationCollector();
+            System.out.println("wsdl wsi");
+            if (WsiUtil.runAnalyzer(toolJar, toolRoot, config, summary, wsiCollector)) {
+                collector.add(wsiCollector);
+            } else {
+                errors.addError("", "Could not run WS-I analyzer for '" + fileName + "'",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Config file '" + config + "'");
+            }
+        } else {
+            errors.addError("", "Could not create WS-I configuration file for '" + fileName + "'",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Location '" + config + "'");
+        }*/
+
+        // file and path checks
+        System.out.println("wsdl checkServiceFileName");
+        ServiceChecker.checkServiceFileName(relPath.resolve(fileName), wsdl, collector);
+        System.out.println("wsdl checkPathCharacters");
+        WsdlChecker.checkPathCharacters(Utilities.pathToNamespace(domain, relPath), collector);
+        System.out.println("wsdl checkPathAndTargetNamespace");
+        WsdlChecker.checkPathAndTargetNamespace(wsdl, domain, relPath, collector);
+        System.out.println("wsdl checkServiceNamespace");
+        WsdlChecker.checkServiceNamespace(wsdl, fileName, collector);
     }
 
     private void writeJsonReport(Path location, String filename, AnalysisInformationCollector collector)
@@ -393,7 +625,7 @@ public class Driver {
 
     private void copy(Path from, Path to) throws IOException {
         Utilities.createDirs(to.getParent());
-        Files.copy(from, to);
+        Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private void getRootDirectories(Path rootDirectory, List<Path> include, List<Path> ignored,
@@ -417,6 +649,20 @@ public class Driver {
                 }
             }
         }
+    }
+
+    private List<String> getRootDirectories(Path rootDirectory) {
+        // iterate top level directories and get their names
+        List<String> dirs = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(rootDirectory)) {
+            for (Path entry : stream) {
+                if (entry.toFile().isDirectory()) {
+                    dirs.add(entry.toFile().getName());
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return dirs;
     }
 
     private void getFiles(final Path rootDirectory, final List<Path> schema, final List<Path> wsdl,
