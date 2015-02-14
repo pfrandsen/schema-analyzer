@@ -133,13 +133,26 @@ public class Driver {
         if (cmd.hasOption(OPTIONS_SKIP_DIRS)) {
             String[] dirs = cmd.getOptionValues(OPTIONS_SKIP_DIRS);
             List<String> valid = driver.getRootDirectories(sourcePath);
-            for (String dir : dirs) {
-                if (valid.contains(dir)) {
-                    driver.skipDirs.add(dir);
+            int whitespace = 0; // the current version of Apache CLI treat space next te separator as separate value...
+            for (String d : dirs) {
+                String dir = d.trim();
+                if (dir.length() > 0) {
+                    if (valid.contains(dir)) {
+                        driver.skipDirs.add(dir);
+                    } else {
+                        if (cmd.hasOption(OPTIONS_CHATTY)) {
+                            System.out.println("Warning: " + OPTIONS_SKIP_DIRS + " argument '" + dir + "' does not exist in"
+                                    + " source root.");
+                        }
+                    }
                 } else {
-                    driver.logMsg("Warning: " + OPTIONS_SKIP_DIRS + " argument " + dir + " does not exist in source"
-                            + " root.");
+                    whitespace++;
                 }
+            }
+            if ((driver.skipDirs.size() < (dirs.length) - whitespace) && cmd.hasOption(OPTIONS_CHATTY)) {
+                int ignoreCount = dirs.length - whitespace - driver.skipDirs.size();
+                System.out.println("Info: Ignoring " + ignoreCount + " director" + (ignoreCount == 1 ? "y" : "ies")
+                        + " from ignore list.");
             }
         }
         driver.copySourceFiles = cmd.hasOption(OPTIONS_COPY_SRC);
@@ -165,7 +178,6 @@ public class Driver {
 
     private static Options getCommandlineOptions() {
         Options options = new Options();
-
         Option help = new Option(OPTION_HELP, "Show usage information.");
         Option source = new Option(OPTIONS_SOURCE_PATH, true, "Root directory containing schema and wsdl source.");
         source.setRequired(true);
@@ -175,6 +187,8 @@ public class Driver {
         Option skipDirectories = new Option(OPTIONS_SKIP_DIRS, true, "Optional. List of top-level directories in root"
                 + " directory to skip during analysis (comma separated).");
         skipDirectories.setRequired(false);
+        skipDirectories.setArgs(Option.UNLIMITED_VALUES);
+        skipDirectories.setValueSeparator(',');
         Option compare = new Option(OPTIONS_COMPARE_ROOT, true, "Optional. URI to existing errors/warnings comparison"
                 + " files. If present, reports of new and resolved errors/warnings will be generated.");
         compare.setRequired(false);
@@ -201,6 +215,7 @@ public class Driver {
         options.addOption(copy);
         options.addOption(noOverwrite);
         options.addOption(skipWsi);
+        options.addOption(skipDirectories);
         options.addOption(empty);
         options.addOption(chatty);
         return options;
@@ -298,7 +313,6 @@ public class Driver {
                 + schemaErrorsResolved + " resolved.");
         logMsg("Schema warnings: " + schemaWarnings + " total, " + schemaWarningsAdded + " added, "
                 + schemaWarningsResolved + " resolved.");
-        // SortedSet<Map.Entry<String, Integer>> set = schemaTotalErrors.getSortedByValue();
         logMsg("\nErrors in schemas:");
         for (Map.Entry<String, Integer> entry : schemaTotalErrors.getSortedByValue()) {
             logMsg(entry.getValue() + " " + entry.getKey());
