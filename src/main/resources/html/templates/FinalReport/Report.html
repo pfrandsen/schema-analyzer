@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Analysis report</title>
+    <style type="text/css">
+        .result-ok {color:#009901}
+        .result-failed {color:#fe0000}
+        <!-- overall summary table -->
+
+        .sl  {border-collapse:collapse;border-spacing:0;border-color:#ccc;margin:0px auto;}
+        .sl th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#ccc;color:#333;background-color:#f0f0f0;border-top-width:1px;border-bottom-width:1px;}
+        .sl .slh1 {font-weight:bold;text-align:center}
+        .sl .slh2 {font-weight:bold;text-align:left}
+        .sl .even-row {}
+        .sl .odd-row {background-color:#f9f9f9}
+        .sl .first-column {text-align:right;padding-left: 10px;padding-right: 10px}
+        .sl .second-column {}
+
+        .st  {border-collapse:collapse;border-spacing:0;border-color:#ccc;border-width:1px;border-style:solid;margin:0px auto;}
+        .st .even-row {}
+        .st .odd-row {background-color:#f9f9f9}
+        .st .first-column {}
+        .st .second-column {text-align:right;padding-left: 10px}
+        .st .ok {color:#009901}
+        .st .fail {color:#fe0000}
+
+        .color-ok {color:#009901}
+        .color-failed {color:#fe0000}
+        .tbl-summary  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
+        .tbl-summary td {border-style:solid;border-width:0px;border-top-width:1px;border-bottom-width:1px;text-align:center}
+        #tbl-summay tr td:first-child {font-weight:bold;text-align:left}
+        .tbl-summary th {border-style:solid;border-width:0px;border-top-width:1px;border-bottom-width:1px;padding:6px 3px;}
+
+    </style>
+
+
+</head>
+<body>
+<a name="top"></a>
+<h1>Analysis report</h1>
+<h2>Table of Contents</h2>
+<ul>
+    <li><a href="#summary">Analysis result</a></li>
+    <li><a href="#wsdlsummary">Summary - WSDLs</a></li>
+    <li><a href="#schemasummary">Summary - Schemas</a></li>
+    <li><a href="#wsdlfilesummary">File summary - WSDLs</a></li>
+    <li><a href="#schemafilesummary">File summary - Schemas</a></li>
+    <li><a href="#other">Other errors</a></li>
+</ul>
+
+<h2><a name="summary">Analysis result</a></h2>
+<h3>Overall result: {{result}}</h3>
+{{summary}}
+<p><a href="#top">Back to top</a></p>
+
+<h2><a name="wsdlsummary">Summary - WSDLs</a></h2>
+{{wsdlsummary}}
+<h3>WSDL assertions by occurence</h3>
+{{summary-wsdl-by-count}}
+{{summary-wsdl-by-assertion}}
+<p><a href="#top">Back to top</a></p>
+
+<h2><a name="schemasummary">Summary - Schemas</a></h2>
+{{schemasummary}}
+<h3>Schema assertions by occurence</h3>
+{{summary-schema-by-count}}
+{{summary-schema-by-assertion}}
+<p><a href="#top">Back to top</a></p>
+
+<h2><a name="wsdlfilesummary">File summary - WSDLs</a></h2>
+<div>{{wsdlfilesummary}}</div>
+<p><a href="#top">Back to top</a></p>
+
+<h2><a name="schemafilesummary">File summary - Schemas</a></h2>
+<div>{{schemafilesummary}}</div>
+<p><a href="#top">Back to top</a></p>
+
+<h2><a name="other">Other errors</a></h2>
+<div>{{other}}</div>
+<p><a href="#top">Back to top</a></p>
+
+<div class='footer'>{{footer}}</div>
+</body>
+</html>

@@ -57,10 +57,33 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 public class Driver {
+
+    // final report html template names
+    private static final String FR_TEMPLATE = "FinalReport";
+    private static final String FR_SUMMARY_TEMPLATE = "FinalReportSummary";
+    private static final String FR_FOOTER_TEMPLATE = "FinalReportFooter";
+    private static final String FR_WSDL_SUMMARY_TEMPLATE = "FinalReportWsdlSummary";
+    private static final String FR_SCHEMA_SUMMARY_TEMPLATE = "FinalReportSchemaSummary";
+    private static final String FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE = "FinalReportWsdlSummaryByCount";
+    private static final String FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE = "FinalReportWsdlSummaryByCountEven";
+    private static final String FR_WSDL_SUMMARY_BY_COUNT_ODD_TEMPLATE = "FinalReportWsdlSummaryByCountOdd";
+    private static final String FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE = "FinalReportSchemaSummaryByCount";
+    private static final String FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE = "FinalReportSchemaSummaryByCountEven";
+    private static final String FR_SCHEMA_SUMMARY_BY_COUNT_ODD_TEMPLATE = "FinalReportSchemaSummaryByCountOdd";
+    private static final String FR_WSDL_SUMMARY_BY_FILE_TEMPLATE = "FinalReportWsdlSummaryByFile";
+    private static final String FR_WSDL_SUMMARY_BY_FILE_HDR_TEMPLATE = "FinalReportWsdlSummaryByFileHdr";
+    private static final String FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE = "FinalReportWsdlSummaryByFileEven";
+    private static final String FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE = "FinalReportWsdlSummaryByFileOdd";
+    private static final String FR_SCHEMA_SUMMARY_BY_FILE_TEMPLATE = "FinalReportSchemaSummaryByFile";
+    private static final String FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE = "FinalReportSchemaSummaryByFileHdr";
+    private static final String FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE = "FinalReportSchemaSummaryByFileEven";
+    private static final String FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE = "FinalReportSchemaSummaryByFileOdd";
+
 
     private static String arg(String argument) {
         return "-" + argument;
@@ -114,22 +137,41 @@ public class Driver {
         return template.toString();
     }
 
+    Map<String, String> getFinalReportTemplates(boolean includeCompare) throws IOException {
+        String path = includeCompare ? "" : "nodiff/";
+        String root = "FinalReport/";
+        Map<String, String> templates = new TreeMap<>();
+        templates.put(FR_TEMPLATE, getHtmlTemplate("FinalReport/Report.html"));
+        templates.put(FR_SUMMARY_TEMPLATE, getHtmlTemplate("FinalReport/" + path + "SummaryTable.html"));
+        templates.put(FR_FOOTER_TEMPLATE, getHtmlTemplate("FinalReport/Footer.html"));
+        templates.put(FR_WSDL_SUMMARY_TEMPLATE, getHtmlTemplate(root + "types/" + path + "SummaryTable.html"));
+        templates.put(FR_SCHEMA_SUMMARY_TEMPLATE, getHtmlTemplate(root + "types/" + path + "SummaryTable.html"));
+
+        String countRoot = root + "types/bycount/";
+        templates.put(FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE, getHtmlTemplate(countRoot + "Summary.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE, getHtmlTemplate(countRoot + "Summary.html"));
+        countRoot += "fragment/";
+        templates.put(FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE, getHtmlTemplate(countRoot + "EvenRow.html"));
+        templates.put(FR_WSDL_SUMMARY_BY_COUNT_ODD_TEMPLATE, getHtmlTemplate(countRoot + "OddRow.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE, getHtmlTemplate(countRoot + "EvenRow.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_COUNT_ODD_TEMPLATE, getHtmlTemplate(countRoot + "OddRow.html"));
+
+        String fileRoot = root + "types/byfile/";
+        templates.put(FR_WSDL_SUMMARY_BY_FILE_TEMPLATE, getHtmlTemplate(fileRoot + "Summary.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_TEMPLATE, getHtmlTemplate(fileRoot + "Summary.html"));
+        fileRoot += "fragment/";
+        templates.put(FR_WSDL_SUMMARY_BY_FILE_HDR_TEMPLATE, getHtmlTemplate(fileRoot + "Header.html"));
+        templates.put(FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE, getHtmlTemplate(fileRoot + "EvenRow.html"));
+        templates.put(FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE, getHtmlTemplate(fileRoot + "OddRow.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE, getHtmlTemplate(fileRoot + "Header.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE, getHtmlTemplate(fileRoot + "EvenRow.html"));
+        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE, getHtmlTemplate(fileRoot + "OddRow.html"));
+
+        return templates;
+    }
 
     public static void runner() { // for testing
-
         Driver driver = new Driver();
-        String footer = "";
-        String template;
-        try {
-            footer = driver.timing(0);
-            template = getHtmlTemplate("FinalReport.html");
-        } catch (IOException e) {
-            e.printStackTrace();
-            template = "Error";
-        }
-        System.out.println(template);
-        System.out.println(footer);
-
         driver.chatty = true;
         driver.empty = true;
         driver.copySourceFiles = true;
@@ -141,7 +183,7 @@ public class Driver {
     }
 
     public static void main(String[] args) {
-        runner();
+        //runner();
         Driver driver = new Driver();
         CommandLine cmd;
         try {
@@ -155,6 +197,7 @@ public class Driver {
         }
 
         Path sourcePath = Paths.get(cmd.getOptionValue(OPTIONS_SOURCE_PATH));
+        System.out.println("Source directory: " + sourcePath);
         if (!(sourcePath.toFile().exists() && sourcePath.toFile().isDirectory())) {
             System.err.println("Fatal error: Source directory must exist, " + sourcePath);
             return;
@@ -177,8 +220,8 @@ public class Driver {
                         driver.skipDirs.add(dir);
                     } else {
                         if (cmd.hasOption(OPTIONS_CHATTY)) {
-                            System.out.println("Warning: " + OPTIONS_SKIP_DIRS + " argument '" + dir + "' does not exist in"
-                                    + " source root.");
+                            System.out.println("Warning: " + OPTIONS_SKIP_DIRS + " argument '" + dir + "' does not"
+                                    + " exist in source root.");
                         }
                     }
                 } else {
@@ -261,6 +304,7 @@ public class Driver {
         long start = System.currentTimeMillis();
         Path relTargetSrc = Paths.get("src");
         Path relResult = Paths.get("result");
+        Path relReport = relResult.resolve("AnalysisReport.html");
         Path relResultSchema = relResult.resolve("schema");
         Path relResultSchemaDiff = relResult.resolve("schema-diff");
         Path relResultWsdl = relResult.resolve("wsdl");
@@ -314,21 +358,23 @@ public class Driver {
             logMsg("Analyzing " + wsdl.size() + " wsdls");
             analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
                     toolRoot);
-            return generateFinalReport(start);
+            Map<String, String> templates = getFinalReportTemplates(compareToRoot != null);
+            return generateFinalReport(templates, outputPath.resolve(relReport),  compareToRoot != null, start);
 
         } catch (IOException e) {
             logMsg("Exception while processing files, " +  e.getMessage());
             errors.addError("", "Exception while processing files",
                     AnalysisInformationCollector.SEVERITY_LEVEL_FATAL, e.getMessage());
+            return false;
         }
-        return true;
     }
 
-    private boolean generateFinalReport(long start) throws IOException {
+    private boolean generateFinalReport(Map<String, String> templates, Path reportFile, boolean compare, long start)
+            throws IOException {
         // generate overall report
         logMsg("Generating final report");
         boolean retVal = true;
-        String template = getHtmlTemplate("FinalReport.html");
+        String template = templates.get(FR_TEMPLATE);
         AssertionStatistics wsdlTotalErrors = new AssertionStatistics();
         AssertionStatistics wsdlTotalWarnings = new AssertionStatistics();
         AssertionStatistics schemaTotalErrors = new AssertionStatistics();
@@ -351,9 +397,19 @@ public class Driver {
         if (wsdlErrorsAdded > 0 || wsdlWarningsAdded > 0) {
             retVal = false;
         }
+        template = addAssertionsByCount(template, "{{summary-wsdl-by-count}}",
+                templates.get(FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE),
+                templates.get(FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE),
+                templates.get(FR_WSDL_SUMMARY_BY_COUNT_ODD_TEMPLATE), wsdlTotalErrors, wsdlTotalWarnings);
 
-
-
+        List<FileSummary> summaryList = new ArrayList<>();
+        summaryList.addAll(wsdlSummary);
+        template = addAssertionsByFile(template, "{{summary-wsdl-by-assertion}}",
+                templates.get(FR_WSDL_SUMMARY_BY_FILE_TEMPLATE),
+                templates.get(FR_WSDL_SUMMARY_BY_FILE_HDR_TEMPLATE),
+                templates.get(FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE),
+                templates.get(FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE),
+                wsdlTotalErrors, wsdlTotalWarnings, summaryList);
 
         for (SchemaSummary summary : schemasSummary) {
             schemaTotalErrors.add(summary.getErrors());
@@ -373,80 +429,144 @@ public class Driver {
         logMsg("Schema warnings: " + schemaWarnings + " total, " + schemaWarningsAdded + " added, "
                 + schemaWarningsResolved + " resolved.");
 
-        logMsg("\nErrors in schemas:");
-        for (Map.Entry<String, Integer> entry : schemaTotalErrors.getSortedByValue()) {
-            logMsg(entry.getValue() + " " + entry.getKey());
-        }
-        logMsg("\nWarnings in schemas:");
-        for (Map.Entry<String, Integer> entry : schemaTotalWarnings.getSortedByValue()) {
-            logMsg(entry.getValue() + " " + entry.getKey());
-        }
-        logMsg("\nErrors in schemas by assertion:");
-        for (Map.Entry<String, Integer> entry : schemaTotalErrors.getSortedByValue()) {
-            logMsg("\nAssertion: " + entry.getKey());
-            for (SchemaSummary summary : schemasSummary) {
-                int count = summary.getErrors().countByAssertion(entry.getKey());
-                if (count > 0) {
-                    logMsg("  " + count + " in " + summary.getName() + " " + summary.getFilePath());
-                }
-            }
-        }
-        logMsg("\nWarnings in schemas by assertion:");
-        for (Map.Entry<String, Integer> entry : schemaTotalWarnings.getSortedByValue()) {
-            logMsg("\nAssertion: " + entry.getKey());
-            for (SchemaSummary summary : schemasSummary) {
-                int count = summary.getWarnings().countByAssertion(entry.getKey());
-                if (count > 0) {
-                    logMsg("  " + count + " in " + summary.getName() + " " + summary.getFilePath());
-                }
-            }
-        }
+        template = addAssertionsByCount(template, "{{summary-schema-by-count}}",
+                templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE),
+                templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE),
+                templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_ODD_TEMPLATE), schemaTotalErrors, schemaTotalWarnings);
 
-        String summaryTable = getAnalysisSummaryHtml(wsdlErrors, wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded,
-        wsdlErrorsResolved, wsdlWarningsResolved, schemaErrors,
-        schemaWarnings, schemaErrorsAdded, schemaWarningsAdded,
-        schemaErrorsResolved, schemaWarningsResolved);
-        template = template.replace("{{summary}}", summaryTable);
+        summaryList = new ArrayList<>();
+        summaryList.addAll(schemasSummary);
+        template = addAssertionsByFile(template, "{{summary-schema-by-assertion}}",
+                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_TEMPLATE),
+                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE),
+                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE),
+                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE),
+                schemaTotalErrors, schemaTotalWarnings, summaryList);
+
+        template = addAnalysisSummaryHtml(template, "{{summary}}", templates.get(FR_SUMMARY_TEMPLATE), wsdlErrors,
+                wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded, wsdlErrorsResolved, wsdlWarningsResolved,
+                schemaErrors, schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved,
+                schemaWarningsResolved);
+        template = addSummaryHtml(template, "{{wsdlsummary}}", templates.get(FR_WSDL_SUMMARY_TEMPLATE), wsdlErrors,
+                wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded, wsdlErrorsResolved, wsdlWarningsResolved);
+        template = addSummaryHtml(template, "{{schemasummary}}", templates.get(FR_SCHEMA_SUMMARY_TEMPLATE), schemaErrors,
+                schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved, schemaWarningsResolved);
         if (retVal) {
             template = template.replace("{{result}}", "<span class='result-ok'>OK</span>");
         } else {
             template = template.replace("{{result}}", "<span class='result-failed'>Failed</span>");
         }
-        String footer = timing(start);
-
+        template = addReportFooter(template, "{{footer}}", templates.get(FR_FOOTER_TEMPLATE), start);
+        logMsg("Report: " + reportFile);
+        FileUtils.writeStringToFile(reportFile.toFile(), template);
         return retVal;
     }
 
-    String getAnalysisSummaryHtml(int wsdlErrors, int wsdlWarnings, int wsdlErrorsAdded, int wsdlWarningsAdded,
-                                  int wsdlErrorsResolved, int wsdlWarningsResolved, int schemaErrors,
-                                  int schemaWarnings, int schemaErrorsAdded, int schemaWarningsAdded,
-                                  int schemaErrorsResolved, int schemaWarningsResolved) throws IOException {
-        String template = getHtmlTemplate("SummaryTable.html");
-        // WSDL table row
-        template = template.replace("{{WSDL_ERR_ADDED}}", "" + wsdlErrorsAdded);
-        template = template.replace("{{WSDL_ERR_RESOLVED}}", "" + wsdlErrorsResolved);
-        template = template.replace("{{WSDL_WARN_ADDED}}", "" + wsdlWarningsAdded);
-        template = template.replace("{{WSDL_WARN_RESOLVED}}", "" + wsdlWarningsResolved);
-        template = template.replace("{{WSDL_ERR_TOTAL}}", "" + wsdlErrors);
-        template = template.replace("{{WSDL_WARN_TOTAL}}", "" + wsdlWarnings);
-        // schema table row
-        template = template.replace("{{SCHEMA_ERR_ADDED}}", "" + schemaErrorsAdded);
-        template = template.replace("{{SCHEMA_ERR_RESOLVED}}", "" + schemaErrorsResolved);
-        template = template.replace("{{SCHEMA_WARN_ADDED}}", "" + schemaWarningsAdded);
-        template = template.replace("{{SCHEMA_WARN_RESOLVED}}", "" + schemaWarningsResolved);
-        template = template.replace("{{SCHEMA_ERR_TOTAL}}", "" + schemaErrors);
-        template = template.replace("{{SCHEMA_WARN_TOTAL}}", "" + schemaWarnings);
-        return template;
+    String addAssertionsByFile(String src, String tag, String template, String hdrTemplate, String evenTemplate,
+                               String oddTemplate, AssertionStatistics errors, AssertionStatistics warnings,
+                               List<FileSummary> summaryList) {
+        String eRows = "";
+        for (Map.Entry<String, Integer> entry : errors.getSortedByValue()) {
+            eRows += hdrTemplate.replace("{{1}}", entry.getKey());
+            int counter = 0;
+            for (FileSummary summary : summaryList) {
+                int count = summary.getErrors().countByAssertion(entry.getKey());
+                if (count > 0) {
+                    if (counter++ % 2 == 0) {
+                        eRows += evenTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                                .replace("{{3}}", summary.getFilePath().toString());
+                    } else {
+                        eRows += oddTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                                .replace("{{3}}", summary.getFilePath().toString());
+                    }
+                }
+            }
+        }
+        if (eRows.length() == 0) {
+            eRows += hdrTemplate.replace("{{1}}", "No errors found.");
+        }
+        String wRows = "";
+        for (Map.Entry<String, Integer> entry : warnings.getSortedByValue()) {
+            wRows += hdrTemplate.replace("{{1}}", entry.getKey());
+            int counter = 0;
+            for (FileSummary summary : summaryList) {
+                int count = summary.getWarnings().countByAssertion(entry.getKey());
+                if (count > 0) {
+                    if (counter++ % 2 == 0) {
+                        wRows += evenTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                                .replace("{{3}}", summary.getFilePath().toString());
+                    } else {
+                        wRows += oddTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                                .replace("{{3}}", summary.getFilePath().toString());
+                    }
+                }
+            }
+        }
+        if (wRows.length() == 0) {
+            wRows += hdrTemplate.replace("{{1}}", "No warnings found.");
+        }
+        return src.replace(tag, template.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
     }
 
-    private String timing(long start) throws IOException {
-        String template = getHtmlTemplate("FinalReportFooter.html");
+    String addAssertionsByCount(String src, String tag, String template, String evenTemplate, String oddTemplate,
+                                AssertionStatistics errors, AssertionStatistics warnings) {
+        String eRows = "";
+        int counter = 0;
+        for (Map.Entry<String, Integer> entry : errors.getSortedByValue()) {
+            if (counter++ % 2 == 0) {
+                eRows += evenTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
+            } else {
+                eRows += oddTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
+            }
+        }
+        if (eRows.length() == 0) {
+            eRows += evenTemplate.replace("{{1}}", "").replace("{{2}}", "No errors.");
+        }
+        String wRows = "";
+        counter = 0;
+        for (Map.Entry<String, Integer> entry : warnings.getSortedByValue()) {
+            if (counter++ % 2 == 0) {
+                wRows += evenTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
+            } else {
+                wRows += oddTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
+            }
+        }
+        if (wRows.length() == 0) {
+            wRows += evenTemplate.replace("{{1}}", "").replace("{{2}}", "No warnings.");
+        }
+        return src.replace(tag, template.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
+    }
+
+    String addSummaryHtml(String src, String tag, String template, int e, int w, int ea, int wa, int er, int wr) {
+        String t = template;
+        t = t.replace("{{ERR_ADDED}}", "" + ea).replace("{{ERR_RESOLVED}}", "" + er);
+        t = t.replace("{{WARN_ADDED}}", "" + wa).replace("{{WARN_RESOLVED}}", "" + wr);
+        t = t.replace("{{ERR_TOTAL}}", "" + e).replace("{{WARN_TOTAL}}", "" + w);
+        return src.replace(tag, t);
+    }
+
+    String addAnalysisSummaryHtml(String src, String tag, String template, int we, int ww, int wea, int wwa, int wer,
+                                  int wwr, int se, int sw, int sea, int swa, int ser, int swr) {
+        String t = template;
+        // WSDL table row
+        t = t.replace("{{WSDL_ERR_ADDED}}", "" + wea).replace("{{WSDL_ERR_RESOLVED}}", "" + wer);
+        t = t.replace("{{WSDL_WARN_ADDED}}", "" + wwa).replace("{{WSDL_WARN_RESOLVED}}", "" + wwr);
+        t = t.replace("{{WSDL_ERR_TOTAL}}", "" + we).replace("{{WSDL_WARN_TOTAL}}", "" + ww);
+        // schema table row
+        t = t.replace("{{SCHEMA_ERR_ADDED}}", "" + sea).replace("{{SCHEMA_ERR_RESOLVED}}", "" + ser);
+        t = t.replace("{{SCHEMA_WARN_ADDED}}", "" + swa).replace("{{SCHEMA_WARN_RESOLVED}}", "" + swr);
+        t = t.replace("{{SCHEMA_ERR_TOTAL}}", "" + se).replace("{{SCHEMA_WARN_TOTAL}}", "" + sw);
+        return src.replace(tag, t);
+    }
+
+    private String addReportFooter(String src, String tag, String template, long start) {
+        //String template = templates.get(FR_FOOTER_TEMPLATE);
         long duration = System.currentTimeMillis() - start;
         long ms = duration % 1000;
         long s = duration / 1000 % 60;
         long m = duration / (60 * 1000) % 60;
         int files = wsdlSummary.size() + schemasSummary.size();
-        String version = "version not determined";
+        String version = "Not determined";
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
 
@@ -469,7 +589,7 @@ public class Driver {
         template = template.replace("{{version}}", "" + escapeHtml(version));
         template = template.replace("{{time}}", "" + dateFormat.format(date));
         logMsg("\n" + files + " files processed in " + m + "m " + s + "s " + ms + "ms");
-        return template;
+        return src.replace(tag, template);
     }
 
     private void analyzeSchemas(Path root, Path xsdTarget, List<Path> schema, URI compareRoot, Path diffTarget,
