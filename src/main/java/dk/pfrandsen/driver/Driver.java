@@ -83,7 +83,10 @@ public class Driver {
     private static final String FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE = "FinalReportSchemaSummaryByFileHdr";
     private static final String FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE = "FinalReportSchemaSummaryByFileEven";
     private static final String FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE = "FinalReportSchemaSummaryByFileOdd";
-
+    private static final String FR_WSDL_FILE_LIST_TEMPLATE = "FinalReportWsdlFileList";
+    private static final String FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE = "FinalReportWsdlFileListElement";
+    private static final String FR_SCHEMA_FILE_LIST_TEMPLATE = "FinalReportSchemaFileList";
+    private static final String FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE = "FinalReportSchemaFileListElement";
 
     private static String arg(String argument) {
         return "-" + argument;
@@ -141,6 +144,7 @@ public class Driver {
         String path = includeCompare ? "" : "nodiff/";
         String root = "FinalReport/";
         Map<String, String> templates = new TreeMap<>();
+
         templates.put(FR_TEMPLATE, getHtmlTemplate("FinalReport/Report.html"));
         templates.put(FR_SUMMARY_TEMPLATE, getHtmlTemplate("FinalReport/" + path + "SummaryTable.html"));
         templates.put(FR_FOOTER_TEMPLATE, getHtmlTemplate("FinalReport/Footer.html"));
@@ -166,6 +170,12 @@ public class Driver {
         templates.put(FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE, getHtmlTemplate(fileRoot + "Header.html"));
         templates.put(FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE, getHtmlTemplate(fileRoot + "EvenRow.html"));
         templates.put(FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE, getHtmlTemplate(fileRoot + "OddRow.html"));
+
+        String fileListRoot = root + "types/filelist/" + path;
+        templates.put(FR_WSDL_FILE_LIST_TEMPLATE, getHtmlTemplate(fileListRoot + "Container.html"));
+        templates.put(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE, getHtmlTemplate(fileListRoot + "Element.html"));
+        templates.put(FR_SCHEMA_FILE_LIST_TEMPLATE, getHtmlTemplate(fileListRoot + "Container.html"));
+        templates.put(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE, getHtmlTemplate(fileListRoot + "Element.html"));
 
         return templates;
     }
@@ -397,6 +407,13 @@ public class Driver {
         if (wsdlErrorsAdded > 0 || wsdlWarningsAdded > 0) {
             retVal = false;
         }
+        logMsg("WSDL errors: " + wsdlErrors + " total, " + wsdlErrorsAdded + " added, "
+                + wsdlErrorsResolved + " resolved.");
+        logMsg("WSDL warnings: " + wsdlWarnings + " total, " + wsdlWarningsAdded + " added, "
+                + wsdlWarningsResolved + " resolved.");
+        template = template.replace("{{wsdl-file-count}}", wsdlSummary.size() + " WSDL file" +
+                (wsdlSummary.size() == 1 ? "" : "s"));
+        template = template.replace("{{wsdl-files-content}}", wsdlSummary.size() == 0 ? "display:none" : "");
         template = addAssertionsByCount(template, "{{summary-wsdl-by-count}}",
                 templates.get(FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE),
                 templates.get(FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE),
@@ -410,6 +427,8 @@ public class Driver {
                 templates.get(FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE),
                 templates.get(FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE),
                 wsdlTotalErrors, wsdlTotalWarnings, summaryList);
+        template = addFileList(template, "{{wsdl-file-summary}}", templates.get(FR_WSDL_FILE_LIST_TEMPLATE),
+                templates.get(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
 
         for (SchemaSummary summary : schemasSummary) {
             schemaTotalErrors.add(summary.getErrors());
@@ -429,6 +448,9 @@ public class Driver {
         logMsg("Schema warnings: " + schemaWarnings + " total, " + schemaWarningsAdded + " added, "
                 + schemaWarningsResolved + " resolved.");
 
+        template = template.replace("{{schema-file-count}}", schemasSummary.size() + " schema file" +
+                (schemasSummary.size() == 1 ? "" : "s"));
+        template = template.replace("{{schema-files-content}}", schemasSummary.size() == 0 ? "display:none" : "");
         template = addAssertionsByCount(template, "{{summary-schema-by-count}}",
                 templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE),
                 templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE),
@@ -442,14 +464,17 @@ public class Driver {
                 templates.get(FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE),
                 templates.get(FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE),
                 schemaTotalErrors, schemaTotalWarnings, summaryList);
+        template = addFileList(template, "{{schema-file-summary}}", templates.get(FR_SCHEMA_FILE_LIST_TEMPLATE),
+                templates.get(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
 
         template = addAnalysisSummaryHtml(template, "{{summary}}", templates.get(FR_SUMMARY_TEMPLATE), wsdlErrors,
                 wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded, wsdlErrorsResolved, wsdlWarningsResolved,
                 schemaErrors, schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved,
                 schemaWarningsResolved);
-        template = addSummaryHtml(template, "{{wsdlsummary}}", templates.get(FR_WSDL_SUMMARY_TEMPLATE), wsdlErrors,
-                wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded, wsdlErrorsResolved, wsdlWarningsResolved);
-        template = addSummaryHtml(template, "{{schemasummary}}", templates.get(FR_SCHEMA_SUMMARY_TEMPLATE), schemaErrors,
+        template = addSummaryHtml(template, "{{wsdlsummary}}", "{{wsdlsummary-content}}",
+                templates.get(FR_WSDL_SUMMARY_TEMPLATE), wsdlErrors,  wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded,
+                wsdlErrorsResolved, wsdlWarningsResolved);
+        template = addSummaryHtml(template, "{{schemasummary}}", "{{schemasummary-content}}", templates.get(FR_SCHEMA_SUMMARY_TEMPLATE), schemaErrors,
                 schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved, schemaWarningsResolved);
         if (retVal) {
             template = template.replace("{{result}}", "<span class='result-ok'>OK</span>");
@@ -462,6 +487,40 @@ public class Driver {
         return retVal;
     }
 
+    /*
+<tr>
+    <td>{{name}}</td>
+    <td>{{report}}</td>
+    <td>{{WARN_TOTAL}}</td>
+    <td>{{diff}}</td>
+</tr>
+     */
+
+    String addFileList(String src, String tag, String template, String rowTemplate, List<FileSummary> summaryList) {
+        StringBuilder builder = new StringBuilder();
+        for (FileSummary summary : summaryList) {
+            String t = rowTemplate;
+            String name = "<a href='" + summary.getFilePath() + "' target='_blank'>" + summary.getName();
+            String report = escapeHtml("<none>");
+            if (summary.hasFullReportHtml()) {
+                report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
+            }
+            String diff = escapeHtml("<none>");
+            if (summary.hasDiffReportHtml()) {
+                diff = "<a href='" + summary.getDiffReportHtml() + "' target='_blank'>Diff</a>";
+            }
+            t = t.replace("{{ERR_ADDED}}", spanNeutralFail(summary.getErrorsAdded()))
+                    .replace("{{ERR_RESOLVED}}", spanNeutralOK(summary.getErrorsResolved()))
+                    .replace("{{WARN_ADDED}}", spanNeutralFail(summary.getWarningsAdded()))
+                    .replace("{{WARN_RESOLVED}}", spanNeutralOK(summary.getWarningsResolved()))
+                    .replace("{{ERR_TOTAL}}", spanOKFail(summary.getErrors().count()))
+                    .replace("{{WARN_TOTAL}}", spanOKFail(summary.getWarnings().count()))
+                    .replace("{{name}}", name).replace("{{report}}", report).replace("{{diff}}", diff);
+            builder.append(t);
+        }
+        return src.replace(tag, template.replace("{{1}}", builder.toString()));
+    }
+
     String addAssertionsByFile(String src, String tag, String template, String hdrTemplate, String evenTemplate,
                                String oddTemplate, AssertionStatistics errors, AssertionStatistics warnings,
                                List<FileSummary> summaryList) {
@@ -472,18 +531,20 @@ public class Driver {
             for (FileSummary summary : summaryList) {
                 int count = summary.getErrors().countByAssertion(entry.getKey());
                 if (count > 0) {
-                    if (counter++ % 2 == 0) {
-                        eRows += evenTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
-                                .replace("{{3}}", summary.getFilePath().toString());
-                    } else {
-                        eRows += oddTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
-                                .replace("{{3}}", summary.getFilePath().toString());
+                    String report = "";
+                    if (summary.hasFullReportHtml()) {
+                        report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
                     }
+                    String t = counter++ % 2 == 0 ? evenTemplate : oddTemplate;
+                    eRows += t.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                            .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", report);
                 }
             }
         }
         if (eRows.length() == 0) {
-            eRows += hdrTemplate.replace("{{1}}", "No errors found.");
+            eRows = "<p>No errors found.</p>";
+        } else {
+            eRows = "<table class=''>\n" + eRows + "\n</table>";
         }
         String wRows = "";
         for (Map.Entry<String, Integer> entry : warnings.getSortedByValue()) {
@@ -492,18 +553,20 @@ public class Driver {
             for (FileSummary summary : summaryList) {
                 int count = summary.getWarnings().countByAssertion(entry.getKey());
                 if (count > 0) {
-                    if (counter++ % 2 == 0) {
-                        wRows += evenTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
-                                .replace("{{3}}", summary.getFilePath().toString());
-                    } else {
-                        wRows += oddTemplate.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
-                                .replace("{{3}}", summary.getFilePath().toString());
+                    String report = "";
+                    if (summary.hasFullReportHtml()) {
+                        report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
                     }
+                    String t = counter++ % 2 == 0 ? evenTemplate : oddTemplate;
+                    wRows += t.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                            .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", report);
                 }
             }
         }
         if (wRows.length() == 0) {
-            wRows += hdrTemplate.replace("{{1}}", "No warnings found.");
+            wRows  = "<p>No warnings found.</p>";
+        } else {
+            wRows = "<table class=''>\n" + wRows + "\n</table>";
         }
         return src.replace(tag, template.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
     }
@@ -537,11 +600,25 @@ public class Driver {
         return src.replace(tag, template.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
     }
 
-    String addSummaryHtml(String src, String tag, String template, int e, int w, int ea, int wa, int er, int wr) {
+    private String spanNeutralFail(int value) {
+        return "<span" + (value == 0 ? ">" : " class='color-failed'>") + value + "</span>";
+    }
+
+    private String spanNeutralOK(int value) {
+        return "<span" + (value == 0 ? ">" : " class='color-ok'>") + value + "</span>";
+    }
+
+    private String spanOKFail(int value) {
+        return "<span class='color" + (value == 0 ? "-ok'>" : "-failed'>") + value + "</span>";
+    }
+
+    String addSummaryHtml(String src, String tag, String display, String template, int e, int w, int ea, int wa,
+                          int er, int wr) {
         String t = template;
-        t = t.replace("{{ERR_ADDED}}", "" + ea).replace("{{ERR_RESOLVED}}", "" + er);
-        t = t.replace("{{WARN_ADDED}}", "" + wa).replace("{{WARN_RESOLVED}}", "" + wr);
-        t = t.replace("{{ERR_TOTAL}}", "" + e).replace("{{WARN_TOTAL}}", "" + w);
+        src = src.replace(display, (e+w+ea+wa+er+wr == 0) ? "display:none" : "");
+        t = t.replace("{{ERR_ADDED}}", spanNeutralFail(ea)).replace("{{ERR_RESOLVED}}", spanNeutralOK(er));
+        t = t.replace("{{WARN_ADDED}}", spanNeutralFail(wa)).replace("{{WARN_RESOLVED}}", spanNeutralOK(wr));
+        t = t.replace("{{ERR_TOTAL}}", spanOKFail(e)).replace("{{WARN_TOTAL}}", spanOKFail(w));
         return src.replace(tag, t);
     }
 
@@ -549,13 +626,19 @@ public class Driver {
                                   int wwr, int se, int sw, int sea, int swa, int ser, int swr) {
         String t = template;
         // WSDL table row
-        t = t.replace("{{WSDL_ERR_ADDED}}", "" + wea).replace("{{WSDL_ERR_RESOLVED}}", "" + wer);
-        t = t.replace("{{WSDL_WARN_ADDED}}", "" + wwa).replace("{{WSDL_WARN_RESOLVED}}", "" + wwr);
-        t = t.replace("{{WSDL_ERR_TOTAL}}", "" + we).replace("{{WSDL_WARN_TOTAL}}", "" + ww);
+        t = t.replace("{{WSDL_ERR_ADDED}}", spanNeutralFail(wea))
+                .replace("{{WSDL_ERR_RESOLVED}}", spanNeutralOK(wer))
+                .replace("{{WSDL_WARN_ADDED}}", spanNeutralFail(wwa))
+                .replace("{{WSDL_WARN_RESOLVED}}", spanNeutralOK(wwr))
+                .replace("{{WSDL_ERR_TOTAL}}", spanOKFail(we))
+                .replace("{{WSDL_WARN_TOTAL}}", spanOKFail(ww));
         // schema table row
-        t = t.replace("{{SCHEMA_ERR_ADDED}}", "" + sea).replace("{{SCHEMA_ERR_RESOLVED}}", "" + ser);
-        t = t.replace("{{SCHEMA_WARN_ADDED}}", "" + swa).replace("{{SCHEMA_WARN_RESOLVED}}", "" + swr);
-        t = t.replace("{{SCHEMA_ERR_TOTAL}}", "" + se).replace("{{SCHEMA_WARN_TOTAL}}", "" + sw);
+        t = t.replace("{{SCHEMA_ERR_ADDED}}", spanNeutralFail(sea))
+                .replace("{{SCHEMA_ERR_RESOLVED}}", spanNeutralOK(ser))
+                .replace("{{SCHEMA_WARN_ADDED}}", spanNeutralFail(swa))
+                .replace("{{SCHEMA_WARN_RESOLVED}}", spanNeutralOK(swr))
+                .replace("{{SCHEMA_ERR_TOTAL}}", spanOKFail(se))
+                .replace("{{SCHEMA_WARN_TOTAL}}", spanOKFail(sw));
         return src.replace(tag, t);
     }
 
@@ -643,7 +726,7 @@ public class Driver {
             if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
                 // write html report of added/resolved errors/warnings
                 writeHtmlReport(outputDirDiff, filename, added, resolved, collector);
-                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".json"));
+                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
             }
 
             schemasSummary.add(summary);

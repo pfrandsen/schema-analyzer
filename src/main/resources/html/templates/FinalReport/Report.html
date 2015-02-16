@@ -3,35 +3,43 @@
 <html>
 <head>
     <title>Analysis report</title>
+    <script type="text/javascript">
+       function toggle(id) {
+           var e = document.getElementById(id);
+           if(e.style.display != 'none')
+              e.style.display = 'none';
+           else
+              e.style.display = 'block';
+       }
+    </script>
     <style type="text/css">
         .result-ok {color:#009901}
         .result-failed {color:#fe0000}
-        <!-- overall summary table -->
+        .color-ok {color:#009901}
+        .color-failed {color:#fe0000}
 
-        .sl  {border-collapse:collapse;border-spacing:0;border-color:#ccc;margin:0px auto;}
-        .sl th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#ccc;color:#333;background-color:#f0f0f0;border-top-width:1px;border-bottom-width:1px;}
+        .content-section {padding-left:20px;}
+
+        .sl  {border-collapse:collapse;border-spacing:0;border-color:#ccc;}
+        .sl th{padding:5px 5px;border-style:solid;border-width:0px;overflow:hidden;border-color:#ccc;color:#333;border-top-width:1px;border-bottom-width:1px;}
         .sl .slh1 {font-weight:bold;text-align:center}
         .sl .slh2 {font-weight:bold;text-align:left}
         .sl .even-row {}
-        .sl .odd-row {background-color:#f9f9f9}
+        .sl .odd-row {}
         .sl .first-column {text-align:right;padding-left: 10px;padding-right: 10px}
         .sl .second-column {}
 
-        .st  {border-collapse:collapse;border-spacing:0;border-color:#ccc;border-width:1px;border-style:solid;margin:0px auto;}
-        .st .even-row {}
-        .st .odd-row {background-color:#f9f9f9}
-        .st .first-column {}
-        .st .second-column {text-align:right;padding-left: 10px}
-        .st .ok {color:#009901}
-        .st .fail {color:#fe0000}
-
-        .color-ok {color:#009901}
-        .color-failed {color:#fe0000}
-        .tbl-summary  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
+l        <!-- overall summary table -->
+        .tbl-summary  {border-collapse:collapse;border-spacing:0;}
         .tbl-summary td {border-style:solid;border-width:0px;border-top-width:1px;border-bottom-width:1px;text-align:center}
         #tbl-summay tr td:first-child {font-weight:bold;text-align:left}
         .tbl-summary th {border-style:solid;border-width:0px;border-top-width:1px;border-bottom-width:1px;padding:6px 3px;}
 
+        .type-summary {}
+        .type-summary .second-column {text-align:right;padding-left: 10px}
+
+        .footer-container {}
+        .footer {float: right;background-color:#f9f9f9;margin: 10px;}
     </style>
 
 
@@ -39,6 +47,13 @@
 <body>
 <a name="top"></a>
 <h1>Analysis report</h1>
+
+<h2><a name="summary">Analysis result</a></h2>
+<h3>Overall result: {{result}}</h3>
+<div class="content-section">
+{{summary}}
+</div>
+
 <h2>Table of Contents</h2>
 <ul>
     <li><a href="#summary">Analysis result</a></li>
@@ -49,37 +64,66 @@
     <li><a href="#other">Other errors</a></li>
 </ul>
 
-<h2><a name="summary">Analysis result</a></h2>
-<h3>Overall result: {{result}}</h3>
-{{summary}}
-<p><a href="#top">Back to top</a></p>
 
 <h2><a name="wsdlsummary">Summary - WSDLs</a></h2>
+<div class="content-section">
 {{wsdlsummary}}
-<h3>WSDL assertions by occurence</h3>
+</div>
+<div id="wsdlsummary_content" style='{{wsdlsummary-content}}'>
+    <h3>WSDL assertions by occurence</h3>
+    <div class="content-section">
 {{summary-wsdl-by-count}}
+        <p></p><a href="javascript:toggle('wsdlsummary_by_assertion')">Show/hide assertion details</a><p></p>
+        <div id="wsdlsummary_by_assertion" style="display:none">
 {{summary-wsdl-by-assertion}}
-<p><a href="#top">Back to top</a></p>
+        </div>
+    </div>
+</div>
 
 <h2><a name="schemasummary">Summary - Schemas</a></h2>
+<div class="content-section">
 {{schemasummary}}
-<h3>Schema assertions by occurence</h3>
+</div>
+<div id="schemasummary_content" style='{{schemasummary-content}}'>
+    <h3>Schema assertions by occurence</h3>
+    <div class="content-section">
 {{summary-schema-by-count}}
+        <p></p><a href="javascript:toggle('schemasummary_by_assertion')">Show/hide assertion details</a><p></p>
+        <div id="schemasummary_by_assertion" style="display:none">
 {{summary-schema-by-assertion}}
-<p><a href="#top">Back to top</a></p>
+        </div>
+    </div>
+</div>
 
 <h2><a name="wsdlfilesummary">File summary - WSDLs</a></h2>
-<div>{{wsdlfilesummary}}</div>
-<p><a href="#top">Back to top</a></p>
+<div class="content-section">
+    <p>{{wsdl-file-count}}</p>
+    <div id="wsdl_files_content" style='{{wsdl-files-content}}'>
+        <p></p><a href="javascript:toggle('wsdl_files')">Show/hide file details</a><p></p>
+        <div id="wsdl_files" style="display:none">
+{{wsdl-file-summary}}
+        </div>
+    </div>
+</div>
+
+
 
 <h2><a name="schemafilesummary">File summary - Schemas</a></h2>
-<div>{{schemafilesummary}}</div>
-<p><a href="#top">Back to top</a></p>
+<div class="content-section">
+    <p>{{schema-file-count}}</p>
+    <div id="schema_files_content" style='{{schema-files-content}}'>
+        <p></p><a href="javascript:toggle('schema_files')">Show/hide file details</a><p></p>
+        <div id="schema_files" style="display:none">
+            {{schema-file-summary}}
+        </div>
+    </div>
+</div>
 
 <h2><a name="other">Other errors</a></h2>
 <div>{{other}}</div>
-<p><a href="#top">Back to top</a></p>
 
-<div class='footer'>{{footer}}</div>
+<div class='footer-container'>
+    <div class='footer'>{{footer}}</div>
+</div>
 </body>
 </html>
