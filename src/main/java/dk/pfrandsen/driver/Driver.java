@@ -44,10 +44,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -106,11 +106,11 @@ public class Driver {
             + "[" + arg(OPTIONS_CHATTY) + "] "
             + "[" +  arg(OPTIONS_SKIP_DIRS) + " <subdir>[,<subdir>]*] ";
 
-    int xsd, wsdl, other;
     // top-level directories to include in analysis
     List<String> includeDirs = Arrays.asList("concept", "process", "service", "simpletype", "technical");
     // top-level directories that are skipped without generating error
     List<String> skipDirs = new ArrayList<>(); // Arrays.asList("external");
+    private int compareCount = 0;
     private boolean chatty = false;
     private boolean empty = false;
     private boolean copySourceFiles = false;
@@ -153,18 +153,6 @@ public class Driver {
         return templates;
     }
 
-/*    public static void runner() { // for testing
-        Driver driver = new Driver();
-        driver.chatty = true;
-        driver.empty = true;
-        driver.copySourceFiles = true;
-        Path  sourcePath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("testdata");
-        Path outputPath = Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("out");
-
-        URI uri = null; //Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("compare").toUri();
-        driver.analyze(sourcePath, outputPath, uri);
-    }
-*/
     public static void main(String[] args) {
         Driver driver = new Driver();
         CommandLine cmd;
@@ -481,7 +469,7 @@ public class Driver {
         } else {
             template = template.replace("{{result}}", "<span class='result-failed'>Failed</span>");
         }
-        template = addReportFooter(template, "{{footer}}", templates.get(FR_FOOTER_TEMPLATE), start);
+        template = addReportFooter(template, "{{footer}}", templates.get(FR_FOOTER_TEMPLATE), start, compare);
         logMsg("Report: " + reportFile);
         FileUtils.writeStringToFile(reportFile.toFile(), template);
     }
@@ -643,8 +631,7 @@ public class Driver {
         return version;
     }
 
-    private String addReportFooter(String src, String tag, String template, long start) {
-        //String template = templates.get(FR_FOOTER_TEMPLATE);
+    private String addReportFooter(String src, String tag, String template, long start, boolean compare) {
         long duration = System.currentTimeMillis() - start;
         long ms = duration % 1000;
         long s = duration / 1000 % 60;
@@ -653,13 +640,16 @@ public class Driver {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
 
-        template = template.replace("{{files}}", "" + files);
-        template = template.replace("{{minutes}}", "" + m);
-        template = template.replace("{{seconds}}", "" + s);
-        template = template.replace("{{milliseconds}}", "" + ms);
+        String msg = files + " schema/wsdl resources analyzed in " + m + "m " + s + "s " + ms + "ms";
+        String cmp = compare ? compareCount + " schema/wsdl resources compared" : "";
+        template = template.replace("{{analyzed}}", msg);
+        template = template.replace("{{compare}}", cmp);
         template = template.replace("{{version}}", "" + escapeHtml(getToolVersion()));
         template = template.replace("{{time}}", "" + dateFormat.format(date));
         logMsg("\n" + files + " files processed in " + m + "m " + s + "s " + ms + "ms");
+        if (compare) {
+            logMsg(cmp);
+        }
         return src.replace(tag, template);
     }
 
@@ -679,16 +669,22 @@ public class Driver {
             AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
             AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
             if (compareRoot != null) {
-                // load json file to compare with
-                // TODO: load source file and run analysis on it to get analysis result with same set of rules
-                //
-                String name = FilenameUtils.getBaseName(file.toFile().getName()) + ".json";
-                URI uri = Utilities.appendPath(compareRoot, relPath.getParent().resolve(name));
-                try (InputStream stream = uri.toURL().openStream()) {
-                    AnalysisInformationCollector ref = AnalysisInformationCollector.fromJson(stream);
+                // if "compare to" resource exists run analyzer on it and compute diff
+                URI uri = Utilities.appendPath(compareRoot, relPath);
+                try (InputStream is = uri.toURL().openStream()) {
+                    is.close(); // will be auto closed. but done here to avoid multiple concurrent open connections
+                    logMsg("+", count++ % 50 == 0);
+                    compareCount++;
+                    AnalysisInformationCollector ref = new AnalysisInformationCollector();
+                    Utf8.checkUtf8Uri(relPath.toString(), uri, ref);
+                    // assume source is UTF-8
+                    String cContent = Utilities.getContentWithoutUtf8Bom(uri, Charset.availableCharsets().get("UTF-8"));
+                    // perform checks with content loaded from compare uri - then compute diff
+                    checkSchema(cContent, ref, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
                     added = collector.except(ref);
                     resolved = ref.except(collector);
                 } catch (Exception ignored) {
+                    logMsg("-", count++ % 50 == 0);
                     // assume that compare target does not exist - all errors/warnings are new
                     collector.addInfo("", "Compare to schema source not found (new schema?)",
                             AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
@@ -863,7 +859,7 @@ public class Driver {
         Path report = location.resolve(WsiUtil.getReportFilename(baseName));
         //Path report = Paths.get(WsiUtil.getReportFilename(baseName));
         Path config = location.resolve(WsiUtil.getConfigFilename(baseName));
-        Path summary = location.resolve(WsiUtil.getSummaryFilename(baseName));
+        // Path summary = location.resolve(WsiUtil.getSummaryFilename(baseName));
         boolean success = WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config);
         if (success) {
             AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
@@ -1021,7 +1017,6 @@ public class Driver {
                 File f = file.toFile();
                 String ext = FilenameUtils.getExtension(f.getName());
                 Path filePath = Paths.get(f.getAbsolutePath());
-                //logMsg(".", false);
                 if ("xsd".equalsIgnoreCase(ext)) {
                     schema.add(filePath);
                 } else if ("wsdl".equalsIgnoreCase(ext)) {
@@ -1046,7 +1041,6 @@ public class Driver {
                 if (!("xsd".equalsIgnoreCase(ext) || "wsdl".equalsIgnoreCase(ext))) {
                     err = "Invalid file extension '" + ext + "'";
                 }
-                other++;
                 otherErrors.addError("", err, AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Path: '" + rel + "'.");
             }
         }
