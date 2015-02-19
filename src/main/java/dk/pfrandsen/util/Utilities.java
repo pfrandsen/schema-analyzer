@@ -15,6 +15,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -231,6 +232,24 @@ public class Utilities {
             }
             return fileContents;
         }
+    }
+
+    public static String getContentWithoutUtf8Bom(URI uri, Charset encoding) throws IOException {
+        String fileContents = IOUtils.toString(uri, encoding);
+        if (Utilities.hasUtf8Bom(fileContents)) {
+            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
+            fileContents = Utilities.removeUtf8Bom(fileContents);
+        }
+        return fileContents;
+    }
+
+    public static String getContentWithoutUtf8Bom(InputStream is, Charset encoding) throws IOException {
+        String fileContents = IOUtils.toString(is, encoding);
+        if (Utilities.hasUtf8Bom(fileContents)) {
+            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
+            fileContents = Utilities.removeUtf8Bom(fileContents);
+        }
+        return fileContents;
     }
 
 }
