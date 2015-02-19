@@ -3,6 +3,7 @@ package dk.pfrandsen.driver;
 import com.fasterxml.jackson.jr.ob.JSON;
 import dk.pfrandsen.AnalyzeWsdl;
 import dk.pfrandsen.UnpackTool;
+import dk.pfrandsen.check.AnalysisInformation;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.check.AssertionStatistics;
 import dk.pfrandsen.check.FileSummary;
@@ -18,6 +19,8 @@ import dk.pfrandsen.wsdl.DocumentationChecker;
 import dk.pfrandsen.wsdl.MessageChecker;
 import dk.pfrandsen.wsdl.NamespaceChecker;
 import dk.pfrandsen.wsdl.OperationChecker;
+import dk.pfrandsen.wsdl.PortBindingNameChecker;
+import dk.pfrandsen.wsdl.PortTypeChecker;
 import dk.pfrandsen.wsdl.SchemaTypesChecker;
 import dk.pfrandsen.wsdl.ServiceChecker;
 import dk.pfrandsen.wsdl.SoapBindingChecker;
@@ -36,9 +39,13 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
@@ -69,20 +76,6 @@ public class Driver {
     private static final String FR_FOOTER_TEMPLATE = "FinalReportFooter";
     private static final String FR_WSDL_SUMMARY_TEMPLATE = "FinalReportWsdlSummary";
     private static final String FR_SCHEMA_SUMMARY_TEMPLATE = "FinalReportSchemaSummary";
-    private static final String FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE = "FinalReportWsdlSummaryByCount";
-    private static final String FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE = "FinalReportWsdlSummaryByCountEven";
-    private static final String FR_WSDL_SUMMARY_BY_COUNT_ODD_TEMPLATE = "FinalReportWsdlSummaryByCountOdd";
-    private static final String FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE = "FinalReportSchemaSummaryByCount";
-    private static final String FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE = "FinalReportSchemaSummaryByCountEven";
-    private static final String FR_SCHEMA_SUMMARY_BY_COUNT_ODD_TEMPLATE = "FinalReportSchemaSummaryByCountOdd";
-    private static final String FR_WSDL_SUMMARY_BY_FILE_TEMPLATE = "FinalReportWsdlSummaryByFile";
-    private static final String FR_WSDL_SUMMARY_BY_FILE_HDR_TEMPLATE = "FinalReportWsdlSummaryByFileHdr";
-    private static final String FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE = "FinalReportWsdlSummaryByFileEven";
-    private static final String FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE = "FinalReportWsdlSummaryByFileOdd";
-    private static final String FR_SCHEMA_SUMMARY_BY_FILE_TEMPLATE = "FinalReportSchemaSummaryByFile";
-    private static final String FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE = "FinalReportSchemaSummaryByFileHdr";
-    private static final String FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE = "FinalReportSchemaSummaryByFileEven";
-    private static final String FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE = "FinalReportSchemaSummaryByFileOdd";
     private static final String FR_WSDL_FILE_LIST_TEMPLATE = "FinalReportWsdlFileList";
     private static final String FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE = "FinalReportWsdlFileListElement";
     private static final String FR_SCHEMA_FILE_LIST_TEMPLATE = "FinalReportSchemaFileList";
@@ -123,7 +116,7 @@ public class Driver {
     private boolean copySourceFiles = false;
     private boolean skipWsi = false;
     // error related to running the tool
-    AnalysisInformationCollector errors = new AnalysisInformationCollector();
+    AnalysisInformationCollector otherErrors = new AnalysisInformationCollector();
     List<SchemaSummary> schemasSummary = new ArrayList<>();
     List<WsdlSummary> wsdlSummary = new ArrayList<>();
 
@@ -151,26 +144,6 @@ public class Driver {
         templates.put(FR_WSDL_SUMMARY_TEMPLATE, getHtmlTemplate(root + "types/" + path + "SummaryTable.html"));
         templates.put(FR_SCHEMA_SUMMARY_TEMPLATE, getHtmlTemplate(root + "types/" + path + "SummaryTable.html"));
 
-        String countRoot = root + "types/bycount/";
-        templates.put(FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE, getHtmlTemplate(countRoot + "Summary.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE, getHtmlTemplate(countRoot + "Summary.html"));
-        countRoot += "fragment/";
-        templates.put(FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE, getHtmlTemplate(countRoot + "EvenRow.html"));
-        templates.put(FR_WSDL_SUMMARY_BY_COUNT_ODD_TEMPLATE, getHtmlTemplate(countRoot + "OddRow.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE, getHtmlTemplate(countRoot + "EvenRow.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_COUNT_ODD_TEMPLATE, getHtmlTemplate(countRoot + "OddRow.html"));
-
-        String fileRoot = root + "types/byfile/";
-        templates.put(FR_WSDL_SUMMARY_BY_FILE_TEMPLATE, getHtmlTemplate(fileRoot + "Summary.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_TEMPLATE, getHtmlTemplate(fileRoot + "Summary.html"));
-        fileRoot += "fragment/";
-        templates.put(FR_WSDL_SUMMARY_BY_FILE_HDR_TEMPLATE, getHtmlTemplate(fileRoot + "Header.html"));
-        templates.put(FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE, getHtmlTemplate(fileRoot + "EvenRow.html"));
-        templates.put(FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE, getHtmlTemplate(fileRoot + "OddRow.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE, getHtmlTemplate(fileRoot + "Header.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE, getHtmlTemplate(fileRoot + "EvenRow.html"));
-        templates.put(FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE, getHtmlTemplate(fileRoot + "OddRow.html"));
-
         String fileListRoot = root + "types/filelist/" + path;
         templates.put(FR_WSDL_FILE_LIST_TEMPLATE, getHtmlTemplate(fileListRoot + "Container.html"));
         templates.put(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE, getHtmlTemplate(fileListRoot + "Element.html"));
@@ -180,7 +153,7 @@ public class Driver {
         return templates;
     }
 
-    public static void runner() { // for testing
+/*    public static void runner() { // for testing
         Driver driver = new Driver();
         driver.chatty = true;
         driver.empty = true;
@@ -191,9 +164,8 @@ public class Driver {
         URI uri = null; //Paths.get(System.getProperty("user.home")).resolve("tmp").resolve("compare").toUri();
         driver.analyze(sourcePath, outputPath, uri);
     }
-
+*/
     public static void main(String[] args) {
-        //runner();
         Driver driver = new Driver();
         CommandLine cmd;
         try {
@@ -206,8 +178,8 @@ public class Driver {
             return;
         }
 
+        System.out.println("Analyzer version: " + driver.getToolVersion());
         Path sourcePath = Paths.get(cmd.getOptionValue(OPTIONS_SOURCE_PATH));
-        System.out.println("Source directory: " + sourcePath);
         if (!(sourcePath.toFile().exists() && sourcePath.toFile().isDirectory())) {
             System.err.println("Fatal error: Source directory must exist, " + sourcePath);
             return;
@@ -315,13 +287,17 @@ public class Driver {
         Path relTargetSrc = Paths.get("src");
         Path relResult = Paths.get("result");
         Path relReport = relResult.resolve("AnalysisReport.html");
+        Path relLog = relResult.resolve("log");
+        Path relErr = relLog.resolve("System-err.log");
+        Path relWsiOut = relLog.resolve("wsi-out.log"); // wsi analyzer prints messages to stdout, redirect to file
         Path relResultSchema = relResult.resolve("schema");
         Path relResultSchemaDiff = relResult.resolve("schema-diff");
         Path relResultWsdl = relResult.resolve("wsdl");
+        Path relResultWsdlDiff = relResult.resolve("wsdl-diff");
         Path relResultWsi = relResult.resolve("wsi");
         Path toolRoot = outputPath.resolve("wsi-tool");
 
-        // find the relative path between the source location and the result location
+        // find the relative path between the source location and the result location, both locations are in local fs
         Path resultToSrc = outputPath.resolve(relResult).relativize(sourcePath);
         if (copySourceFiles) {
             resultToSrc = outputPath.resolve(relResult).relativize(outputPath.resolve(relTargetSrc));
@@ -338,6 +314,7 @@ public class Driver {
                 return false;
             }
         }
+        Utilities.createDirs(outputPath.resolve(relLog));
         UnpackTool unpackTool = new UnpackTool();
         boolean unpacked =  unpackTool.extractTool(toolRoot);
         if (!unpacked) {
@@ -362,28 +339,65 @@ public class Driver {
                 copySource(sourcePath, outputPath.resolve(relTargetSrc), schema, wsdl);
             }
             logMsg("Analyzing " + schema.size() + " schemas");
-            URI compare = compareToRoot != null ? compareToRoot.resolve("schema") : null;
-            analyzeSchemas(sourcePath, outputPath.resolve(relResultSchema), schema, compare,
-                    outputPath.resolve(relResultSchemaDiff), resultToSrc);
-            logMsg("Analyzing " + wsdl.size() + " wsdls");
-            analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
-                    toolRoot);
+            URI compare = compareToRoot; // != null ? compareToRoot.resolve("schema") : null;
+            // until issue with sax parser is fixed (newer version is likely needed) redirect error stream to file
+            PrintStream stdErr = System.err;
+            boolean redirected = redirectStdErr(outputPath.resolve(relErr).toFile());
+            try {
+                analyzeSchemas(sourcePath, outputPath.resolve(relResultSchema), schema, compare,
+                        outputPath.resolve(relResultSchemaDiff), resultToSrc);
+                logMsg("Analyzing " + wsdl.size() + " wsdls");
+                FileUtils.deleteQuietly(outputPath.resolve(relWsiOut).toFile());
+                analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
+                        compare, outputPath.resolve(relResultWsdlDiff), resultToSrc, outputPath.resolve(relWsiOut),
+                        toolRoot);
+            }
+            finally {
+                // reset std err
+                if (redirected) {
+                    System.err.close();
+                    System.setErr(stdErr);
+                }
+            }
             Map<String, String> templates = getFinalReportTemplates(compareToRoot != null);
-            return generateFinalReport(templates, outputPath.resolve(relReport),  compareToRoot != null, start);
+            generateFinalReport(templates, outputPath.resolve(relReport),  compareToRoot != null, start);
 
         } catch (IOException e) {
             logMsg("Exception while processing files, " +  e.getMessage());
-            errors.addError("", "Exception while processing files",
+            otherErrors.addError("", "Exception while processing files",
                     AnalysisInformationCollector.SEVERITY_LEVEL_FATAL, e.getMessage());
             return false;
         }
+        return analysisSucceeded();
     }
 
-    private boolean generateFinalReport(Map<String, String> templates, Path reportFile, boolean compare, long start)
+    boolean redirectStdErr(File errFile) {
+        try {
+            System.setErr(new PrintStream(new FileOutputStream(errFile)));
+            return true;
+        } catch (FileNotFoundException e) {
+            logMsg("Could not redirect stderr to " + errFile);
+        }
+        return false;
+    }
+
+    boolean analysisSucceeded() {
+        int errorCount = otherErrors.errorCount(), warningCount = 0;
+        for (WsdlSummary summary : wsdlSummary) {
+            errorCount += summary.getErrorsAdded();
+            warningCount += summary.getWarningsAdded();
+        }
+        for (SchemaSummary summary : schemasSummary) {
+            errorCount += summary.getErrorsAdded();
+            warningCount += summary.getWarningsAdded();
+        }
+        return errorCount == 0 && warningCount == 0;
+    }
+
+    private void generateFinalReport(Map<String, String> templates, Path reportFile, boolean compare, long start)
             throws IOException {
         // generate overall report
         logMsg("Generating final report");
-        boolean retVal = true;
         String template = templates.get(FR_TEMPLATE);
         AssertionStatistics wsdlTotalErrors = new AssertionStatistics();
         AssertionStatistics wsdlTotalWarnings = new AssertionStatistics();
@@ -404,32 +418,16 @@ public class Driver {
             wsdlErrorsResolved += summary.getErrorsResolved();
             wsdlWarningsResolved += summary.getWarningsResolved();
         }
-        if (wsdlErrorsAdded > 0 || wsdlWarningsAdded > 0) {
-            retVal = false;
-        }
-        logMsg("WSDL errors: " + wsdlErrors + " total, " + wsdlErrorsAdded + " added, "
-                + wsdlErrorsResolved + " resolved.");
-        logMsg("WSDL warnings: " + wsdlWarnings + " total, " + wsdlWarningsAdded + " added, "
-                + wsdlWarningsResolved + " resolved.");
         template = template.replace("{{wsdl-file-count}}", wsdlSummary.size() + " WSDL file" +
                 (wsdlSummary.size() == 1 ? "" : "s"));
         template = template.replace("{{wsdl-files-content}}", wsdlSummary.size() == 0 ? "display:none" : "");
-        template = addAssertionsByCount(template, "{{summary-wsdl-by-count}}",
-                templates.get(FR_WSDL_SUMMARY_BY_COUNT_TEMPLATE),
-                templates.get(FR_WSDL_SUMMARY_BY_COUNT_EVEN_TEMPLATE),
-                templates.get(FR_WSDL_SUMMARY_BY_COUNT_ODD_TEMPLATE), wsdlTotalErrors, wsdlTotalWarnings);
-
+        template = addAssertionsByCount(template, "{{summary-wsdl-by-count}}", wsdlTotalErrors, wsdlTotalWarnings);
         List<FileSummary> summaryList = new ArrayList<>();
         summaryList.addAll(wsdlSummary);
         template = addAssertionsByFile(template, "{{summary-wsdl-by-assertion}}",
-                templates.get(FR_WSDL_SUMMARY_BY_FILE_TEMPLATE),
-                templates.get(FR_WSDL_SUMMARY_BY_FILE_HDR_TEMPLATE),
-                templates.get(FR_WSDL_SUMMARY_BY_FILE_EVEN_TEMPLATE),
-                templates.get(FR_WSDL_SUMMARY_BY_FILE_ODD_TEMPLATE),
                 wsdlTotalErrors, wsdlTotalWarnings, summaryList);
         template = addFileList(template, "{{wsdl-file-summary}}", templates.get(FR_WSDL_FILE_LIST_TEMPLATE),
                 templates.get(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
-
         for (SchemaSummary summary : schemasSummary) {
             schemaTotalErrors.add(summary.getErrors());
             schemaTotalWarnings.add(summary.getWarnings());
@@ -440,43 +438,45 @@ public class Driver {
             schemaErrorsResolved += summary.getErrorsResolved();
             schemaWarningsResolved += summary.getWarningsResolved();
         }
-        if (schemaErrorsAdded > 0 || schemaWarningsAdded > 0) {
-            retVal = false;
-        }
-        logMsg("Schema errors: " + schemaErrors + " total, " + schemaErrorsAdded + " added, "
-                + schemaErrorsResolved + " resolved.");
-        logMsg("Schema warnings: " + schemaWarnings + " total, " + schemaWarningsAdded + " added, "
-                + schemaWarningsResolved + " resolved.");
-
         template = template.replace("{{schema-file-count}}", schemasSummary.size() + " schema file" +
                 (schemasSummary.size() == 1 ? "" : "s"));
         template = template.replace("{{schema-files-content}}", schemasSummary.size() == 0 ? "display:none" : "");
         template = addAssertionsByCount(template, "{{summary-schema-by-count}}",
-                templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_TEMPLATE),
-                templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_EVEN_TEMPLATE),
-                templates.get(FR_SCHEMA_SUMMARY_BY_COUNT_ODD_TEMPLATE), schemaTotalErrors, schemaTotalWarnings);
-
+                schemaTotalErrors, schemaTotalWarnings);
         summaryList = new ArrayList<>();
         summaryList.addAll(schemasSummary);
         template = addAssertionsByFile(template, "{{summary-schema-by-assertion}}",
-                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_TEMPLATE),
-                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_HDR_TEMPLATE),
-                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_EVEN_TEMPLATE),
-                templates.get(FR_SCHEMA_SUMMARY_BY_FILE_ODD_TEMPLATE),
                 schemaTotalErrors, schemaTotalWarnings, summaryList);
         template = addFileList(template, "{{schema-file-summary}}", templates.get(FR_SCHEMA_FILE_LIST_TEMPLATE),
                 templates.get(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
-
         template = addAnalysisSummaryHtml(template, "{{summary}}", templates.get(FR_SUMMARY_TEMPLATE), wsdlErrors,
                 wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded, wsdlErrorsResolved, wsdlWarningsResolved,
                 schemaErrors, schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved,
-                schemaWarningsResolved);
+                schemaWarningsResolved, compare);
         template = addSummaryHtml(template, "{{wsdlsummary}}", "{{wsdlsummary-content}}",
                 templates.get(FR_WSDL_SUMMARY_TEMPLATE), wsdlErrors,  wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded,
                 wsdlErrorsResolved, wsdlWarningsResolved);
         template = addSummaryHtml(template, "{{schemasummary}}", "{{schemasummary-content}}", templates.get(FR_SCHEMA_SUMMARY_TEMPLATE), schemaErrors,
                 schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved, schemaWarningsResolved);
-        if (retVal) {
+
+        template = template.replace("{{other-errors-summary}}", spanOKFail(otherErrors.errorCount()));
+        if (otherErrors.errorCount() > 0) {
+            otherErrors.errorCount();
+            String container = "\n<div>Errors: " + spanOKFail(otherErrors.errorCount()) + "</div>";
+            container += "</p><a href=\"javascript:toggle('other_errors')\">Show/hide details</a></p>";
+            container += "\n<div id='other_errors' style='display:none'>";
+            container += "\n<table class='other-errors'>\n  <tr><th>Description</th><th>Details</th></tr>\n";
+            for (AnalysisInformation err : otherErrors.getErrors()) {
+                container += "\n  <tr><td>" + escapeHtml(err.getMessage()) + "</td><td>" + escapeHtml(err.getDetails())
+                        + "</td></tr>";
+            }
+            container += "\n</div>\n</table>\n";
+            template = template.replace("{{other-errors}}", container);
+        } else {
+            template = template.replace("{{other-errors}}", "No errors in this category.");
+        }
+
+        if (analysisSucceeded()) {
             template = template.replace("{{result}}", "<span class='result-ok'>OK</span>");
         } else {
             template = template.replace("{{result}}", "<span class='result-failed'>Failed</span>");
@@ -484,17 +484,7 @@ public class Driver {
         template = addReportFooter(template, "{{footer}}", templates.get(FR_FOOTER_TEMPLATE), start);
         logMsg("Report: " + reportFile);
         FileUtils.writeStringToFile(reportFile.toFile(), template);
-        return retVal;
     }
-
-    /*
-<tr>
-    <td>{{name}}</td>
-    <td>{{report}}</td>
-    <td>{{WARN_TOTAL}}</td>
-    <td>{{diff}}</td>
-</tr>
-     */
 
     String addFileList(String src, String tag, String template, String rowTemplate, List<FileSummary> summaryList) {
         StringBuilder builder = new StringBuilder();
@@ -521,13 +511,13 @@ public class Driver {
         return src.replace(tag, template.replace("{{1}}", builder.toString()));
     }
 
-    String addAssertionsByFile(String src, String tag, String template, String hdrTemplate, String evenTemplate,
-                               String oddTemplate, AssertionStatistics errors, AssertionStatistics warnings,
+    String addAssertionsByFile(String src, String tag, AssertionStatistics errors, AssertionStatistics warnings,
                                List<FileSummary> summaryList) {
+        String t = "<h4>Assertion errors</h4>\n{{errors}}\n<h4>Assertion warnings</h4>\n{{warnings}}\n";
+        String rt =  "\n<tr><td>{{1}}</td><td><a href='{{3}}' target='_blank'>{{2}}</a></td><td>{{4}}</td></tr>";
         String eRows = "";
         for (Map.Entry<String, Integer> entry : errors.getSortedByValue()) {
-            eRows += hdrTemplate.replace("{{1}}", entry.getKey());
-            int counter = 0;
+            eRows += "\n<tr><th colspan='3'>" + escapeHtml(entry.getKey()) + "</th></tr>";
             for (FileSummary summary : summaryList) {
                 int count = summary.getErrors().countByAssertion(entry.getKey());
                 if (count > 0) {
@@ -535,8 +525,7 @@ public class Driver {
                     if (summary.hasFullReportHtml()) {
                         report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
                     }
-                    String t = counter++ % 2 == 0 ? evenTemplate : oddTemplate;
-                    eRows += t.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                    eRows += rt.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
                             .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", report);
                 }
             }
@@ -548,8 +537,7 @@ public class Driver {
         }
         String wRows = "";
         for (Map.Entry<String, Integer> entry : warnings.getSortedByValue()) {
-            wRows += hdrTemplate.replace("{{1}}", entry.getKey());
-            int counter = 0;
+            wRows += "\n<tr><th colspan='3'>" + escapeHtml(entry.getKey()) + "</th></tr>";
             for (FileSummary summary : summaryList) {
                 int count = summary.getWarnings().countByAssertion(entry.getKey());
                 if (count > 0) {
@@ -557,8 +545,7 @@ public class Driver {
                     if (summary.hasFullReportHtml()) {
                         report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
                     }
-                    String t = counter++ % 2 == 0 ? evenTemplate : oddTemplate;
-                    wRows += t.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
+                    wRows += rt.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
                             .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", report);
                 }
             }
@@ -566,38 +553,30 @@ public class Driver {
         if (wRows.length() == 0) {
             wRows  = "<p>No warnings found.</p>";
         } else {
-            wRows = "<table class=''>\n" + wRows + "\n</table>";
+            wRows = "<table>\n" + wRows + "\n</table>";
         }
-        return src.replace(tag, template.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
+        return src.replace(tag, t.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
     }
 
-    String addAssertionsByCount(String src, String tag, String template, String evenTemplate, String oddTemplate,
-                                AssertionStatistics errors, AssertionStatistics warnings) {
+    String addAssertionsByCount(String src, String tag, AssertionStatistics errors, AssertionStatistics warnings) {
+        String t = "\n<table>\n<tr><th>Count</th><th>Assertion errors</th></tr>\n{{errors}}\n" +
+                "\n<tr><th>Count</th><th>Assertion warnings</th></tr>\n{{warnings}}\n</table>\n";
+        String rt =  "\n<tr><td>{{1}}</td><td>{{2}}</td></tr>";
         String eRows = "";
-        int counter = 0;
         for (Map.Entry<String, Integer> entry : errors.getSortedByValue()) {
-            if (counter++ % 2 == 0) {
-                eRows += evenTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
-            } else {
-                eRows += oddTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
-            }
+            eRows += rt.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
         }
         if (eRows.length() == 0) {
-            eRows += evenTemplate.replace("{{1}}", "").replace("{{2}}", "No errors.");
+            eRows += rt.replace("{{1}}", "").replace("{{2}}", "No errors.");
         }
         String wRows = "";
-        counter = 0;
         for (Map.Entry<String, Integer> entry : warnings.getSortedByValue()) {
-            if (counter++ % 2 == 0) {
-                wRows += evenTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
-            } else {
-                wRows += oddTemplate.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
-            }
+            wRows += rt.replace("{{1}}", "" + entry.getValue()).replace("{{2}}", entry.getKey());
         }
         if (wRows.length() == 0) {
-            wRows += evenTemplate.replace("{{1}}", "").replace("{{2}}", "No warnings.");
+            wRows += rt.replace("{{1}}", "").replace("{{2}}", "No warnings.");
         }
-        return src.replace(tag, template.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
+        return src.replace(tag, t.replace("{{errors}}", eRows).replace("{{warnings}}", wRows));
     }
 
     private String spanNeutralFail(int value) {
@@ -623,7 +602,7 @@ public class Driver {
     }
 
     String addAnalysisSummaryHtml(String src, String tag, String template, int we, int ww, int wea, int wwa, int wer,
-                                  int wwr, int se, int sw, int sea, int swa, int ser, int swr) {
+                                  int wwr, int se, int sw, int sea, int swa, int ser, int swr, boolean compare) {
         String t = template;
         // WSDL table row
         t = t.replace("{{WSDL_ERR_ADDED}}", spanNeutralFail(wea))
@@ -639,20 +618,17 @@ public class Driver {
                 .replace("{{SCHEMA_WARN_RESOLVED}}", spanNeutralOK(swr))
                 .replace("{{SCHEMA_ERR_TOTAL}}", spanOKFail(se))
                 .replace("{{SCHEMA_WARN_TOTAL}}", spanOKFail(sw));
+
+        logMsg("\nWSDL errors: " + we + (compare ? " total, " + wea + " added, " + wer + " resolved." : ""));
+        logMsg("WSDL warnings: " + ww + (compare ? " total, " + wwa + " added, " + wwr + " resolved." : ""));
+        logMsg("Schema errors: " + se  + (compare ? " total, " + sea + " added, " + ser + " resolved." : ""));
+        logMsg("Schema warnings: " + sw  + (compare ?" total, " + swa + " added, " + swr + " resolved." : ""));
+
         return src.replace(tag, t);
     }
 
-    private String addReportFooter(String src, String tag, String template, long start) {
-        //String template = templates.get(FR_FOOTER_TEMPLATE);
-        long duration = System.currentTimeMillis() - start;
-        long ms = duration % 1000;
-        long s = duration / 1000 % 60;
-        long m = duration / (60 * 1000) % 60;
-        int files = wsdlSummary.size() + schemasSummary.size();
+    String getToolVersion() {
         String version = "Not determined";
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
-
         // try to load version info from maven properties
         try {
             Properties p = new Properties();
@@ -664,12 +640,24 @@ public class Driver {
             }
         } catch (Exception ignore) {
         }
+        return version;
+    }
+
+    private String addReportFooter(String src, String tag, String template, long start) {
+        //String template = templates.get(FR_FOOTER_TEMPLATE);
+        long duration = System.currentTimeMillis() - start;
+        long ms = duration % 1000;
+        long s = duration / 1000 % 60;
+        long m = duration / (60 * 1000) % 60;
+        int files = wsdlSummary.size() + schemasSummary.size();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
 
         template = template.replace("{{files}}", "" + files);
         template = template.replace("{{minutes}}", "" + m);
         template = template.replace("{{seconds}}", "" + s);
         template = template.replace("{{milliseconds}}", "" + ms);
-        template = template.replace("{{version}}", "" + escapeHtml(version));
+        template = template.replace("{{version}}", "" + escapeHtml(getToolVersion()));
         template = template.replace("{{time}}", "" + dateFormat.format(date));
         logMsg("\n" + files + " files processed in " + m + "m " + s + "s " + ms + "ms");
         return src.replace(tag, template);
@@ -692,14 +680,18 @@ public class Driver {
             AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
             if (compareRoot != null) {
                 // load json file to compare with
+                // TODO: load source file and run analysis on it to get analysis result with same set of rules
+                //
                 String name = FilenameUtils.getBaseName(file.toFile().getName()) + ".json";
                 URI uri = Utilities.appendPath(compareRoot, relPath.getParent().resolve(name));
                 try (InputStream stream = uri.toURL().openStream()) {
                     AnalysisInformationCollector ref = AnalysisInformationCollector.fromJson(stream);
                     added = collector.except(ref);
-                    resolved = collector.except(ref);
+                    resolved = ref.except(collector);
                 } catch (Exception ignored) {
                     // assume that compare target does not exist - all errors/warnings are new
+                    collector.addInfo("", "Compare to schema source not found (new schema?)",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
                 }
             }
 
@@ -743,10 +735,9 @@ public class Driver {
         summary.setWarnings(warningStatistics);
     }
 
-    //Path root, Path wsdlTarget, List<Path> wsdl, URI compareRoot, Path diffTarget,
-    //Path resultToSrc
-    private void analyzeWsdls(Path root, Path wsdlTarget, Path wsiTarget,  List<Path> wsdl, Path toolRoot)
-                              throws IOException {
+    // resultToSrc - path to source files (used for creating links in report)
+    private void analyzeWsdls(Path root, Path wsdlTarget, Path wsiTarget,  List<Path> wsdl, URI compareRoot,
+                              Path diffTarget, Path resultToSrc, Path wsiOut, Path toolRoot) throws IOException {
         int count = 1;
         for (Path file : wsdl) {
             logMsg(".", count++ % 50 == 0);
@@ -760,13 +751,76 @@ public class Driver {
             String fileName = file.toFile().getName();
             String domain = dirToNamespace(topLevel);
 
-            if (!skipWsi) {
-                Path location = wsiTarget.resolve(relPath).getParent();
-                checkWsdlWsi(file, collector, fileName, relPath, domain, location, toolRoot);
-            }
             // first do ws-i check the do the other wsdl checks
-            //checkWsdl(fileContents, collector, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
+            if (!skipWsi) {
+                PrintStream stdOut = System.out;
+                boolean redirected = false;
+                Path location = wsiTarget.resolve(relPath).getParent();
+                if (wsiOut != null) { // redirect stdout from ws-i analyzer to file
+                    try {
+                        System.setOut(new PrintStream(new FileOutputStream(wsiOut.toFile(), true))); // append
+                        redirected = true;
+                    } catch (FileNotFoundException ignore) {
+                    }
+                }
+                checkWsdlWsi(file, collector, fileName, relPath, domain, location, toolRoot);
+                if (redirected) {
+                    System.out.close();
+                    System.setOut(stdOut);
+                }
+            }
+            checkWsdl(fileContents, collector, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
+
+            // collect errors/warnings
+
+            AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
+            AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
+            if (compareRoot != null) {
+                // load json file to compare with
+                // TODO: load source file and run analysis on it to get analysis result with same set of rules
+                //
+                String name = FilenameUtils.getBaseName(file.toFile().getName()) + ".json";
+                URI uri = Utilities.appendPath(compareRoot, relPath.getParent().resolve(name));
+                try (InputStream stream = uri.toURL().openStream()) {
+                    AnalysisInformationCollector ref = AnalysisInformationCollector.fromJson(stream);
+                    added = collector.except(ref);
+                    resolved = ref.except(collector);
+                } catch (Exception ignored) {
+                    // assume that compare target does not exist - all errors/warnings are new
+                    collector.addInfo("", "Compare to wsdl source not found (new wsdl?)",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
+                }
+            }
+
+            // Generate reports and collect stats about errors/warnings
+            Path outputDirFull = wsdlTarget.resolve(relPath).getParent();
+            Path outputDirDiff = diffTarget.resolve(relPath).getParent();
+            String filename = file.toFile().getName(); // filename
+            String baseName = FilenameUtils.getBaseName(filename);
+            WsdlSummary summary = new WsdlSummary(resultToSrc.resolve(relPath), added, resolved);
+            addAssertionStatistics(summary, collector);
+            if ((!collector.isEmpty()) || (empty)) {
+                // write full report
+                writeJsonReport(outputDirFull, filename, collector);
+                summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
+                // write html report
+                writeHtmlReport(outputDirFull, filename, collector);
+                summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
+            }
+            if ((!added.isEmpty()) || (empty)) {
+                // write report of added errors/warnings
+                writeJsonReport(outputDirDiff, filename, added);
+                summary.setAddedReport(outputDirDiff.resolve(baseName + ".json"));
+            }
+            if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
+                // write html report of added/resolved errors/warnings
+                writeHtmlReport(outputDirDiff, filename, added, resolved, collector);
+                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
+            }
+
+            wsdlSummary.add(summary);
         }
+        logMsg("\nDone analyzing wsdls");
     }
 
     private void checkSchema(String schema, AnalysisInformationCollector collector, String fileName,
@@ -812,108 +866,56 @@ public class Driver {
         Path summary = location.resolve(WsiUtil.getSummaryFilename(baseName));
         boolean success = WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config);
         if (success) {
-            logMsg("SUCCESS generating ws-i config file");
             AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
+
             if (!wsiAnalyzer.analyzeWsdl(toolRoot, config, collector)) {
-                logMsg("Error running ws-i analysis");
+                logMsg("Error running ws-i analysis\n");
             } else {
-                logMsg("SUCCESS running ws-i analysis");
+                logMsg("SUCCESS running ws-i analysis\n");
             }
         } else {
-            logMsg("Error generating ws-i config file");
+            otherErrors.addError("", "Could not generate WS-I configuration file for " + wsdl,
+                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Target location: " + config);
+            logMsg("Error generating ws-i config file\n");
         }
     }
 
     private void checkWsdl(String wsdl, AnalysisInformationCollector collector, String fileName,
-                                  Path relPath, String domain, Path location, Path toolRoot) {
-
-
-        // TODO: add missing checks (WS-I)
-        System.out.println("wsdl BetaNamespaceChecker.checkBetaNamespace");
+                                  Path relPath, String domain/*, Path location, Path toolRoot*/) {
         BetaNamespaceChecker.checkBetaNamespace(wsdl, collector);
-        System.out.println("wsdl BetaNamespaceChecker.checkBetaNamespaceDefinitions");
         BetaNamespaceChecker.checkBetaNamespaceDefinitions(wsdl, collector);
-        System.out.println("wsdl BetaNamespaceChecker.checkBetaNamespaceImports");
         BetaNamespaceChecker.checkBetaNamespaceImports(wsdl, collector);
-        System.out.println("wsdl BindingChecker.checkFaults");
         BindingChecker.checkFaults(wsdl, collector);
-        //System.out.println("wsdl BindingChecker.checkSoapAction");
-        //BindingChecker.checkSoapAction(wsdl, collector);
-        //System.out.println("wsdl DocumentationChecker.checkWsdlDocumentation");
-        //DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
-        System.out.println("wsdl MessageChecker.checkMessageNames");
+        BindingChecker.checkSoapAction(wsdl, collector);
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
+
         MessageChecker.checkMessageNames(wsdl, collector);
-        System.out.println("wsdl MessageChecker.checkMessageParts");
         MessageChecker.checkMessageParts(wsdl, collector);
-        System.out.println("wsdl MessageChecker.checkUnusedMessages");
         MessageChecker.checkUnusedMessages(wsdl, collector);
-        System.out.println("wsdl NamespaceChecker.checkInvalidImports");
         NamespaceChecker.checkInvalidImports(wsdl, collector);
-        System.out.println("wsdl NamespaceChecker.checkNamespace");
         NamespaceChecker.checkNamespace(wsdl, collector);
-        System.out.println("wsdl SchemaChecker.checkUnusedImport");
         SchemaChecker.checkUnusedImport(wsdl, collector);
-        //System.out.println("wsdl OperationChecker.checkOperationNames");
-        //OperationChecker.checkOperationNames(wsdl, collector);
-        System.out.println("wsdl OperationChecker.checkPortTypeAndBinding");
+
+        OperationChecker.checkOperationNames(wsdl, collector);
+
         OperationChecker.checkPortTypeAndBinding(wsdl, collector);
-        //System.out.println("wsdl PortBindingNameChecker.checkNames");
-        //PortBindingNameChecker.checkNames(wsdl, collector);
-        //System.out.println("wsdl PortTypeChecker.checkCardinality");
-        //PortTypeChecker.checkCardinality(wsdl, collector);
-        //System.out.println("wsdl PortTypeChecker.checkInputOutputMessagesAndFaults");
-        //PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
-        //System.out.println("wsdl PortTypeChecker.checkName");
-        //PortTypeChecker.checkName(wsdl, collector);
-        System.out.println("wsdl SchemaTypesChecker.checkSchemaTypes");
+
+        PortBindingNameChecker.checkNames(wsdl, collector);
+        PortTypeChecker.checkCardinality(wsdl, collector);
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        PortTypeChecker.checkName(wsdl, collector);
+
         SchemaTypesChecker.checkSchemaTypes(wsdl, collector);
-        System.out.println("wsdl ServiceChecker.checkServices");
         ServiceChecker.checkServices(wsdl, collector);
-        System.out.println("wsdl SoapBindingChecker.checkBindings");
         SoapBindingChecker.checkBindings(wsdl, collector);
-        System.out.println("wsdl WsdlNameChecker.checkName");
         WsdlNameChecker.checkName(wsdl, collector);
 
-        // WS-I checks
-        Path wsdlFile = location.resolve(fileName);
-
-        //Path relOutputPath = Paths.get("rel", "path");
-        /*boolean success = WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config);
-        if (success) {
-            String p = wsdlFile.toString();
-            if (p.endsWith(Paths.get("bank", "guarantee", "v1", "Guarantee.wsdl").toString())
-                    || p.endsWith(Paths.get("enterprise", "worker", "v2", "Worker.wsdl").toString())
-                    || p.endsWith(Paths.get("enterprise", "adresse", "v1", "ws", "AdresseStamdata.wsdl").toString())
-                    || p.endsWith(Paths.get("enterprise", "adresse", "v2", "ws", "AdresseStamdata.wsdl").toString())
-                    || p.endsWith(Paths.get("enterprise", "adresse", "v3", "ws", "AdresseStamdata.wsdl").toString())) {
-                errors.addError("", "WS-I analysis disabled for '" + fileName + "'",
-                        AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Config file '" + config + "'");
-                System.out.println("WSDL " + p);
-            } else {
-                return;
-            }
-            AnalysisInformationCollector wsiCollector = new AnalysisInformationCollector();
-            System.out.println("wsdl wsi");
-            if (WsiUtil.runAnalyzer(toolJar, toolRoot, config, summary, wsiCollector)) {
-                collector.add(wsiCollector);
-            } else {
-                errors.addError("", "Could not run WS-I analyzer for '" + fileName + "'",
-                        AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Config file '" + config + "'");
-            }
-        } else {
-            errors.addError("", "Could not create WS-I configuration file for '" + fileName + "'",
-                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Location '" + config + "'");
-        }*/
-
         // file and path checks
-        System.out.println("wsdl checkServiceFileName");
         ServiceChecker.checkServiceFileName(relPath.resolve(fileName), wsdl, collector);
-        System.out.println("wsdl checkPathCharacters");
         WsdlChecker.checkPathCharacters(Utilities.pathToNamespace(domain, relPath), collector);
-        System.out.println("wsdl checkPathAndTargetNamespace");
         WsdlChecker.checkPathAndTargetNamespace(wsdl, domain, relPath, collector);
-        System.out.println("wsdl checkServiceNamespace");
         WsdlChecker.checkServiceNamespace(wsdl, fileName, collector);
+
     }
 
     private void writeJsonReport(Path location, String filename, AnalysisInformationCollector collector)
@@ -1034,15 +1036,19 @@ public class Driver {
     }
 
     private void collectIgnoredErrors(List<Path> invalid, Path rootDirectory) {
-        if (invalid.size() > 0)
-            logMsg("Skipping " + invalid.size() + " files/directories with invalid extension or location");
-        for (Path file : invalid) {
-            Path rel = rootDirectory.relativize(file);
-            logMsg("Ignoring " + rel);
-            other++;
-            errors.addError("", "Invalid file/directory. Reason: Extension not {xsd,wsdl} or invalid location.",
-                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL,
-                    "Path: '" + rel + "'.");
+        if (invalid.size() > 0) {
+            String txt = invalid.size() == 1 ? "file/directory" : "files/directories";
+            logMsg("Skipping " + invalid.size() + " " + txt + ", see report for details.");
+            for (Path file : invalid) {
+                Path rel = rootDirectory.relativize(file);
+                String err = "Invalid location";
+                String ext = FilenameUtils.getExtension(file.toFile().getName());
+                if (!("xsd".equalsIgnoreCase(ext) || "wsdl".equalsIgnoreCase(ext))) {
+                    err = "Invalid file extension '" + ext + "'";
+                }
+                other++;
+                otherErrors.addError("", err, AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Path: '" + rel + "'.");
+            }
         }
     }
 
