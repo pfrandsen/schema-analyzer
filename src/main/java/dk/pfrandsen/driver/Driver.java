@@ -326,18 +326,17 @@ public class Driver {
                 copySource(sourcePath, outputPath.resolve(relTargetSrc), schema, wsdl);
             }
             logMsg("Analyzing " + schema.size() + " schemas");
-            URI compare = compareToRoot; // != null ? compareToRoot.resolve("schema") : null;
             // until issue with sax parser is fixed (newer version is likely needed) redirect error stream to file
             PrintStream stdErr = System.err;
             boolean redirected = redirectStdErr(outputPath.resolve(relErr).toFile());
             try {
-                analyzeSchemas(sourcePath, outputPath.resolve(relResultSchema), schema, compare,
+                analyzeSchemas(sourcePath, outputPath.resolve(relResultSchema), schema, compareToRoot,
                         outputPath.resolve(relResultSchemaDiff), resultToSrc);
                 logMsg("Analyzing " + wsdl.size() + " wsdls");
                 FileUtils.deleteQuietly(outputPath.resolve(relWsiOut).toFile());
                 analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
-                        compare, outputPath.resolve(relResultWsdlDiff), resultToSrc, outputPath.resolve(relWsiOut),
-                        tmp, toolRoot);
+                        compareToRoot, outputPath.resolve(relResultWsdlDiff), resultToSrc,
+                        outputPath.resolve(relWsiOut), tmp, toolRoot);
             }
             finally {
                 // reset std err
