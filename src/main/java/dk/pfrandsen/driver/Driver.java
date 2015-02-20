@@ -159,13 +159,11 @@ public class Driver {
         try {
             CommandLineParser parser = new GnuParser(); // replace with BasicParser when Apache commons-cli is released
             cmd = parser.parse(getCommandlineOptions(), args);
-
         } catch (ParseException e) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp(USAGE, getCommandlineOptions());
             return;
         }
-
         System.out.println("Analyzer version: " + driver.getToolVersion());
         Path sourcePath = Paths.get(cmd.getOptionValue(OPTIONS_SOURCE_PATH));
         if (!(sourcePath.toFile().exists() && sourcePath.toFile().isDirectory())) {
@@ -284,6 +282,7 @@ public class Driver {
         Path relResultWsdlDiff = relResult.resolve("wsdl-diff");
         Path relResultWsi = relResult.resolve("wsi");
         Path toolRoot = outputPath.resolve("wsi-tool");
+        Path tmp = outputPath.resolve("tmp");
 
         // find the relative path between the source location and the result location, both locations are in local fs
         Path resultToSrc = outputPath.resolve(relResult).relativize(sourcePath);
@@ -338,7 +337,7 @@ public class Driver {
                 FileUtils.deleteQuietly(outputPath.resolve(relWsiOut).toFile());
                 analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
                         compare, outputPath.resolve(relResultWsdlDiff), resultToSrc, outputPath.resolve(relWsiOut),
-                        toolRoot);
+                        tmp, toolRoot);
             }
             finally {
                 // reset std err
@@ -380,6 +379,264 @@ public class Driver {
             warningCount += summary.getWarningsAdded();
         }
         return errorCount == 0 && warningCount == 0;
+    }
+
+    // resultToSrc - path to source files (used for creating links in report)
+    private void analyzeSchemas(Path root, Path xsdTarget, List<Path> schema, URI compareRoot, Path diffTarget,
+                                Path resultToSrc) throws IOException {
+        int count = 1;
+        for (Path file : schema) {
+            logMsg(".", count++ % 50 == 0);
+            AnalysisInformationCollector collector = new AnalysisInformationCollector();
+            Path relPath = root.relativize(file);
+            Path topLevel = relPath.subpath(0, 1); // top level is logically equal to domain (prefix of domain)
+            Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
+            String fileName = file.toFile().getName();
+            String domain = dirToNamespace(topLevel);
+
+            Utf8.checkUtf8File(root, file, collector);
+            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
+            String fileContents = Utilities.getContentWithoutUtf8Bom(file);
+            checkSchema(fileContents, collector, fileName, logicalPath, domain);
+            AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
+            AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
+            if (compareRoot != null) {
+                // if "compare to" resource exists run analyzer on it and compute diff
+                URI uri = Utilities.appendPath(compareRoot, relPath);
+                try (InputStream is = uri.toURL().openStream()) {
+                    is.close(); // will be auto closed. but done here to avoid multiple concurrent open connections
+                    logMsg(" ", count++ % 50 == 0);
+                    compareCount++;
+                    AnalysisInformationCollector ref = new AnalysisInformationCollector();
+                    Utf8.checkUtf8Uri(relPath.toString(), uri, ref);
+                    // assume source is UTF-8
+                    String cContent = Utilities.getContentWithoutUtf8Bom(uri, Charset.availableCharsets().get("UTF-8"));
+                    // perform checks with content loaded from compare uri - then compute diff
+                    checkSchema(cContent, ref, fileName, logicalPath, domain);
+                    added = collector.except(ref);
+                    resolved = ref.except(collector);
+                } catch (Exception ignored) {
+                    logMsg("-", count++ % 50 == 0);
+                    // assume that compare target does not exist - all errors/warnings are new
+                    collector.addInfo("", "Compare to schema source not found (new schema?)",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
+                }
+            }
+            // Generate reports and collect stats about errors/warnings
+            Path outputDirFull = xsdTarget.resolve(relPath).getParent();
+            Path outputDirDiff = diffTarget.resolve(relPath).getParent();
+            String baseName = FilenameUtils.getBaseName(fileName);
+            SchemaSummary summary = new SchemaSummary(resultToSrc.resolve(relPath), added, resolved);
+            addAssertionStatistics(summary, collector);
+            if ((!collector.isEmpty()) || (empty)) {
+                // write full report
+                writeJsonReport(outputDirFull, fileName, collector);
+                summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
+                // write html report
+                writeHtmlReport(outputDirFull, fileName, collector);
+                summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
+            }
+            if ((!added.isEmpty()) || (empty)) {
+                // write report of added errors/warnings
+                writeJsonReport(outputDirDiff, fileName, added);
+                summary.setAddedReport(outputDirDiff.resolve(baseName + ".json"));
+            }
+            if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
+                // write html report of added/resolved errors/warnings
+                writeHtmlReport(outputDirDiff, fileName, added, resolved, collector);
+                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
+            }
+            schemasSummary.add(summary);
+        }
+        logMsg("\nDone analyzing schemas");
+    }
+
+    // resultToSrc - path to source files (used for creating links in report)
+    private void analyzeWsdls(Path root, Path wsdlTarget, Path wsiTarget,  List<Path> wsdl, URI compareRoot,
+                              Path diffTarget, Path resultToSrc, Path wsiOut, Path tmp, Path toolRoot) throws IOException {
+        int count = 1;
+        for (Path file : wsdl) {
+            logMsg(".", count++ % 50 == 0);
+            AnalysisInformationCollector collector = new AnalysisInformationCollector();
+            Path relPath = root.relativize(file);
+            Path topLevel = relPath.subpath(0, 1); // top level is logically equal to domain (prefix of domain)
+            Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
+            String fileName = file.toFile().getName();
+            String domain = dirToNamespace(topLevel);
+
+            Utf8.checkUtf8File(root, file, collector);
+            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
+            String fileContents = Utilities.getContentWithoutUtf8Bom(file);
+
+            // first do ws-i check the do the other wsdl checks
+            if (!skipWsi) {
+                Path location = wsiTarget.resolve(relPath).getParent();
+                checkWsdlWsi(file, collector, fileName, location, wsiOut, toolRoot);
+            }
+            checkWsdl(fileContents, collector, fileName, logicalPath, domain);
+            AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
+            AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
+            if (compareRoot != null) {
+                // if "compare to" resource exists run analyzer on it and compute diff
+                URI uri = Utilities.appendPath(compareRoot, relPath);
+                try (InputStream is = uri.toURL().openStream()) {
+                    is.close(); // will be auto closed. but done here to avoid multiple concurrent open connections
+                    logMsg(" ", count++ % 50 == 0);
+                    compareCount++;
+                    Utilities.createDirs(tmp); // make sure tmp directory for ws-i config file is created
+                    AnalysisInformationCollector ref = new AnalysisInformationCollector();
+                    Utf8.checkUtf8Uri(relPath.toString(), uri, ref);
+                    // assume source is UTF-8
+                    String cContent = Utilities.getContentWithoutUtf8Bom(uri, Charset.availableCharsets().get("UTF-8"));
+                    // perform checks with content loaded from compare uri - then compute diff
+                    if (!skipWsi) {
+                        checkWsdlWsi(file, ref, fileName, tmp, wsiOut, toolRoot);
+                    }
+                    checkWsdl(cContent, ref, fileName, logicalPath, domain);
+                    added = collector.except(ref);
+                    resolved = ref.except(collector);
+                } catch (Exception ignored) {
+                    logMsg("-", count++ % 50 == 0);
+                    // assume that compare target does not exist - all errors/warnings are new
+                    collector.addInfo("", "Compare to wsdl source not found (new wsdl?)",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
+                }
+            }
+            // Generate reports and collect stats about errors/warnings
+            Path outputDirFull = wsdlTarget.resolve(relPath).getParent();
+            Path outputDirDiff = diffTarget.resolve(relPath).getParent();
+            String baseName = FilenameUtils.getBaseName(fileName);
+            WsdlSummary summary = new WsdlSummary(resultToSrc.resolve(relPath), added, resolved);
+            addAssertionStatistics(summary, collector);
+            if ((!collector.isEmpty()) || (empty)) {
+                // write full report
+                writeJsonReport(outputDirFull, fileName, collector);
+                summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
+                // write html report
+                writeHtmlReport(outputDirFull, fileName, collector);
+                summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
+            }
+            if ((!added.isEmpty()) || (empty)) {
+                // write report of added errors/warnings
+                writeJsonReport(outputDirDiff, fileName, added);
+                summary.setAddedReport(outputDirDiff.resolve(baseName + ".json"));
+            }
+            if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
+                // write html report of added/resolved errors/warnings
+                writeHtmlReport(outputDirDiff, fileName, added, resolved, collector);
+                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
+            }
+            wsdlSummary.add(summary);
+        }
+        logMsg("\nDone analyzing wsdls");
+    }
+
+    private void addAssertionStatistics(FileSummary summary, AnalysisInformationCollector collector) {
+        AssertionStatistics errorStatistics = new AssertionStatistics();
+        AssertionStatistics warningStatistics = new AssertionStatistics();
+        errorStatistics.add(collector.getErrors());
+        warningStatistics.add(collector.getWarnings());
+        summary.setErrors(errorStatistics);
+        summary.setWarnings(warningStatistics);
+    }
+
+    private void checkSchema(String schema, AnalysisInformationCollector collector, String fileName,
+                             Path relPath, String domain) {
+        SchemaChecker.checkFormDefault(schema, collector);
+        SchemaChecker.checkNillable(schema, collector);
+        SchemaChecker.checkMinMaxOccurs(schema, collector);
+        SchemaChecker.checkConceptTypes(schema, collector);
+        SchemaChecker.checkTypes(schema, collector);
+        SchemaChecker.checkElements(schema, collector);
+        SchemaChecker.checkBetaNamespace(schema, collector);
+        SchemaChecker.checkEnumerationValues(schema, collector);
+        SchemaChecker.checkSimpleTypesInConcept(schema, collector);
+        SchemaChecker.checkServiceElementDefinition(schema, collector);
+        SchemaChecker.checkRedefinition(schema, collector);
+        SchemaChecker.checkSchemaUse(schema, collector);
+        SchemaChecker.checkTargetNamespaceVersion(schema, collector);
+        SchemaChecker.checkTargetNamespaceCase(schema, collector);
+        SchemaChecker.checkTargetNamespaceCharacters(schema, collector);
+        SchemaChecker.checkAnyType(schema, collector);
+        SchemaChecker.checkAny(schema, collector);
+        SchemaChecker.checkAnyAttribute(schema, collector);
+        SchemaChecker.checkIdenticalElementNames(schema, collector);
+        SchemaChecker.checkImportAndIncludeLocation(schema, collector);
+        SchemaChecker.checkDeprecated(schema, collector);
+        SchemaChecker.checkUnusedNamespacePrefix(schema, collector);
+        SchemaChecker.checkUnusedImport(schema, collector);
+        DocumentationChecker.checkConceptSchemaDocumentation(schema, collector);
+        // file and path checks
+        SchemaChecker.checkSchemaFilename(fileName, collector);
+        SchemaChecker.checkEnterpriseConceptNamespace(schema, fileName, collector);
+        SchemaChecker.checkServiceConceptNamespace(schema, fileName, collector);
+        SchemaChecker.checkPathAndTargetNamespace(schema, domain, relPath, collector);
+    }
+
+    private void checkWsdlWsi(Path wsdl, AnalysisInformationCollector collector, String fileName, Path location,
+                              Path wsiOut, Path toolRoot) {
+        String baseName = FilenameUtils.getBaseName(fileName);
+        Utilities.createDirs(location);
+        Path report = location.resolve(WsiUtil.getReportFilename(baseName));
+        Path config = location.resolve(WsiUtil.getConfigFilename(baseName));
+
+        PrintStream stdOut = System.out;
+        boolean redirected = false;
+        if (wsiOut != null) { // redirect stdout from ws-i analyzer to file
+            try {
+                System.setOut(new PrintStream(new FileOutputStream(wsiOut.toFile(), true))); // append
+                redirected = true;
+            } catch (FileNotFoundException ignore) {
+            }
+        }
+        if (WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config)) {
+            AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
+            if (!wsiAnalyzer.analyzeWsdl(toolRoot, config, collector)) {
+                logMsg("Error running ws-i analysis\n");
+            } else {
+                logMsg("SUCCESS running ws-i analysis\n");
+            }
+        } else {
+            otherErrors.addError("", "Could not generate WS-I configuration file for " + wsdl,
+                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Target location: " + config);
+            logMsg("Error generating ws-i config file\n");
+        }
+        // restore std out
+        if (redirected) {
+            System.out.close();
+            System.setOut(stdOut);
+        }
+    }
+
+    private void checkWsdl(String wsdl, AnalysisInformationCollector collector, String fileName,
+                           Path relPath, String domain/*, Path location, Path toolRoot*/) {
+        BetaNamespaceChecker.checkBetaNamespace(wsdl, collector);
+        BetaNamespaceChecker.checkBetaNamespaceDefinitions(wsdl, collector);
+        BetaNamespaceChecker.checkBetaNamespaceImports(wsdl, collector);
+        BindingChecker.checkFaults(wsdl, collector);
+        BindingChecker.checkSoapAction(wsdl, collector);
+        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
+        MessageChecker.checkMessageNames(wsdl, collector);
+        MessageChecker.checkMessageParts(wsdl, collector);
+        MessageChecker.checkUnusedMessages(wsdl, collector);
+        NamespaceChecker.checkInvalidImports(wsdl, collector);
+        NamespaceChecker.checkNamespace(wsdl, collector);
+        SchemaChecker.checkUnusedImport(wsdl, collector);
+        OperationChecker.checkOperationNames(wsdl, collector);
+        OperationChecker.checkPortTypeAndBinding(wsdl, collector);
+        PortBindingNameChecker.checkNames(wsdl, collector);
+        PortTypeChecker.checkCardinality(wsdl, collector);
+        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
+        PortTypeChecker.checkName(wsdl, collector);
+        SchemaTypesChecker.checkSchemaTypes(wsdl, collector);
+        ServiceChecker.checkServices(wsdl, collector);
+        SoapBindingChecker.checkBindings(wsdl, collector);
+        WsdlNameChecker.checkName(wsdl, collector);
+        // file and path checks
+        ServiceChecker.checkServiceFileName(relPath.resolve(fileName), wsdl, collector);
+        WsdlChecker.checkPathCharacters(Utilities.pathToNamespace(domain, relPath), collector);
+        WsdlChecker.checkPathAndTargetNamespace(wsdl, domain, relPath, collector);
+        WsdlChecker.checkServiceNamespace(wsdl, fileName, collector);
     }
 
     private void generateFinalReport(Map<String, String> templates, Path reportFile, boolean compare, long start)
@@ -639,7 +896,6 @@ public class Driver {
         int files = wsdlSummary.size() + schemasSummary.size();
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
-
         String msg = files + " schema/wsdl resources analyzed in " + m + "m " + s + "s " + ms + "ms";
         String cmp = compare ? compareCount + " schema/wsdl resources compared" : "";
         template = template.replace("{{analyzed}}", msg);
@@ -651,267 +907,6 @@ public class Driver {
             logMsg(cmp);
         }
         return src.replace(tag, template);
-    }
-
-    private void analyzeSchemas(Path root, Path xsdTarget, List<Path> schema, URI compareRoot, Path diffTarget,
-                                       Path resultToSrc) throws IOException {
-        int count = 1;
-        for (Path file : schema) {
-            logMsg(".", count++ % 50 == 0);
-            AnalysisInformationCollector collector = new AnalysisInformationCollector();
-            Path relPath = root.relativize(file);
-            Path topLevel = relPath.subpath(0, 1); // top level is logically equal to domain (prefix of domain)
-            Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
-            Utf8.checkUtf8File(root, file, collector);
-            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
-            String fileContents = Utilities.getContentWithoutUtf8Bom(file);
-            checkSchema(fileContents, collector, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
-            AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
-            AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
-            if (compareRoot != null) {
-                // if "compare to" resource exists run analyzer on it and compute diff
-                URI uri = Utilities.appendPath(compareRoot, relPath);
-                try (InputStream is = uri.toURL().openStream()) {
-                    is.close(); // will be auto closed. but done here to avoid multiple concurrent open connections
-                    logMsg("+", count++ % 50 == 0);
-                    compareCount++;
-                    AnalysisInformationCollector ref = new AnalysisInformationCollector();
-                    Utf8.checkUtf8Uri(relPath.toString(), uri, ref);
-                    // assume source is UTF-8
-                    String cContent = Utilities.getContentWithoutUtf8Bom(uri, Charset.availableCharsets().get("UTF-8"));
-                    // perform checks with content loaded from compare uri - then compute diff
-                    checkSchema(cContent, ref, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
-                    added = collector.except(ref);
-                    resolved = ref.except(collector);
-                } catch (Exception ignored) {
-                    logMsg("-", count++ % 50 == 0);
-                    // assume that compare target does not exist - all errors/warnings are new
-                    collector.addInfo("", "Compare to schema source not found (new schema?)",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
-                }
-            }
-
-            // Generate reports and collect stats about errors/warnings
-            Path outputDirFull = xsdTarget.resolve(relPath).getParent();
-            Path outputDirDiff = diffTarget.resolve(relPath).getParent();
-            String filename = file.toFile().getName(); // filename
-            String baseName = FilenameUtils.getBaseName(filename);
-            SchemaSummary summary = new SchemaSummary(resultToSrc.resolve(relPath), added, resolved);
-            addAssertionStatistics(summary, collector);
-            if ((!collector.isEmpty()) || (empty)) {
-                // write full report
-                writeJsonReport(outputDirFull, filename, collector);
-                summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
-                // write html report
-                writeHtmlReport(outputDirFull, filename, collector);
-                summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
-            }
-            if ((!added.isEmpty()) || (empty)) {
-                // write report of added errors/warnings
-                writeJsonReport(outputDirDiff, filename, added);
-                summary.setAddedReport(outputDirDiff.resolve(baseName + ".json"));
-            }
-            if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
-                // write html report of added/resolved errors/warnings
-                writeHtmlReport(outputDirDiff, filename, added, resolved, collector);
-                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
-            }
-
-            schemasSummary.add(summary);
-        }
-        logMsg("\nDone analyzing schemas");
-    }
-
-    private void addAssertionStatistics(FileSummary summary, AnalysisInformationCollector collector) {
-        AssertionStatistics errorStatistics = new AssertionStatistics();
-        AssertionStatistics warningStatistics = new AssertionStatistics();
-        errorStatistics.add(collector.getErrors());
-        warningStatistics.add(collector.getWarnings());
-        summary.setErrors(errorStatistics);
-        summary.setWarnings(warningStatistics);
-    }
-
-    // resultToSrc - path to source files (used for creating links in report)
-    private void analyzeWsdls(Path root, Path wsdlTarget, Path wsiTarget,  List<Path> wsdl, URI compareRoot,
-                              Path diffTarget, Path resultToSrc, Path wsiOut, Path toolRoot) throws IOException {
-        int count = 1;
-        for (Path file : wsdl) {
-            logMsg(".", count++ % 50 == 0);
-            AnalysisInformationCollector collector = new AnalysisInformationCollector();
-            Path relPath = root.relativize(file);
-            Path topLevel = relPath.subpath(0, 1); // top level is logically equal to domain (prefix of domain)
-            Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
-            Utf8.checkUtf8File(root, file, collector);
-            // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
-            String fileContents = Utilities.getContentWithoutUtf8Bom(file);
-            String fileName = file.toFile().getName();
-            String domain = dirToNamespace(topLevel);
-
-            // first do ws-i check the do the other wsdl checks
-            if (!skipWsi) {
-                PrintStream stdOut = System.out;
-                boolean redirected = false;
-                Path location = wsiTarget.resolve(relPath).getParent();
-                if (wsiOut != null) { // redirect stdout from ws-i analyzer to file
-                    try {
-                        System.setOut(new PrintStream(new FileOutputStream(wsiOut.toFile(), true))); // append
-                        redirected = true;
-                    } catch (FileNotFoundException ignore) {
-                    }
-                }
-                checkWsdlWsi(file, collector, fileName, relPath, domain, location, toolRoot);
-                if (redirected) {
-                    System.out.close();
-                    System.setOut(stdOut);
-                }
-            }
-            checkWsdl(fileContents, collector, file.toFile().getName(), logicalPath, dirToNamespace(topLevel));
-
-            // collect errors/warnings
-
-            AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
-            AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
-            if (compareRoot != null) {
-                // load json file to compare with
-                // TODO: load source file and run analysis on it to get analysis result with same set of rules
-                //
-                String name = FilenameUtils.getBaseName(file.toFile().getName()) + ".json";
-                URI uri = Utilities.appendPath(compareRoot, relPath.getParent().resolve(name));
-                try (InputStream stream = uri.toURL().openStream()) {
-                    AnalysisInformationCollector ref = AnalysisInformationCollector.fromJson(stream);
-                    added = collector.except(ref);
-                    resolved = ref.except(collector);
-                } catch (Exception ignored) {
-                    // assume that compare target does not exist - all errors/warnings are new
-                    collector.addInfo("", "Compare to wsdl source not found (new wsdl?)",
-                            AnalysisInformationCollector.SEVERITY_LEVEL_UNKNOWN, uri + ", " + relPath);
-                }
-            }
-
-            // Generate reports and collect stats about errors/warnings
-            Path outputDirFull = wsdlTarget.resolve(relPath).getParent();
-            Path outputDirDiff = diffTarget.resolve(relPath).getParent();
-            String filename = file.toFile().getName(); // filename
-            String baseName = FilenameUtils.getBaseName(filename);
-            WsdlSummary summary = new WsdlSummary(resultToSrc.resolve(relPath), added, resolved);
-            addAssertionStatistics(summary, collector);
-            if ((!collector.isEmpty()) || (empty)) {
-                // write full report
-                writeJsonReport(outputDirFull, filename, collector);
-                summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
-                // write html report
-                writeHtmlReport(outputDirFull, filename, collector);
-                summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
-            }
-            if ((!added.isEmpty()) || (empty)) {
-                // write report of added errors/warnings
-                writeJsonReport(outputDirDiff, filename, added);
-                summary.setAddedReport(outputDirDiff.resolve(baseName + ".json"));
-            }
-            if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
-                // write html report of added/resolved errors/warnings
-                writeHtmlReport(outputDirDiff, filename, added, resolved, collector);
-                summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
-            }
-
-            wsdlSummary.add(summary);
-        }
-        logMsg("\nDone analyzing wsdls");
-    }
-
-    private void checkSchema(String schema, AnalysisInformationCollector collector, String fileName,
-                                    Path relPath, String domain) {
-        SchemaChecker.checkFormDefault(schema, collector);
-        SchemaChecker.checkNillable(schema, collector);
-        SchemaChecker.checkMinMaxOccurs(schema, collector);
-        SchemaChecker.checkConceptTypes(schema, collector);
-        SchemaChecker.checkTypes(schema, collector);
-        SchemaChecker.checkElements(schema, collector);
-        SchemaChecker.checkBetaNamespace(schema, collector);
-        SchemaChecker.checkEnumerationValues(schema, collector);
-        SchemaChecker.checkSimpleTypesInConcept(schema, collector);
-        SchemaChecker.checkServiceElementDefinition(schema, collector);
-        SchemaChecker.checkRedefinition(schema, collector);
-        SchemaChecker.checkSchemaUse(schema, collector);
-        SchemaChecker.checkTargetNamespaceVersion(schema, collector);
-        SchemaChecker.checkTargetNamespaceCase(schema, collector);
-        SchemaChecker.checkTargetNamespaceCharacters(schema, collector);
-        SchemaChecker.checkAnyType(schema, collector);
-        SchemaChecker.checkAny(schema, collector);
-        SchemaChecker.checkAnyAttribute(schema, collector);
-        SchemaChecker.checkIdenticalElementNames(schema, collector);
-        SchemaChecker.checkImportAndIncludeLocation(schema, collector);
-        SchemaChecker.checkDeprecated(schema, collector);
-        SchemaChecker.checkUnusedNamespacePrefix(schema, collector);
-        SchemaChecker.checkUnusedImport(schema, collector);
-        DocumentationChecker.checkConceptSchemaDocumentation(schema, collector);
-        // file and path checks
-        SchemaChecker.checkSchemaFilename(fileName, collector);
-        SchemaChecker.checkEnterpriseConceptNamespace(schema, fileName, collector);
-        SchemaChecker.checkServiceConceptNamespace(schema, fileName, collector);
-        SchemaChecker.checkPathAndTargetNamespace(schema, domain, relPath, collector);
-    }
-
-    private void checkWsdlWsi(Path wsdl, AnalysisInformationCollector collector, String fileName,
-                           Path relPath, String domain, Path location, Path toolRoot) {
-        String baseName = FilenameUtils.getBaseName(fileName);
-        Utilities.createDirs(location);
-        Path report = location.resolve(WsiUtil.getReportFilename(baseName));
-        //Path report = Paths.get(WsiUtil.getReportFilename(baseName));
-        Path config = location.resolve(WsiUtil.getConfigFilename(baseName));
-        // Path summary = location.resolve(WsiUtil.getSummaryFilename(baseName));
-        boolean success = WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config);
-        if (success) {
-            AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
-
-            if (!wsiAnalyzer.analyzeWsdl(toolRoot, config, collector)) {
-                logMsg("Error running ws-i analysis\n");
-            } else {
-                logMsg("SUCCESS running ws-i analysis\n");
-            }
-        } else {
-            otherErrors.addError("", "Could not generate WS-I configuration file for " + wsdl,
-                    AnalysisInformationCollector.SEVERITY_LEVEL_CRITICAL, "Target location: " + config);
-            logMsg("Error generating ws-i config file\n");
-        }
-    }
-
-    private void checkWsdl(String wsdl, AnalysisInformationCollector collector, String fileName,
-                                  Path relPath, String domain/*, Path location, Path toolRoot*/) {
-        BetaNamespaceChecker.checkBetaNamespace(wsdl, collector);
-        BetaNamespaceChecker.checkBetaNamespaceDefinitions(wsdl, collector);
-        BetaNamespaceChecker.checkBetaNamespaceImports(wsdl, collector);
-        BindingChecker.checkFaults(wsdl, collector);
-        BindingChecker.checkSoapAction(wsdl, collector);
-        DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
-
-        MessageChecker.checkMessageNames(wsdl, collector);
-        MessageChecker.checkMessageParts(wsdl, collector);
-        MessageChecker.checkUnusedMessages(wsdl, collector);
-        NamespaceChecker.checkInvalidImports(wsdl, collector);
-        NamespaceChecker.checkNamespace(wsdl, collector);
-        SchemaChecker.checkUnusedImport(wsdl, collector);
-
-        OperationChecker.checkOperationNames(wsdl, collector);
-
-        OperationChecker.checkPortTypeAndBinding(wsdl, collector);
-
-        PortBindingNameChecker.checkNames(wsdl, collector);
-        PortTypeChecker.checkCardinality(wsdl, collector);
-        PortTypeChecker.checkInputOutputMessagesAndFaults(wsdl, collector);
-        PortTypeChecker.checkName(wsdl, collector);
-
-        SchemaTypesChecker.checkSchemaTypes(wsdl, collector);
-        ServiceChecker.checkServices(wsdl, collector);
-        SoapBindingChecker.checkBindings(wsdl, collector);
-        WsdlNameChecker.checkName(wsdl, collector);
-
-        // file and path checks
-        ServiceChecker.checkServiceFileName(relPath.resolve(fileName), wsdl, collector);
-        WsdlChecker.checkPathCharacters(Utilities.pathToNamespace(domain, relPath), collector);
-        WsdlChecker.checkPathAndTargetNamespace(wsdl, domain, relPath, collector);
-        WsdlChecker.checkServiceNamespace(wsdl, fileName, collector);
-
     }
 
     private void writeJsonReport(Path location, String filename, AnalysisInformationCollector collector)
