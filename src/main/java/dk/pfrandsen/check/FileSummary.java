@@ -14,6 +14,7 @@ public class FileSummary {
     Path fullReportHtml = null;
     Path addedReport = null;
     Path diffReportHtml = null;
+    Path sourceHtml = null;
     AssertionStatistics errors = new AssertionStatistics();
     AssertionStatistics warnings = new AssertionStatistics();
 
@@ -40,6 +41,10 @@ public class FileSummary {
 
     public boolean hasDiffReportHtml() {
         return diffReportHtml != null;
+    }
+
+    public boolean hasSourceHtml() {
+        return sourceHtml != null;
     }
 
     public int getErrorsAdded() {
@@ -82,6 +87,10 @@ public class FileSummary {
         return diffReportHtml;
     }
 
+    public Path getSourceHtml() {
+        return sourceHtml;
+    }
+
     public void setFullReport(Path fullReport) {
         this.fullReport = fullReport;
     }
@@ -96,6 +105,10 @@ public class FileSummary {
 
     public void setDiffReportHtml(Path diffReportHtml) {
         this.diffReportHtml = diffReportHtml;
+    }
+
+    public void setSourceHtml(Path sourceHtml) {
+        this.sourceHtml = sourceHtml;
     }
 
     public AssertionStatistics getErrors() {

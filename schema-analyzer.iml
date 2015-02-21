@@ -19,7 +19,7 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.jr:jackson-jr-objects:2.4.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.4.0" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
-    <orderEntry type="library" name="Maven: commons-lang:commons-lang:2.6" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.3.2" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.2" level="project" />
     <orderEntry type="library" name="Maven: net.sf.jtidy:jtidy:r938" level="project" />
     <orderEntry type="library" name="Maven: xerces:xercesImpl:2.6.2" level="project" />

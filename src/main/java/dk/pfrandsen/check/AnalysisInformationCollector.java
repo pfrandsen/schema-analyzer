@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 public class AnalysisInformationCollector {
     public static int SEVERITY_LEVEL_UNKNOWN = -1;
@@ -173,8 +173,8 @@ public class AnalysisInformationCollector {
         StringBuilder html = new StringBuilder();
         if (collection.size() > 0 || includeEmpty ) {
             html.append("<tr>");
-            html.append("<td colspan='4' class='").append(cssClasses).append("'>").append(escapeHtml(caption))
-                    .append("</td>");
+            html.append("<td colspan='4' class='").append(cssClasses).append("'>")
+                    .append(StringEscapeUtils.escapeHtml4(caption)).append("</td>");
             html.append("</tr>");
             for (AnalysisInformation inf : collection) {
                 html.append(inf.toHtmlTableRow());

@@ -65,12 +65,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 public class Driver {
 
-    // final report html template names
+    // report html template names
     private static final String FR_TEMPLATE = "FinalReport";
     private static final String FR_SUMMARY_TEMPLATE = "FinalReportSummary";
     private static final String FR_FOOTER_TEMPLATE = "FinalReportFooter";
@@ -80,6 +82,8 @@ public class Driver {
     private static final String FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE = "FinalReportWsdlFileListElement";
     private static final String FR_SCHEMA_FILE_LIST_TEMPLATE = "FinalReportSchemaFileList";
     private static final String FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE = "FinalReportSchemaFileListElement";
+    private static final String STANDARD_REPORT_TEMPLATE = "StandardReport";
+    private static final String DIFF_REPORT_TEMPLATE = "DiffReport";
 
     private static String arg(String argument) {
         return "-" + argument;
@@ -150,6 +154,9 @@ public class Driver {
         templates.put(FR_SCHEMA_FILE_LIST_TEMPLATE, getHtmlTemplate(fileListRoot + "Container.html"));
         templates.put(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE, getHtmlTemplate(fileListRoot + "Element.html"));
 
+        root = "Report/";
+        templates.put(STANDARD_REPORT_TEMPLATE, getHtmlTemplate(root + "Standard.html"));
+        templates.put(DIFF_REPORT_TEMPLATE, getHtmlTemplate(root + "Diff.html"));
         return templates;
     }
 
@@ -278,11 +285,14 @@ public class Driver {
         Path relWsiOut = relLog.resolve("wsi-out.log"); // wsi analyzer prints messages to stdout, redirect to file
         Path relResultSchema = relResult.resolve("schema");
         Path relResultSchemaDiff = relResult.resolve("schema-diff");
+        Path relSchemaHtml = relResult.resolve("schema-html");
         Path relResultWsdl = relResult.resolve("wsdl");
         Path relResultWsdlDiff = relResult.resolve("wsdl-diff");
+        Path relWsdlHtml = relResult.resolve("wsdl-html");
         Path relResultWsi = relResult.resolve("wsi");
         Path toolRoot = outputPath.resolve("wsi-tool");
         Path tmp = outputPath.resolve("tmp");
+        Path srcDiff = outputPath.resolve("src-diff");
 
         // find the relative path between the source location and the result location, both locations are in local fs
         Path resultToSrc = outputPath.resolve(relResult).relativize(sourcePath);
@@ -308,6 +318,10 @@ public class Driver {
             System.err.println("Fatal error: Could not unpack WS-I tool to " + toolRoot);
             return false;
         }
+        // unpack resources used for wsdl and schema source diff reports
+        if (!unpackSourceDiffResources(srcDiff)) {
+            // TODO:
+        }
 
         List<Path> schema = new ArrayList<>();
         List<Path> wsdl = new ArrayList<>();
@@ -326,17 +340,18 @@ public class Driver {
                 copySource(sourcePath, outputPath.resolve(relTargetSrc), schema, wsdl);
             }
             logMsg("Analyzing " + schema.size() + " schemas");
+            Map<String, String> templates = getFinalReportTemplates(compareToRoot != null);
             // until issue with sax parser is fixed (newer version is likely needed) redirect error stream to file
             PrintStream stdErr = System.err;
             boolean redirected = redirectStdErr(outputPath.resolve(relErr).toFile());
             try {
-                analyzeSchemas(sourcePath, outputPath.resolve(relResultSchema), schema, compareToRoot,
-                        outputPath.resolve(relResultSchemaDiff), resultToSrc);
+                analyzeSchemas(templates, sourcePath, outputPath.resolve(relResultSchema), schema, compareToRoot,
+                        outputPath.resolve(relResultSchemaDiff), outputPath.resolve(relSchemaHtml), resultToSrc);
                 logMsg("Analyzing " + wsdl.size() + " wsdls");
                 FileUtils.deleteQuietly(outputPath.resolve(relWsiOut).toFile());
-                analyzeWsdls(sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi), wsdl,
-                        compareToRoot, outputPath.resolve(relResultWsdlDiff), resultToSrc,
-                        outputPath.resolve(relWsiOut), tmp, toolRoot);
+                analyzeWsdls(templates, sourcePath, outputPath.resolve(relResultWsdl), outputPath.resolve(relResultWsi),
+                        wsdl, compareToRoot, outputPath.resolve(relResultWsdlDiff), outputPath.resolve(relWsdlHtml),
+                        resultToSrc, outputPath.resolve(relWsiOut), tmp, toolRoot);
             }
             finally {
                 // reset std err
@@ -345,7 +360,6 @@ public class Driver {
                     System.setErr(stdErr);
                 }
             }
-            Map<String, String> templates = getFinalReportTemplates(compareToRoot != null);
             generateFinalReport(templates, outputPath.resolve(relReport),  compareToRoot != null, start);
 
         } catch (IOException e) {
@@ -367,6 +381,39 @@ public class Driver {
         return false;
     }
 
+    boolean unpackSourceDiffResources(Path srcDiff) {
+        byte[] buffer = new byte[2 * 1024];
+
+        Utilities.createDirs(srcDiff);
+        InputStream stream = Driver.class.getResourceAsStream("/predic8/zip/web.zip");
+        ZipInputStream zipStream = new ZipInputStream(stream);
+        try {
+            ZipEntry entry = zipStream.getNextEntry();
+            while (entry != null) {
+                String fileName = entry.getName();
+                if (entry.isDirectory()) {
+                    Path folder = srcDiff.resolve(fileName);
+                    Utilities.createDirs(folder);
+                } else {
+                    File f = srcDiff.resolve(fileName).toFile();
+                    FileOutputStream outputStream = new FileOutputStream(f);
+                    int length;
+                    while ((length = zipStream.read(buffer)) > 0) {
+                        outputStream.write(buffer, 0, length);
+                    }
+                    outputStream.close();
+                }
+                entry = zipStream.getNextEntry();
+            }
+            zipStream.close();
+        } catch (IOException e) {
+            System.err.println("Exception " + e.getMessage());
+            return false;
+        }
+        return true;
+
+    }
+
     boolean analysisSucceeded() {
         int errorCount = otherErrors.errorCount(), warningCount = 0;
         for (WsdlSummary summary : wsdlSummary) {
@@ -381,8 +428,9 @@ public class Driver {
     }
 
     // resultToSrc - path to source files (used for creating links in report)
-    private void analyzeSchemas(Path root, Path xsdTarget, List<Path> schema, URI compareRoot, Path diffTarget,
-                                Path resultToSrc) throws IOException {
+    private void analyzeSchemas(Map<String, String> templates, Path root, Path xsdTarget, List<Path> schema,
+                                URI compareRoot, Path diffTarget, Path schemaHtml, Path resultToSrc)
+            throws IOException {
         int count = 1;
         for (Path file : schema) {
             logMsg(".", count++ % 50 == 0);
@@ -392,10 +440,17 @@ public class Driver {
             Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
             String fileName = file.toFile().getName();
             String domain = dirToNamespace(topLevel);
+            String html = "", compareHtml = "";
+
 
             Utf8.checkUtf8File(root, file, collector);
             // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
             String fileContents = Utilities.getContentWithoutUtf8Bom(file);
+            try {
+                html = HtmlUtil.schemaToHtml(fileContents, false);
+            } catch (Exception ignored) {
+            }
+            //String body = HtmlUtil.htmlBody(html);
             checkSchema(fileContents, collector, fileName, logicalPath, domain);
             AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
             AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
@@ -410,6 +465,10 @@ public class Driver {
                     Utf8.checkUtf8Uri(relPath.toString(), uri, ref);
                     // assume source is UTF-8
                     String cContent = Utilities.getContentWithoutUtf8Bom(uri, Charset.availableCharsets().get("UTF-8"));
+                    try {
+                        compareHtml = HtmlUtil.schemaToHtml(cContent, false);
+                    } catch (Exception ignored) {
+                    }
                     // perform checks with content loaded from compare uri - then compute diff
                     checkSchema(cContent, ref, fileName, logicalPath, domain);
                     added = collector.except(ref);
@@ -427,12 +486,18 @@ public class Driver {
             String baseName = FilenameUtils.getBaseName(fileName);
             SchemaSummary summary = new SchemaSummary(resultToSrc.resolve(relPath), added, resolved);
             addAssertionStatistics(summary, collector);
+            if (html.length() > 0) {
+                Path htmlOut = schemaHtml.resolve(relPath).getParent().resolve(baseName + ".html");
+                summary.setSourceHtml(htmlOut);
+                writeHtmlSource(htmlOut, html);
+            }
             if ((!collector.isEmpty()) || (empty)) {
                 // write full report
                 writeJsonReport(outputDirFull, fileName, collector);
                 summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
                 // write html report
-                writeHtmlReport(outputDirFull, fileName, collector);
+                writeHtmlReport(templates.get(STANDARD_REPORT_TEMPLATE), HtmlUtil.htmlBody(html), outputDirFull,
+                        fileName, collector);
                 summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
             }
             if ((!added.isEmpty()) || (empty)) {
@@ -451,8 +516,9 @@ public class Driver {
     }
 
     // resultToSrc - path to source files (used for creating links in report)
-    private void analyzeWsdls(Path root, Path wsdlTarget, Path wsiTarget,  List<Path> wsdl, URI compareRoot,
-                              Path diffTarget, Path resultToSrc, Path wsiOut, Path tmp, Path toolRoot) throws IOException {
+    private void analyzeWsdls(Map<String, String> templates, Path root, Path wsdlTarget, Path wsiTarget,
+                              List<Path> wsdl, URI compareRoot,  Path diffTarget, Path wsdlHtml, Path resultToSrc,
+                              Path wsiOut, Path tmp, Path toolRoot) throws IOException {
         int count = 1;
         for (Path file : wsdl) {
             logMsg(".", count++ % 50 == 0);
@@ -462,10 +528,15 @@ public class Driver {
             Path logicalPath = topLevel.relativize(relPath).getParent(); // remove top level and filename
             String fileName = file.toFile().getName();
             String domain = dirToNamespace(topLevel);
+            String html = "", compareHtml = "";
 
             Utf8.checkUtf8File(root, file, collector);
             // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
             String fileContents = Utilities.getContentWithoutUtf8Bom(file);
+            try {
+                html = HtmlUtil.wsdlToHtml(fileContents, false);
+            } catch (Exception ignored) {
+            }
 
             // first do ws-i check the do the other wsdl checks
             if (!skipWsi) {
@@ -487,6 +558,10 @@ public class Driver {
                     Utf8.checkUtf8Uri(relPath.toString(), uri, ref);
                     // assume source is UTF-8
                     String cContent = Utilities.getContentWithoutUtf8Bom(uri, Charset.availableCharsets().get("UTF-8"));
+                    try {
+                        compareHtml = HtmlUtil.wsdlToHtml(cContent, false);
+                    } catch (Exception ignored) {
+                    }
                     // perform checks with content loaded from compare uri - then compute diff
                     if (!skipWsi) {
                         checkWsdlWsi(file, ref, fileName, tmp, wsiOut, toolRoot);
@@ -507,12 +582,19 @@ public class Driver {
             String baseName = FilenameUtils.getBaseName(fileName);
             WsdlSummary summary = new WsdlSummary(resultToSrc.resolve(relPath), added, resolved);
             addAssertionStatistics(summary, collector);
+            if (html.length() > 0) {
+                Path htmlOut = wsdlHtml.resolve(relPath).getParent().resolve(baseName + ".html");
+                summary.setSourceHtml(htmlOut);
+                writeHtmlSource(htmlOut, html);
+            }
             if ((!collector.isEmpty()) || (empty)) {
                 // write full report
                 writeJsonReport(outputDirFull, fileName, collector);
                 summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
                 // write html report
-                writeHtmlReport(outputDirFull, fileName, collector);
+            //    writeHtmlReport(outputDirFull, fileName, collector);
+                writeHtmlReport(templates.get(STANDARD_REPORT_TEMPLATE), HtmlUtil.htmlBody(html), outputDirFull,
+                        fileName, collector);
                 summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
             }
             if ((!added.isEmpty()) || (empty)) {
@@ -669,7 +751,7 @@ public class Driver {
         List<FileSummary> summaryList = new ArrayList<>();
         summaryList.addAll(wsdlSummary);
         template = addAssertionsByFile(template, "{{summary-wsdl-by-assertion}}",
-                wsdlTotalErrors, wsdlTotalWarnings, summaryList);
+                wsdlTotalErrors, wsdlTotalWarnings, summaryList, reportFile.getParent());
         template = addFileList(template, "{{wsdl-file-summary}}", templates.get(FR_WSDL_FILE_LIST_TEMPLATE),
                 templates.get(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
         for (SchemaSummary summary : schemasSummary) {
@@ -690,7 +772,7 @@ public class Driver {
         summaryList = new ArrayList<>();
         summaryList.addAll(schemasSummary);
         template = addAssertionsByFile(template, "{{summary-schema-by-assertion}}",
-                schemaTotalErrors, schemaTotalWarnings, summaryList);
+                schemaTotalErrors, schemaTotalWarnings, summaryList, reportFile.getParent());
         template = addFileList(template, "{{schema-file-summary}}", templates.get(FR_SCHEMA_FILE_LIST_TEMPLATE),
                 templates.get(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
         template = addAnalysisSummaryHtml(template, "{{summary}}", templates.get(FR_SUMMARY_TEMPLATE), wsdlErrors,
@@ -711,8 +793,8 @@ public class Driver {
             container += "\n<div id='other_errors' style='display:none'>";
             container += "\n<table class='other-errors'>\n  <tr><th>Description</th><th>Details</th></tr>\n";
             for (AnalysisInformation err : otherErrors.getErrors()) {
-                container += "\n  <tr><td>" + escapeHtml(err.getMessage()) + "</td><td>" + escapeHtml(err.getDetails())
-                        + "</td></tr>";
+                container += "\n  <tr><td>" + StringEscapeUtils.escapeHtml4(err.getMessage()) + "</td><td>"
+                        + StringEscapeUtils.escapeHtml4(err.getDetails()) + "</td></tr>";
             }
             container += "\n</div>\n</table>\n";
             template = template.replace("{{other-errors}}", container);
@@ -735,11 +817,11 @@ public class Driver {
         for (FileSummary summary : summaryList) {
             String t = rowTemplate;
             String name = "<a href='" + summary.getFilePath() + "' target='_blank'>" + summary.getName();
-            String report = escapeHtml("<none>");
+            String report = StringEscapeUtils.escapeHtml4("<none>");
             if (summary.hasFullReportHtml()) {
                 report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
             }
-            String diff = escapeHtml("<none>");
+            String diff = StringEscapeUtils.escapeHtml4("<none>");
             if (summary.hasDiffReportHtml()) {
                 diff = "<a href='" + summary.getDiffReportHtml() + "' target='_blank'>Diff</a>";
             }
@@ -756,21 +838,29 @@ public class Driver {
     }
 
     String addAssertionsByFile(String src, String tag, AssertionStatistics errors, AssertionStatistics warnings,
-                               List<FileSummary> summaryList) {
+                               List<FileSummary> summaryList, Path reportLocation) {
         String t = "<h4>Assertion errors</h4>\n{{errors}}\n<h4>Assertion warnings</h4>\n{{warnings}}\n";
-        String rt =  "\n<tr><td>{{1}}</td><td><a href='{{3}}' target='_blank'>{{2}}</a></td><td>{{4}}</td></tr>";
+        String rt =  "\n<tr><td>{{1}}</td><td><a href='{{3}}' target='_blank'>{{2}}</a></td><td>{{4}}</td>"
+                + "<td>{{5}}</td></tr>";
         String eRows = "";
         for (Map.Entry<String, Integer> entry : errors.getSortedByValue()) {
-            eRows += "\n<tr><th colspan='3'>" + escapeHtml(entry.getKey()) + "</th></tr>";
+            eRows += "\n<tr><th colspan='3'>" + StringEscapeUtils.escapeHtml4(entry.getKey()) + "</th></tr>";
             for (FileSummary summary : summaryList) {
                 int count = summary.getErrors().countByAssertion(entry.getKey());
                 if (count > 0) {
                     String report = "";
+                    String html = "";
                     if (summary.hasFullReportHtml()) {
-                        report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
+                        Path relLoc = reportLocation.relativize(summary.getFullReportHtml());
+                        report = "<a href='" + relLoc + "' target='_blank'>Report</a>";
+                    }
+                    if (summary.hasSourceHtml()) {
+                        Path relLoc = reportLocation.relativize(summary.getSourceHtml());
+                        html = "<a href='" + relLoc + "' target='_blank'>pretty</a>";
                     }
                     eRows += rt.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
-                            .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", report);
+                            .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", html)
+                            .replace("{{5}}", report);
                 }
             }
         }
@@ -781,7 +871,7 @@ public class Driver {
         }
         String wRows = "";
         for (Map.Entry<String, Integer> entry : warnings.getSortedByValue()) {
-            wRows += "\n<tr><th colspan='3'>" + escapeHtml(entry.getKey()) + "</th></tr>";
+            wRows += "\n<tr><th colspan='3'>" + StringEscapeUtils.escapeHtml4(entry.getKey()) + "</th></tr>";
             for (FileSummary summary : summaryList) {
                 int count = summary.getWarnings().countByAssertion(entry.getKey());
                 if (count > 0) {
@@ -899,7 +989,7 @@ public class Driver {
         String cmp = compare ? compareCount + " schema/wsdl resources compared" : "";
         template = template.replace("{{analyzed}}", msg);
         template = template.replace("{{compare}}", cmp);
-        template = template.replace("{{version}}", "" + escapeHtml(getToolVersion()));
+        template = template.replace("{{version}}", "" + StringEscapeUtils.escapeHtml4(getToolVersion()));
         template = template.replace("{{time}}", "" + dateFormat.format(date));
         logMsg("\n" + files + " files processed in " + m + "m " + s + "s " + ms + "ms");
         if (compare) {
@@ -916,14 +1006,27 @@ public class Driver {
         JSON.std.with(JSON.Feature.PRETTY_PRINT_OUTPUT).write(collector, jsonOut.toFile());
     }
 
-    private void writeHtmlReport(Path location, String filename, AnalysisInformationCollector collector)
+    private void writeHtmlSource(Path location, String html)
+            throws IOException {
+        Utilities.createDirs(location.getParent()); // make sure parent dirs are created
+        FileUtils.writeStringToFile(location.toFile(), html);
+    }
+
+    private void writeHtmlReport(String template, String sourceHtml, Path location, String filename,
+                                 AnalysisInformationCollector collector)
             throws IOException {
         Utilities.createDirs(location); // make sure parent dirs are created
         String baseName = FilenameUtils.getBaseName(filename);
-        String ext = FilenameUtils.getExtension(filename);
+        //String ext = FilenameUtils.getExtension(filename);
         Path htmlOut = location.resolve(baseName + ".html");
         String htmlFragment = HtmlUtil.toHtmlTable(collector, true);
-        FileUtils.writeStringToFile(htmlOut.toFile(), HtmlUtil.toHtml(htmlFragment, false, true, baseName, ext));
+
+        String html = template.replace("{{title}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{result}}", htmlFragment).replace("{{source}}", sourceHtml);
+
+        //FileUtils.writeStringToFile(htmlOut.toFile(), HtmlUtil.toHtml(htmlFragment, false, true, baseName, ext));
+        FileUtils.writeStringToFile(htmlOut.toFile(), html);
     }
 
     private void writeHtmlReport(Path location, String filename, AnalysisInformationCollector added,

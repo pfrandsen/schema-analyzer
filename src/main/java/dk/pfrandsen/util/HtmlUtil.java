@@ -2,6 +2,8 @@ package dk.pfrandsen.util;
 
 import dk.pfrandsen.check.AnalysisInformation;
 import dk.pfrandsen.check.AnalysisInformationCollector;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.tidy.Tidy;
 
@@ -9,9 +11,19 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import org.apache.commons.lang3.StringEscapeUtils;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 /**
  * Utility to convert AnalysisInformationCollector/AnalysisInformation to html
@@ -21,21 +33,21 @@ public class HtmlUtil {
     public static String toHtmlTableRow(AnalysisInformation info) {
         StringBuilder html = new StringBuilder();
         html.append("<tr>");
-        html.append("<td>").append(escapeHtml(info.getAssertion())).append("</td>");
-        html.append("<td>").append(escapeHtml(info.getMessage())).append("</td>");
+        html.append("<td>").append(StringEscapeUtils.escapeHtml4(info.getAssertion())).append("</td>");
+        html.append("<td>").append(StringEscapeUtils.escapeHtml4(info.getMessage())).append("</td>");
         html.append("<td>").append(info.getSeverity()).append("</td>");
-        html.append("<td>").append(escapeHtml(info.getDetails())).append("</td>");
+        html.append("<td>").append(StringEscapeUtils.escapeHtml4(info.getDetails())).append("</td>");
         html.append("</tr>");
         return html.toString();
     }
 
     private static String toHtmlTableFragment(List<AnalysisInformation> collection, String caption, boolean includeEmpty,
-                                       String cssClasses) {
+                                              String cssClasses) {
         StringBuilder html = new StringBuilder();
         if (collection.size() > 0 || includeEmpty) {
             html.append("<tr>");
-            html.append("<td colspan='4' class='").append(cssClasses).append("'>").append(escapeHtml(caption))
-                    .append("</td>");
+            html.append("<td colspan='4' class='").append(cssClasses).append("'>")
+                    .append(StringEscapeUtils.escapeHtml4(caption)).append("</td>");
             html.append("</tr>");
             for (AnalysisInformation inf : collection) {
                 html.append(toHtmlTableRow(inf));
@@ -44,7 +56,7 @@ public class HtmlUtil {
         return html.toString();
     }
 
-    public static  String toHtmlTable(AnalysisInformationCollector collector, boolean includeEmpty) {
+    public static String toHtmlTable(AnalysisInformationCollector collector, boolean includeEmpty) {
         StringBuilder html = new StringBuilder();
         html.append("<table summary='Analysis result'>");
         html.append(toHtmlTableFragment(collector.getErrors(), "Errors:", includeEmpty, "tblheader error"));
@@ -57,7 +69,7 @@ public class HtmlUtil {
     // public static String toHtml(AnalysisInformationCollector collector, boolean includeEmpty, boolean tidyUp,
     public static String toHtml(String htmlContent, boolean includeEmpty, boolean tidyUp,
                                 String baseName, String ext) {
-        String fileName = escapeHtml(baseName + "." + ext);
+        String fileName = StringEscapeUtils.escapeHtml4(baseName + "." + ext);
         String head = "<head><title>" + fileName + "</title>" +
                 "<style type=\"text/css\">" +
                 "table {border-collapse: collapse;}\n" +
@@ -98,4 +110,61 @@ public class HtmlUtil {
         }
     }
 
+    /* public static String xmlToHtml(String xml) {
+
+        try {
+            return Utilities.schemaToHtml(xml);
+        } catch (Exception e) {
+            return "<div>Exception while formatting XML<div>" + StringEscapeUtils.escapeHtml4(e.getMessage())
+                    + "</div></div>";
+        }
+        / *
+        StringWriter writer = new StringWriter();
+        HtmlBeautifierFormatter formatter = new HtmlBeautifierFormatter(writer, 2);
+        XMLBeautifier beautifier = new XMLBeautifier(formatter);
+        try {
+            beautifier.parse(new StringReader(xml));
+            return writer.toString();
+        } catch (Exception e) {
+            return "<div>Exception while formatting XML<div>" + StringEscapeUtils.escapeHtml4(e.getMessage())
+                    + "</div></div>";
+        }* /
+    } */
+
+    public static String schemaToHtml(String xml, boolean bodyOnly) throws Exception {
+        Path stylesheet = Paths.get("/", "xslt", "tohtml", "annotated-xsd.xsl");
+        return xmlToHtml(xml, bodyOnly, stylesheet);
+        /*String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
+        Transformer transformer = factory.newTransformer(xslt);
+        Source xmlSource = new StreamSource(IOUtils.toInputStream(xml));
+        StringWriter writer = new StringWriter();
+        transformer.transform(xmlSource, new StreamResult(writer));
+        return writer.toString();*/
+    }
+
+    public static String xmlToHtml(String xml, boolean bodyOnly, Path stylesheet) throws Exception {
+        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+        TransformerFactory factory = TransformerFactory.newInstance();
+        URIResolver resolver = new XslURIResolver();
+        factory.setURIResolver(resolver);
+        StreamSource xslt = new StreamSource(IOUtils.toInputStream(xsl));
+
+        Transformer transformer = factory.newTransformer(xslt);
+        transformer.setURIResolver(resolver);
+        Source xmlSource = new StreamSource(IOUtils.toInputStream(xml));
+        StringWriter writer = new StringWriter();
+        transformer.transform(xmlSource, new StreamResult(writer));
+        return bodyOnly ? htmlBody(writer.toString()) : writer.toString();
+    }
+
+    public static String wsdlToHtml(String xml, boolean bodyOnly) throws Exception {
+        Path stylesheet = Paths.get("/", "xslt", "tohtml", "annotated-wsdl.xsl");
+        return xmlToHtml(xml, bodyOnly, stylesheet);
+    }
+
+    public static String htmlBody(String html) {
+        return StringUtils.substringBetween(html, "<body>", "</body>");
+    }
 }

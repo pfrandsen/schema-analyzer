@@ -5,7 +5,7 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 public class AnalysisInformation {
     private String assertion;
@@ -126,10 +126,10 @@ public class AnalysisInformation {
     public String toHtmlTableRow() {
         StringBuilder html = new StringBuilder();
         html.append("<tr>");
-        html.append("<td>").append(escapeHtml(assertion)).append("</td>");
-        html.append("<td>").append(escapeHtml(message)).append("</td>");
+        html.append("<td>").append(StringEscapeUtils.escapeHtml4(assertion)).append("</td>");
+        html.append("<td>").append(StringEscapeUtils.escapeHtml4(message)).append("</td>");
         html.append("<td>").append(severity).append("</td>");
-        html.append("<td>").append(escapeHtml(details)).append("</td>");
+        html.append("<td>").append(StringEscapeUtils.escapeHtml4(details)).append("</td>");
         html.append("</tr>");
         return html.toString();
     }
