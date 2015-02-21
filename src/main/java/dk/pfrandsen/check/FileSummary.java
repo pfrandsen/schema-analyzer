@@ -8,6 +8,7 @@ public class FileSummary {
     int errorsResolved;
     int warningsAdded;
     int warningsResolved;
+    int infoCount;
     String name;
     Path filePath; // path to schema or wsdl
     Path fullReport = null;
@@ -18,13 +19,15 @@ public class FileSummary {
     AssertionStatistics errors = new AssertionStatistics();
     AssertionStatistics warnings = new AssertionStatistics();
 
-    protected FileSummary(Path fullPath, AnalysisInformationCollector added, AnalysisInformationCollector resolved) {
+    protected FileSummary(Path fullPath, AnalysisInformationCollector added, AnalysisInformationCollector resolved,
+                          int infoCount) {
         this.filePath = fullPath;
         this.name = fullPath.toFile().getName();
         errorsAdded = added.errorCount();
         errorsResolved = resolved.errorCount();
         warningsAdded = added.warningCount();
         warningsResolved = resolved.warningCount();
+        this.infoCount = infoCount;
     }
 
     public boolean hasFullReport() {
@@ -61,6 +64,10 @@ public class FileSummary {
 
     public int getWarningsResolved() {
         return warningsResolved;
+    }
+
+    public int getInfoCount() {
+        return infoCount;
     }
 
     public String getName() {
@@ -126,4 +133,5 @@ public class FileSummary {
     public void setWarnings(AssertionStatistics warnings) {
         this.warnings = warnings != null ? warnings : new AssertionStatistics();
     }
+
 }

@@ -26,7 +26,9 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 /**
- * Utility to convert AnalysisInformationCollector/AnalysisInformation to html
+ * Misc. utilities
+ *   - convert AnalysisInformationCollector/AnalysisInformation to html
+ *   - transform schema/wsdl to html
  */
 public class HtmlUtil {
 
@@ -58,7 +60,7 @@ public class HtmlUtil {
 
     public static String toHtmlTable(AnalysisInformationCollector collector, boolean includeEmpty) {
         StringBuilder html = new StringBuilder();
-        html.append("<table summary='Analysis result'>");
+        html.append("<table class='analysis-table' summary='Analysis result'>");
         html.append(toHtmlTableFragment(collector.getErrors(), "Errors:", includeEmpty, "tblheader error"));
         html.append(toHtmlTableFragment(collector.getWarnings(), "Warnings:", includeEmpty, "tblheader warning"));
         html.append(toHtmlTableFragment(collector.getInfo(), "Information:", includeEmpty, "tblheader info"));
@@ -88,7 +90,6 @@ public class HtmlUtil {
         html.append("<body>");
         html.append("<div>" + fileName + "</div>");
         html.append(htmlContent);
-        //html.append("<div><a href='").append(baseName + ".json").append("'>JSON report</a></div>");
         html.append("</body>");
         html.append("</html>");
         return tidyUp ? doTidy(html.toString()) : html.toString();
@@ -110,38 +111,9 @@ public class HtmlUtil {
         }
     }
 
-    /* public static String xmlToHtml(String xml) {
-
-        try {
-            return Utilities.schemaToHtml(xml);
-        } catch (Exception e) {
-            return "<div>Exception while formatting XML<div>" + StringEscapeUtils.escapeHtml4(e.getMessage())
-                    + "</div></div>";
-        }
-        / *
-        StringWriter writer = new StringWriter();
-        HtmlBeautifierFormatter formatter = new HtmlBeautifierFormatter(writer, 2);
-        XMLBeautifier beautifier = new XMLBeautifier(formatter);
-        try {
-            beautifier.parse(new StringReader(xml));
-            return writer.toString();
-        } catch (Exception e) {
-            return "<div>Exception while formatting XML<div>" + StringEscapeUtils.escapeHtml4(e.getMessage())
-                    + "</div></div>";
-        }* /
-    } */
-
     public static String schemaToHtml(String xml, boolean bodyOnly) throws Exception {
         Path stylesheet = Paths.get("/", "xslt", "tohtml", "annotated-xsd.xsl");
         return xmlToHtml(xml, bodyOnly, stylesheet);
-        /*String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
-        TransformerFactory factory = TransformerFactory.newInstance();
-        Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
-        Transformer transformer = factory.newTransformer(xslt);
-        Source xmlSource = new StreamSource(IOUtils.toInputStream(xml));
-        StringWriter writer = new StringWriter();
-        transformer.transform(xmlSource, new StreamResult(writer));
-        return writer.toString();*/
     }
 
     public static String xmlToHtml(String xml, boolean bodyOnly, Path stylesheet) throws Exception {
@@ -150,7 +122,6 @@ public class HtmlUtil {
         URIResolver resolver = new XslURIResolver();
         factory.setURIResolver(resolver);
         StreamSource xslt = new StreamSource(IOUtils.toInputStream(xsl));
-
         Transformer transformer = factory.newTransformer(xslt);
         transformer.setURIResolver(resolver);
         Source xmlSource = new StreamSource(IOUtils.toInputStream(xml));
@@ -167,4 +138,5 @@ public class HtmlUtil {
     public static String htmlBody(String html) {
         return StringUtils.substringBetween(html, "<body>", "</body>");
     }
+
 }

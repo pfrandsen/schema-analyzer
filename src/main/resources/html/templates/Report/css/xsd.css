@@ -1,0 +1,42 @@
+<style type="text/css">
+.schema {padding-left:5em; text-indent:-5em}
+.schema-top-level {padding-left: 6em; text-indent:-5em}
+.indent {margin-left:1em}
+.double-indent {margin-left:2em}
+.trivialText {color:gray}
+
+td {vertical-align:top; font: 100%/1.3 "Lucida Grande","Lucida Sans","Lucida Sans Unicode","trebuchet ms",verdana,sans-serif}
+.annotation-area {width:16em}
+.source-area    {font-size:80%; padding-bottom:.6em}
+.sidebar        {font-size:80%; padding-bottom:.6em; margin-bottom:2px}
+.arrow          {border-top: 1px dashed black; width:2em; position:relative; top:.5em}
+.note           {background-color:rgb(255,255,210); text-align:right; border: 1px dashed black; padding:.5em}
+.simpleType     {background-color:rgb(255,242,210); text-align:right; border: 1px dashed black; padding:.5em}
+.complexType    {background-color:rgb(255,242,210); text-align:right; border: 1px dashed black; padding:.5em}
+.element        {background-color:rgb(225,237,246); text-align:right; border: 1px dashed black; padding:.5em}
+.group          {background-color:rgb(225,237,246); text-align:right; border: 1px dashed black; padding:.5em}
+.attribute      {background-color:rgb(225,246,235); text-align:right; border: 1px dashed black; padding:.5em}
+.attributeGroup {background-color:rgb(225,246,235); text-align:right; border: 1px dashed black; padding:.5em}
+.redefine       {background-color:rgb(255,255,210); text-align:right; border: 1px dashed black; padding:.5em}
+.notation       {background-color:rgb(255,255,210); text-align:right; border: 1px dashed black; padding:.5em}
+.sidebar-title  {}
+.sidebar-title-highlight {font-weight:bold}
+.sidebar-text   {padding-top:.3em}
+ul {margin-left:1em; margin-top:0em; margin-bottom:0em}
+.referenced-item {list-style-type:square; text-align:left; margin-left:.5em}
+.referenced-list {margin-top:.5em; text-align:left}
+
+#index {margin-top:2em; margin-bottom:2em}
+
+.markup {color:gray}
+.markup-element {color:gray; text-indent:-2em; }
+.markup-extension-element {color:navy}
+.markup-attribute {color:gray}
+.markup-extension-attribute {color:navy}
+.markup-attribute-value {}
+.markup-name-attribute-value {font-weight:bold}
+.markup-namespace {color:purple}
+.markup-namespace-uri {color:purple}
+.markup-text-content  {margin-left:-4em; text-indent:0em}
+.markup-comment  {color:green}
+</style>

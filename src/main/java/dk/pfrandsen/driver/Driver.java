@@ -84,6 +84,8 @@ public class Driver {
     private static final String FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE = "FinalReportSchemaFileListElement";
     private static final String STANDARD_REPORT_TEMPLATE = "StandardReport";
     private static final String DIFF_REPORT_TEMPLATE = "DiffReport";
+    private static final String WSDL_CSS_TEMPLATE = "WsdlCss";
+    private static final String SCHEMA_CSS_TEMPLATE = "XsdCss";
 
     private static String arg(String argument) {
         return "-" + argument;
@@ -157,6 +159,9 @@ public class Driver {
         root = "Report/";
         templates.put(STANDARD_REPORT_TEMPLATE, getHtmlTemplate(root + "Standard.html"));
         templates.put(DIFF_REPORT_TEMPLATE, getHtmlTemplate(root + "Diff.html"));
+
+        templates.put(WSDL_CSS_TEMPLATE, getHtmlTemplate(root + "css/wsdl.css"));
+        templates.put(SCHEMA_CSS_TEMPLATE, getHtmlTemplate(root + "css/xsd.css"));
         return templates;
     }
 
@@ -442,7 +447,6 @@ public class Driver {
             String domain = dirToNamespace(topLevel);
             String html = "", compareHtml = "";
 
-
             Utf8.checkUtf8File(root, file, collector);
             // some libs (e.g., SAX parser) do not like the BOM and will throw exception if present
             String fileContents = Utilities.getContentWithoutUtf8Bom(file);
@@ -450,7 +454,6 @@ public class Driver {
                 html = HtmlUtil.schemaToHtml(fileContents, false);
             } catch (Exception ignored) {
             }
-            //String body = HtmlUtil.htmlBody(html);
             checkSchema(fileContents, collector, fileName, logicalPath, domain);
             AnalysisInformationCollector added = collector; // default is that all errors/warnings are new
             AnalysisInformationCollector resolved = new AnalysisInformationCollector(); // none resolved
@@ -484,7 +487,8 @@ public class Driver {
             Path outputDirFull = xsdTarget.resolve(relPath).getParent();
             Path outputDirDiff = diffTarget.resolve(relPath).getParent();
             String baseName = FilenameUtils.getBaseName(fileName);
-            SchemaSummary summary = new SchemaSummary(resultToSrc.resolve(relPath), added, resolved);
+            SchemaSummary summary = new SchemaSummary(resultToSrc.resolve(relPath), added, resolved,
+                    collector.infoCount());
             addAssertionStatistics(summary, collector);
             if (html.length() > 0) {
                 Path htmlOut = schemaHtml.resolve(relPath).getParent().resolve(baseName + ".html");
@@ -496,8 +500,8 @@ public class Driver {
                 writeJsonReport(outputDirFull, fileName, collector);
                 summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
                 // write html report
-                writeHtmlReport(templates.get(STANDARD_REPORT_TEMPLATE), HtmlUtil.htmlBody(html), outputDirFull,
-                        fileName, collector);
+                writeHtmlReport(templates.get(STANDARD_REPORT_TEMPLATE), templates.get(SCHEMA_CSS_TEMPLATE),
+                        HtmlUtil.htmlBody(html), outputDirFull, fileName, collector);
                 summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
             }
             if ((!added.isEmpty()) || (empty)) {
@@ -507,7 +511,7 @@ public class Driver {
             }
             if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
                 // write html report of added/resolved errors/warnings
-                writeHtmlReport(outputDirDiff, fileName, added, resolved, collector);
+                writeHtmlReport(templates.get(DIFF_REPORT_TEMPLATE), outputDirDiff, fileName, added, resolved, collector);
                 summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
             }
             schemasSummary.add(summary);
@@ -580,7 +584,7 @@ public class Driver {
             Path outputDirFull = wsdlTarget.resolve(relPath).getParent();
             Path outputDirDiff = diffTarget.resolve(relPath).getParent();
             String baseName = FilenameUtils.getBaseName(fileName);
-            WsdlSummary summary = new WsdlSummary(resultToSrc.resolve(relPath), added, resolved);
+            WsdlSummary summary = new WsdlSummary(resultToSrc.resolve(relPath), added, resolved, collector.infoCount());
             addAssertionStatistics(summary, collector);
             if (html.length() > 0) {
                 Path htmlOut = wsdlHtml.resolve(relPath).getParent().resolve(baseName + ".html");
@@ -593,7 +597,8 @@ public class Driver {
                 summary.setFullReport(outputDirFull.resolve(baseName + ".json"));
                 // write html report
             //    writeHtmlReport(outputDirFull, fileName, collector);
-                writeHtmlReport(templates.get(STANDARD_REPORT_TEMPLATE), HtmlUtil.htmlBody(html), outputDirFull,
+                writeHtmlReport(templates.get(STANDARD_REPORT_TEMPLATE), templates.get(WSDL_CSS_TEMPLATE),
+                        HtmlUtil.htmlBody(html), outputDirFull,
                         fileName, collector);
                 summary.setFullReportHtml(outputDirFull.resolve(baseName + ".html"));
             }
@@ -604,7 +609,7 @@ public class Driver {
             }
             if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
                 // write html report of added/resolved errors/warnings
-                writeHtmlReport(outputDirDiff, fileName, added, resolved, collector);
+                writeHtmlReport(templates.get(DIFF_REPORT_TEMPLATE), outputDirDiff, fileName, added, resolved, collector);
                 summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
             }
             wsdlSummary.add(summary);
@@ -753,7 +758,7 @@ public class Driver {
         template = addAssertionsByFile(template, "{{summary-wsdl-by-assertion}}",
                 wsdlTotalErrors, wsdlTotalWarnings, summaryList, reportFile.getParent());
         template = addFileList(template, "{{wsdl-file-summary}}", templates.get(FR_WSDL_FILE_LIST_TEMPLATE),
-                templates.get(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
+                templates.get(FR_WSDL_FILE_LIST_ELEMENT_TEMPLATE), summaryList, reportFile.getParent());
         for (SchemaSummary summary : schemasSummary) {
             schemaTotalErrors.add(summary.getErrors());
             schemaTotalWarnings.add(summary.getWarnings());
@@ -774,7 +779,7 @@ public class Driver {
         template = addAssertionsByFile(template, "{{summary-schema-by-assertion}}",
                 schemaTotalErrors, schemaTotalWarnings, summaryList, reportFile.getParent());
         template = addFileList(template, "{{schema-file-summary}}", templates.get(FR_SCHEMA_FILE_LIST_TEMPLATE),
-                templates.get(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE), summaryList);
+                templates.get(FR_SCHEMA_FILE_LIST_ELEMENT_TEMPLATE), summaryList, reportFile.getParent());
         template = addAnalysisSummaryHtml(template, "{{summary}}", templates.get(FR_SUMMARY_TEMPLATE), wsdlErrors,
                 wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded, wsdlErrorsResolved, wsdlWarningsResolved,
                 schemaErrors, schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved,
@@ -782,8 +787,9 @@ public class Driver {
         template = addSummaryHtml(template, "{{wsdlsummary}}", "{{wsdlsummary-content}}",
                 templates.get(FR_WSDL_SUMMARY_TEMPLATE), wsdlErrors,  wsdlWarnings, wsdlErrorsAdded, wsdlWarningsAdded,
                 wsdlErrorsResolved, wsdlWarningsResolved);
-        template = addSummaryHtml(template, "{{schemasummary}}", "{{schemasummary-content}}", templates.get(FR_SCHEMA_SUMMARY_TEMPLATE), schemaErrors,
-                schemaWarnings, schemaErrorsAdded, schemaWarningsAdded, schemaErrorsResolved, schemaWarningsResolved);
+        template = addSummaryHtml(template, "{{schemasummary}}", "{{schemasummary-content}}",
+                templates.get(FR_SCHEMA_SUMMARY_TEMPLATE), schemaErrors, schemaWarnings, schemaErrorsAdded,
+                schemaWarningsAdded, schemaErrorsResolved, schemaWarningsResolved);
 
         template = template.replace("{{other-errors-summary}}", spanOKFail(otherErrors.errorCount()));
         if (otherErrors.errorCount() > 0) {
@@ -812,18 +818,26 @@ public class Driver {
         FileUtils.writeStringToFile(reportFile.toFile(), template);
     }
 
-    String addFileList(String src, String tag, String template, String rowTemplate, List<FileSummary> summaryList) {
+    String addFileList(String src, String tag, String template, String rowTemplate, List<FileSummary> summaryList,
+                       Path reportLocation) {
         StringBuilder builder = new StringBuilder();
         for (FileSummary summary : summaryList) {
             String t = rowTemplate;
             String name = "<a href='" + summary.getFilePath() + "' target='_blank'>" + summary.getName();
             String report = StringEscapeUtils.escapeHtml4("<none>");
             if (summary.hasFullReportHtml()) {
-                report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
+                Path relLoc = reportLocation.relativize(summary.getFullReportHtml());
+                report = "<a href='" + relLoc + "' target='_blank'>Report</a>";
+            }
+            String pretty = StringEscapeUtils.escapeHtml4("<none>");
+            if (summary.hasSourceHtml()) {
+                Path relLoc = reportLocation.relativize(summary.getSourceHtml());
+                pretty = "<a href='" + relLoc + "' target='_blank'>Pretty</a>";
             }
             String diff = StringEscapeUtils.escapeHtml4("<none>");
             if (summary.hasDiffReportHtml()) {
-                diff = "<a href='" + summary.getDiffReportHtml() + "' target='_blank'>Diff</a>";
+                Path relLoc = reportLocation.relativize(summary.getDiffReportHtml());
+                diff = "<a href='" + relLoc + "' target='_blank'>Diff</a>";
             }
             t = t.replace("{{ERR_ADDED}}", spanNeutralFail(summary.getErrorsAdded()))
                     .replace("{{ERR_RESOLVED}}", spanNeutralOK(summary.getErrorsResolved()))
@@ -831,7 +845,8 @@ public class Driver {
                     .replace("{{WARN_RESOLVED}}", spanNeutralOK(summary.getWarningsResolved()))
                     .replace("{{ERR_TOTAL}}", spanOKFail(summary.getErrors().count()))
                     .replace("{{WARN_TOTAL}}", spanOKFail(summary.getWarnings().count()))
-                    .replace("{{name}}", name).replace("{{report}}", report).replace("{{diff}}", diff);
+                    .replace("{{INFO_TOTAL}}", "" + summary.getInfoCount()).replace("{{name}}", name)
+                    .replace("{{report}}", report).replace("{{diff}}", diff).replace("{{pretty}}", pretty);
             builder.append(t);
         }
         return src.replace(tag, template.replace("{{1}}", builder.toString()));
@@ -876,11 +891,18 @@ public class Driver {
                 int count = summary.getWarnings().countByAssertion(entry.getKey());
                 if (count > 0) {
                     String report = "";
+                    String html = "";
                     if (summary.hasFullReportHtml()) {
-                        report = "<a href='" + summary.getFullReportHtml() + "' target='_blank'>Report</a>";
+                        Path relLoc = reportLocation.relativize(summary.getFullReportHtml());
+                        report = "<a href='" + relLoc + "' target='_blank'>Report</a>";
+                    }
+                    if (summary.hasSourceHtml()) {
+                        Path relLoc = reportLocation.relativize(summary.getSourceHtml());
+                        html = "<a href='" + relLoc + "' target='_blank'>pretty</a>";
                     }
                     wRows += rt.replace("{{1}}", "" + count).replace("{{2}}", summary.getName())
-                            .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", report);
+                            .replace("{{3}}", summary.getFilePath().toString()).replace("{{4}}", html)
+                            .replace("{{5}}", report);
                 }
             }
         }
@@ -1012,29 +1034,24 @@ public class Driver {
         FileUtils.writeStringToFile(location.toFile(), html);
     }
 
-    private void writeHtmlReport(String template, String sourceHtml, Path location, String filename,
+    private void writeHtmlReport(String template, String css, String sourceHtml, Path location, String filename,
                                  AnalysisInformationCollector collector)
             throws IOException {
         Utilities.createDirs(location); // make sure parent dirs are created
         String baseName = FilenameUtils.getBaseName(filename);
-        //String ext = FilenameUtils.getExtension(filename);
         Path htmlOut = location.resolve(baseName + ".html");
         String htmlFragment = HtmlUtil.toHtmlTable(collector, true);
-
         String html = template.replace("{{title}}", StringEscapeUtils.escapeHtml4(filename))
-                .replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{styles}}", css).replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
                 .replace("{{result}}", htmlFragment).replace("{{source}}", sourceHtml);
-
-        //FileUtils.writeStringToFile(htmlOut.toFile(), HtmlUtil.toHtml(htmlFragment, false, true, baseName, ext));
         FileUtils.writeStringToFile(htmlOut.toFile(), html);
     }
 
-    private void writeHtmlReport(Path location, String filename, AnalysisInformationCollector added,
+    private void writeHtmlReport(String template, Path location, String filename, AnalysisInformationCollector added,
                                         AnalysisInformationCollector resolved, AnalysisInformationCollector all)
             throws IOException {
         Utilities.createDirs(location); // make sure parent dirs are created
         String baseName = FilenameUtils.getBaseName(filename);
-        String ext = FilenameUtils.getExtension(filename);
         Path htmlOut = location.resolve(baseName + ".html");
         String htmlFragment = "<h2>New errors/warnings</h2>";
         htmlFragment += HtmlUtil.toHtmlTable(added, true);
@@ -1042,7 +1059,10 @@ public class Driver {
         htmlFragment += HtmlUtil.toHtmlTable(resolved, true);
         htmlFragment += "<h2>All errors/warnings</h2>";
         htmlFragment += HtmlUtil.toHtmlTable(all, true);
-        FileUtils.writeStringToFile(htmlOut.toFile(), HtmlUtil.toHtml(htmlFragment, false, true, baseName, ext));
+        String html = template.replace("{{title}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{result}}", htmlFragment);
+        FileUtils.writeStringToFile(htmlOut.toFile(), html);
     }
 
     private String dirToNamespace(Path path) {
