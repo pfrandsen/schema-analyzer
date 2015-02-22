@@ -14,6 +14,7 @@ import dk.pfrandsen.file.Utf8;
 import dk.pfrandsen.util.HtmlUtil;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.WsiUtil;
+import dk.pfrandsen.util.XsdUtil;
 import dk.pfrandsen.wsdl.BetaNamespaceChecker;
 import dk.pfrandsen.wsdl.BindingChecker;
 import dk.pfrandsen.wsdl.DocumentationChecker;
@@ -515,7 +516,9 @@ public class Driver {
             }
             if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
                 // write html report of added/resolved errors/warnings
-                writeHtmlReport(templates.get(DIFF_REPORT_TEMPLATE), outputDirDiff, fileName, added, resolved, collector);
+                writeHtmlReport(templates.get(DIFF_REPORT_TEMPLATE), templates.get(SCHEMA_CSS_TEMPLATE),
+                        HtmlUtil.htmlBody(html), HtmlUtil.htmlBody(compareHtml), outputDirDiff, fileName, added,
+                        resolved, collector);
                 summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
             }
             schemasSummary.add(summary);
@@ -613,7 +616,9 @@ public class Driver {
             }
             if ((!added.isEmpty()) || (!resolved.isEmpty()) || (empty)) {
                 // write html report of added/resolved errors/warnings
-                writeHtmlReport(templates.get(DIFF_REPORT_TEMPLATE), outputDirDiff, fileName, added, resolved, collector);
+                writeHtmlReport(templates.get(DIFF_REPORT_TEMPLATE), templates.get(SCHEMA_CSS_TEMPLATE),
+                        HtmlUtil.htmlBody(html), HtmlUtil.htmlBody(compareHtml), outputDirDiff, fileName, added,
+                        resolved, collector);
                 summary.setDiffReportHtml(outputDirDiff.resolve(baseName + ".html"));
             }
             wsdlSummary.add(summary);
@@ -632,6 +637,14 @@ public class Driver {
 
     private void checkSchema(String schema, AnalysisInformationCollector collector, String fileName,
                              Path relPath, String domain) {
+        String baseName = FilenameUtils.getBaseName(fileName);
+        if (baseName.toLowerCase().endsWith("include")) {
+            collector.addInfo(SchemaChecker.ASSERTION_ID_INCLUDE, "Schema detected as include schema",
+                    AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, relPath.resolve(fileName).toString());
+            SchemaChecker.checkInclude(schema, baseName, domain, collector);
+            // other schema checks are not relevant for include files
+            return;
+        }
         SchemaChecker.checkFormDefault(schema, collector);
         SchemaChecker.checkNillable(schema, collector);
         SchemaChecker.checkMinMaxOccurs(schema, collector);
@@ -1053,21 +1066,23 @@ public class Driver {
         FileUtils.writeStringToFile(htmlOut.toFile(), html);
     }
 
-    private void writeHtmlReport(String template, Path location, String filename, AnalysisInformationCollector added,
-                                        AnalysisInformationCollector resolved, AnalysisInformationCollector all)
+    private void writeHtmlReport(String template, String css, String sourceHtml, String compareSrcHtml, Path location,
+                                 String filename, AnalysisInformationCollector added,
+                                 AnalysisInformationCollector resolved, AnalysisInformationCollector all)
             throws IOException {
         Utilities.createDirs(location); // make sure parent dirs are created
         String baseName = FilenameUtils.getBaseName(filename);
         Path htmlOut = location.resolve(baseName + ".html");
         String htmlFragment = "<h2>New errors/warnings</h2>";
-        htmlFragment += HtmlUtil.toHtmlTable(added, true);
+        htmlFragment += HtmlUtil.toHtmlTable(added, false);
         htmlFragment += "<h2>Resolved errors/warnings</h2>";
-        htmlFragment += HtmlUtil.toHtmlTable(resolved, true);
+        htmlFragment += HtmlUtil.toHtmlTable(resolved, false);
         htmlFragment += "<h2>All errors/warnings</h2>";
-        htmlFragment += HtmlUtil.toHtmlTable(all, true);
+        htmlFragment += HtmlUtil.toHtmlTable(all, false);
         String html = template.replace("{{title}}", StringEscapeUtils.escapeHtml4(filename))
-                .replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
-                .replace("{{result}}", htmlFragment);
+                .replace("{{styles}}", css).replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{result}}", htmlFragment).replace("{{analysis-source}}", sourceHtml)
+                .replace("{{compare-to-source}}", compareSrcHtml);
         FileUtils.writeStringToFile(htmlOut.toFile(), html);
     }
 

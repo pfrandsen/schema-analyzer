@@ -17,7 +17,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_NILLABLE = "CA19-XSD-Nillable";
     public static String ASSERTION_ID_MIN_MAX = "CA54-XSD-Redundant-Min-Max-Occurs";
     public static String ASSERTION_ID_TYPE = "CA24-XSD-Type-Validate";
-    public static String ASSERTION_ID_CONCEPT = "CA34-XSD-Illegal-Content-In-Concept-Scheme";
+    public static String ASSERTION_ID_CONCEPT = "CA34-XSD-Illegal-Content-In-Concept-Schema";
     public static String ASSERTION_ID_ELEMENT = "CA??-XSD-Element-Validation";
     public static String ASSERTION_ID_NAMESPACE = "CA25-XSD-Beta-Namespace-Not-Allowed";
     public static String ASSERTION_ID_ENUM_VALUE = "CA41-XSD-Enum-Value-Validate";
@@ -40,6 +40,7 @@ public class SchemaChecker {
     public static String ASSERTION_ID_UNUSED_NS_PREFIX = "CA70-XSD/WSDL-Unused-Namespace-Prefix-validate";
     public static String ASSERTION_ID_UNUSED_IMPORT = "CA47-XSD/WSDL-Unused-Import-validate";
     public static String ASSERTION_ID_NAMESPACE_MATCH_PATH = "CA35-XSD-Target-Namespace-Match-Path-Validate";
+    public static String ASSERTION_ID_INCLUDE = "Include-Validate";
 
     public static void checkFormDefault(String xsd, AnalysisInformationCollector collector) {
         // elementFormDefault = 'qualified' attributeFormDefault = 'unqualified'
@@ -597,7 +598,6 @@ public class SchemaChecker {
                                    namespace + "'");
                 }
             }
-
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_UNUSED_NS_PREFIX);
         }
@@ -618,6 +618,61 @@ public class SchemaChecker {
 
         } catch (Exception e) {
             collectException(e, collector, ASSERTION_ID_UNUSED_IMPORT);
+        }
+    }
+
+    public static void checkInclude(String xsd, String baseName, String domain,
+                                     AnalysisInformationCollector collector) {
+        try {
+            if (!baseName.endsWith("Include")) {
+                collector.addWarning(ASSERTION_ID_INCLUDE, "Filename must end with 'Include' (case sensitive)",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "File basename '" + baseName + "'");
+            }
+            String nakedName = baseName.substring(0, baseName.length() - "include".length());
+            String tns = XsdUtil.getTargetNamespace(xsd);
+            if (XsdUtil.isConcept(tns)) {
+                // illegal use of include
+                collector.addError(ASSERTION_ID_INCLUDE, "Include schema only legal in service schemas",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Namespace '" + tns + "'");
+            } else {
+                collector.addWarning(ASSERTION_ID_INCLUDE, "Include schemas should be avoided",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR);
+            }
+            String[] parts = tns.replace("http://" + domain + "/", "").split("/");
+            if (parts.length >= 2) {
+                String name = parts[parts.length - 2];
+                if (!name.equals(nakedName.toLowerCase())) {
+                    collector.addError(ASSERTION_ID_INCLUDE, "Include name does not match name element in namespace",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Name '" + name + "', include name '"
+                                    + nakedName.toLowerCase() + "' ('Include' removed, converted to lowercase)");
+                }
+            } else {
+                collector.addError(ASSERTION_ID_INCLUDE, "Could not match filename to namespace",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Namespace should end with '/"
+                                + nakedName.toLowerCase() + "/v[\\d]+'");
+            }
+            // check unused namespaces, only 'tns' is allowed
+            String res = XQuery.runXQuery(Paths.get(""), "unusedPrefix.xq", xsd);
+            for (Map<String,String> item : XQuery.mapResult(res, "prefix", "namespace")) {
+                String prefix = item.get("prefix");
+                String namespace = item.get("namespace");
+                if (!"tns".equals(prefix)) {
+                    collector.addError(ASSERTION_ID_UNUSED_NS_PREFIX, "Unused namespace prefix",
+                            AnalysisInformationCollector.SEVERITY_LEVEL_MINOR, "Prefix '" + prefix + "', namespace '" +
+                                    namespace + "'");
+                }
+            }
+            // check that only include nodes are present
+            String topLevel = XQuery.runXQuery(Paths.get("xsd"), "topLevelElementsAndTypes.xq", xsd);
+            List<Map<String,String>> items = items = XQuery.mapResult(topLevel, "name", "node");
+            for (Map<String,String> item : items) {
+                String name = item.get("name");
+                String node = item.get("node");
+                collector.addError(ASSERTION_ID_INCLUDE, "Illegal contents in include file",
+                        AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Node name '" + name + "' (" + node + ")");
+            }
+        } catch (Exception e) {
+            collectException(e, collector, ASSERTION_ID_INCLUDE);
         }
     }
 

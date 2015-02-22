@@ -6,6 +6,15 @@
 <html>
 <head>
     <title>{{title}}</title>
+    <script type="text/javascript">
+       function toggle(id) {
+           var e = document.getElementById(id);
+           if(e.style.display != 'none')
+              e.style.display = 'none';
+           else
+              e.style.display = 'block';
+       }
+    </script>
     <style type="text/css">
         .analysis-table {border-collapse: collapse;border: 1px solid black;}
         .analysis-table td {border: 1px solid black;}
@@ -23,5 +32,21 @@
 <div class="result">
     {{result}}
 </div>
+
+<div>
+    <p><a href="javascript:toggle('source_files')">Show/hide source files</a></p>
+    <div id="source_files" class='assertions-by-occurrence-detail' style="display:none">
+        <h2>Source</h2>
+        <h3>Analysis source</h3>
+        <div>
+            {{analysis-source}}
+        </div>
+        <h3>Compare to source (master)</h3>
+        <div>
+            {{compare-to-source}}
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
