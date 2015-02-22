@@ -2,6 +2,7 @@ package dk.pfrandsen.wsdl.wsi;
 
 import dk.pfrandsen.AnalyzeWsdl;
 import dk.pfrandsen.UnpackTool;
+import dk.pfrandsen.check.AnalysisInfoCollector;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.Utilities;
 import dk.pfrandsen.util.WsiUtil;
@@ -78,7 +79,7 @@ public class ToolRunnerTest {
         assertTrue("Expected config generator to return true (successful run)", status);
         assertTrue("config file '" + config + "' not found.", config.toFile().exists());
         // tool and config file ready, so run the analyzer
-        AnalysisInformationCollector collector = new AnalysisInformationCollector();
+        AnalysisInfoCollector collector = new AnalysisInfoCollector();
         AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
         boolean analysisStatus = wsiAnalyzer.analyzeWsdl(toolRoot, config, collector);
         assertTrue("Expected wsi analyzer to return true (successful run)", analysisStatus);

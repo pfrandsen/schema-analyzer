@@ -3,6 +3,7 @@ package dk.pfrandsen.driver;
 import com.fasterxml.jackson.jr.ob.JSON;
 import dk.pfrandsen.AnalyzeWsdl;
 import dk.pfrandsen.UnpackTool;
+import dk.pfrandsen.check.AnalysisInfoCollector;
 import dk.pfrandsen.check.AnalysisInformation;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.check.AssertionStatistics;
@@ -65,12 +66,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
 public class Driver {
+
+    private static final Logger logger = Logger.getLogger(Driver.class.getName());
 
     // report html template names
     private static final String FR_TEMPLATE = "FinalReport";
@@ -677,9 +681,11 @@ public class Driver {
         }
         if (WsiUtil.generateConfigurationFile(toolRoot, wsdl, report, config)) {
             AnalyzeWsdl wsiAnalyzer = new AnalyzeWsdl();
-            if (!wsiAnalyzer.analyzeWsdl(toolRoot, config, collector)) {
+            AnalysisInfoCollector wsiCollector = new AnalysisInfoCollector();
+            if (!wsiAnalyzer.analyzeWsdl(toolRoot, config, wsiCollector)) {
                 logMsg("Error running ws-i analysis\n");
             } else {
+                Utilities.copyCollector(wsiCollector, collector);
                 logMsg("SUCCESS running ws-i analysis\n");
             }
         } else {

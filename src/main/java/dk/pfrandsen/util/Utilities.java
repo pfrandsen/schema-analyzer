@@ -1,5 +1,9 @@
 package dk.pfrandsen.util;
 
+import dk.pfrandsen.check.AnalysisInfo;
+import dk.pfrandsen.check.AnalysisInfoCollector;
+import dk.pfrandsen.check.AnalysisInformation;
+import dk.pfrandsen.check.AnalysisInformationCollector;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
@@ -252,4 +256,15 @@ public class Utilities {
         return fileContents;
     }
 
+    public static void copyCollector(AnalysisInfoCollector from, AnalysisInformationCollector to) {
+        for (AnalysisInfo a : from.getErrors()) {
+            to.addError(a.getAssertion(), a.getMessage(), a.getSeverity(), a.getDetails());
+        }
+        for (AnalysisInfo a : from.getWarnings()) {
+            to.addWarning(a.getAssertion(), a.getMessage(), a.getSeverity(), a.getDetails());
+        }
+        for (AnalysisInfo a : from.getInfo()) {
+            to.addInfo(a.getAssertion(), a.getMessage(), a.getSeverity(), a.getDetails());
+        }
+    }
 }
