@@ -20,6 +20,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -179,8 +180,8 @@ public class Utilities {
     }
 
     public static String removeXmlComments(String xml) throws Exception {
-        Path stylesheet = Paths.get("/", "xslt", "removeComments.xsl");
-        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+        String stylesheet = "/xslt/removeComments.xsl";
+        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet), StandardCharsets.UTF_8);
         TransformerFactory factory = TransformerFactory.newInstance();
         Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
         Transformer transformer = factory.newTransformer(xslt);
@@ -191,8 +192,8 @@ public class Utilities {
     }
 
     public static String removeXmlDocumentation(String xml) throws Exception {
-        Path stylesheet = Paths.get("/", "xslt", "removeDocumentation.xsl");
-        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+        String stylesheet = "/xslt/removeDocumentation.xsl";
+        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet), StandardCharsets.UTF_8);
         TransformerFactory factory = TransformerFactory.newInstance();
         Source xslt = new StreamSource(IOUtils.toInputStream(xsl));
         Transformer transformer = factory.newTransformer(xslt);
@@ -206,7 +207,7 @@ public class Utilities {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setValidating(false);
         DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.parse(IOUtils.toInputStream(xml, "UTF-8"));
+        Document doc = db.parse(IOUtils.toInputStream(xml, StandardCharsets.UTF_8));
         Transformer tf = TransformerFactory.newInstance().newTransformer();
         tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         tf.setOutputProperty(OutputKeys.INDENT, "yes");

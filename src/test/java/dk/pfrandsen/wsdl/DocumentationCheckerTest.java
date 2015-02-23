@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -24,7 +25,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testValid() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-valid.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
@@ -34,7 +35,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidChars() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-chars.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(1, collector.warningCount());
@@ -50,7 +51,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidDanishChars() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-danish-chars.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
@@ -63,7 +64,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidOnlyWhitespace() throws Exception{
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-only-whitespace.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(2, collector.warningCount());
@@ -80,7 +81,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidNotPresent() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-not-present.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(2, collector.warningCount());
@@ -97,7 +98,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidTooLong() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-too-long.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
@@ -110,7 +111,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidTooLongOperation() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-too-long-operation.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
@@ -124,7 +125,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidTooShort() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-too-short.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
@@ -137,7 +138,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testInvalidTodo() throws Exception {
         Path path = RELATIVE_PATH_WSDL.resolve("Documentation-invalid-todo.wsdl");
-        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()));
+        String wsdl = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkWsdlDocumentation(wsdl, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(1, collector.warningCount());
@@ -150,7 +151,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testSchemaValid() throws Exception {
         Path path = RELATIVE_PATH_SXD.resolve("valid.xsd");
-        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkConceptSchemaDocumentation(xsd, collector);
         assertEquals(0, collector.errorCount());
         assertEquals(0, collector.warningCount());
@@ -160,7 +161,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testSchemaInvalidDanishChars() throws Exception {
         Path path = RELATIVE_PATH_SXD.resolve("invalid-danish-characters.xsd");
-        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkConceptSchemaDocumentation(xsd, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(0, collector.warningCount());
@@ -172,7 +173,7 @@ public class DocumentationCheckerTest {
     @Test
     public void testSchemaInvalidCharsAndEmpty() throws Exception {
         Path path = RELATIVE_PATH_SXD.resolve("invalid-characters-and-empty.xsd");
-        String xsd = IOUtils.toString(new FileInputStream(path.toFile()));
+        String xsd = IOUtils.toString(new FileInputStream(path.toFile()), StandardCharsets.UTF_8);
         DocumentationChecker.checkConceptSchemaDocumentation(xsd, collector);
         assertEquals(1, collector.errorCount());
         assertEquals(2, collector.warningCount());
