@@ -1080,10 +1080,14 @@ public class Driver {
         htmlFragment += "<h2>All errors/warnings</h2>";
         htmlFragment += HtmlUtil.toHtmlTable(all, false);
         String html = template.replace("{{title}}", StringEscapeUtils.escapeHtml4(filename))
-                .replace("{{styles}}", css).replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
-                .replace("{{result}}", htmlFragment).replace("{{analysis-source}}", sourceHtml)
-                .replace("{{compare-to-source}}", compareSrcHtml);
+                .replace("{{styles}}", empty(css)).replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
+                .replace("{{result}}", htmlFragment).replace("{{analysis-source}}", empty(sourceHtml))
+                .replace("{{compare-to-source}}", empty(compareSrcHtml));
         FileUtils.writeStringToFile(htmlOut.toFile(), html);
+    }
+
+    private String empty(String src) {
+        return src != null ? src : "";
     }
 
     private String dirToNamespace(Path path) {
