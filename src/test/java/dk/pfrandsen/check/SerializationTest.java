@@ -1,10 +1,10 @@
 package dk.pfrandsen.check;
 
-import com.fasterxml.jackson.jr.ob.JSON;
 import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
@@ -13,8 +13,8 @@ import static org.junit.Assert.assertTrue;
 
 public class SerializationTest {
 
-    private static String getLocation(String dataFile) throws URISyntaxException {
-        return SerializationTest.class.getResource(dataFile).toURI().getPath();
+    private static URI getLocation(String dataFile) throws URISyntaxException {
+        return SerializationTest.class.getResource(dataFile).toURI();
     }
 
     @Test
@@ -44,7 +44,7 @@ public class SerializationTest {
 
     @Test
     public void testCollectorParseFromFile() throws IOException, URISyntaxException {
-        String jsonFile = getLocation("/json/serialized.json");
+        URI jsonFile = getLocation("/json/serialized.json");
         AnalysisInformationCollector collector =
                 AnalysisInformationCollector.fromJson(new FileInputStream(Paths.get(jsonFile).toFile()));
         assertEquals(5, collector.errorCount());
@@ -57,7 +57,7 @@ public class SerializationTest {
 
     @Test
     public void testCollectorParseEmptyFromFile() throws IOException, URISyntaxException {
-        String jsonFile = getLocation("/json/empty.json");
+        URI jsonFile = getLocation("/json/empty.json");
         AnalysisInformationCollector collector =
                 AnalysisInformationCollector.fromJson(new FileInputStream(Paths.get(jsonFile).toFile()));
         assertEquals(0, collector.errorCount());
