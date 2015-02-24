@@ -109,11 +109,10 @@ public class XQueryTest {
     public void testUnusedImports() throws IOException, MXQueryException {
         Path resource = Paths.get("src", "test", "resources", "wsdl", "namespace", "Namespace-unused-imports.wsdl");
         //Path xq = Paths.get("wsdl", "namespace");
-        Path xq = Paths.get("");
+        Path xq = Paths.get("shared");
         String wsdl = IOUtils.toString(new FileInputStream(resource.toFile()));
         String xqResult = XQuery.runXQuery(xq, "unusedImport.xq", wsdl);
         List<Map<String, String>> result = Xml.parseXQueryResult(xqResult);
-        System.out.println(xqResult);
         assertEquals(2, result.size());
         List<String> unusedNamespaces = new ArrayList<>();
         unusedNamespaces.add(result.get(0).get("namespace"));
@@ -219,4 +218,32 @@ public class XQueryTest {
         assertTrue("Result [" + Utilities.join(", ", result) + "] expected [" +
                 Utilities.join(", ", Arrays.asList(expected)) + "]", result.containsAll(Arrays.asList(expected)));
     }
+
+    @Test
+    public void testXQueryLocationMultiple() {
+        Path xq = Paths.get("wsdl", "message");
+        String location = XQuery.xQueryResourceLocation(xq, "name.xq");
+        assertEquals("/xquery/wsdl/message/name.xq", location);
+    }
+
+    @Test
+    public void testXQueryLocationSingle() {
+        Path xq = Paths.get("wsdl");
+        String location = XQuery.xQueryResourceLocation(xq, "name.xq");
+        assertEquals("/xquery/wsdl/name.xq", location);
+    }
+
+    @Test
+    public void testXQueryLocationEmpty() {
+        String location = XQuery.xQueryResourceLocation(null, "name.xq");
+        assertEquals("/xquery/name.xq", location);
+    }
+
+    @Test
+    public void testXQueryResource() throws IOException {
+        Path xq = Paths.get("wsdl", "port");
+        String query = XQuery.xQueryResource(xq, "port.xq");
+        assertTrue("<name>port name</name> should be in source", query.contains("<name>port name</name>"));
+    }
+
 }

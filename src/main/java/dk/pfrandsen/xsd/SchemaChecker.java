@@ -1,6 +1,5 @@
 package dk.pfrandsen.xsd;
 
-import dk.pfrandsen.Xml;
 import dk.pfrandsen.check.AnalysisInformationCollector;
 import dk.pfrandsen.util.Utilities;
 import dk.pfrandsen.util.XQuery;
@@ -584,7 +583,7 @@ public class SchemaChecker {
      */
     public static void checkUnusedNamespacePrefix(String xsd, AnalysisInformationCollector collector) {
         try {
-            String res = XQuery.runXQuery(Paths.get(""), "unusedPrefix.xq", xsd);
+            String res = XQuery.runXQuery(Paths.get("shared"), "unusedPrefix.xq", xsd);
             for (Map<String,String> item : XQuery.mapResult(res, "prefix", "namespace")) {
                 String prefix = item.get("prefix");
                 String namespace = item.get("namespace");
@@ -610,7 +609,7 @@ public class SchemaChecker {
      */
     public static void checkUnusedImport(String xsd, AnalysisInformationCollector collector) {
         try {
-            String res = XQuery.runXQuery(Paths.get(""), "unusedImport.xq", xsd);
+            String res = XQuery.runXQuery(Paths.get("shared"), "unusedImport.xq", xsd);
             for (String namespace : XQuery.mapResult(res, "namespace")) {
                 collector.addError(ASSERTION_ID_UNUSED_IMPORT, "Unused import",
                         AnalysisInformationCollector.SEVERITY_LEVEL_MAJOR, "Namespace '" + namespace + "'");
@@ -652,7 +651,7 @@ public class SchemaChecker {
                                 + nakedName.toLowerCase() + "/v[\\d]+'");
             }
             // check unused namespaces, only 'tns' is allowed
-            String res = XQuery.runXQuery(Paths.get(""), "unusedPrefix.xq", xsd);
+            String res = XQuery.runXQuery(Paths.get("shared"), "unusedPrefix.xq", xsd);
             for (Map<String,String> item : XQuery.mapResult(res, "prefix", "namespace")) {
                 String prefix = item.get("prefix");
                 String namespace = item.get("namespace");

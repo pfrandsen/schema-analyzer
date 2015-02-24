@@ -329,9 +329,9 @@ public class Driver {
             return false;
         }
         // unpack resources used for wsdl and schema source diff reports
-        if (!unpackSourceDiffResources(srcDiff)) {
+        /*if (!unpackSourceDiffResources(srcDiff)) {
             // TODO:
-        }
+        }*/
 
         List<Path> schema = new ArrayList<>();
         List<Path> wsdl = new ArrayList<>();
@@ -1062,7 +1062,7 @@ public class Driver {
         String htmlFragment = HtmlUtil.toHtmlTable(collector, true);
         String html = template.replace("{{title}}", StringEscapeUtils.escapeHtml4(filename))
                 .replace("{{styles}}", css).replace("{{file}}", StringEscapeUtils.escapeHtml4(filename))
-                .replace("{{result}}", htmlFragment).replace("{{source}}", sourceHtml);
+                .replace("{{result}}", htmlFragment).replace("{{source}}", empty(sourceHtml));
         FileUtils.writeStringToFile(htmlOut.toFile(), html);
     }
 

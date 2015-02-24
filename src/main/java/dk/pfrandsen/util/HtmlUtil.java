@@ -12,8 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -112,12 +111,12 @@ public class HtmlUtil {
     }
 
     public static String schemaToHtml(String xml, boolean bodyOnly) throws Exception {
-        Path stylesheet = Paths.get("/", "xslt", "tohtml", "annotated-xsd.xsl");
+        String stylesheet = "/xslt/tohtml/annotated-xsd.xsl";
         return xmlToHtml(xml, bodyOnly, stylesheet);
     }
 
-    public static String xmlToHtml(String xml, boolean bodyOnly, Path stylesheet) throws Exception {
-        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet.toString()));
+    public static String xmlToHtml(String xml, boolean bodyOnly, String stylesheet) throws Exception {
+        String xsl = IOUtils.toString(Utilities.class.getResourceAsStream(stylesheet), StandardCharsets.UTF_8);
         TransformerFactory factory = TransformerFactory.newInstance();
         URIResolver resolver = new XslURIResolver();
         factory.setURIResolver(resolver);
@@ -131,7 +130,7 @@ public class HtmlUtil {
     }
 
     public static String wsdlToHtml(String xml, boolean bodyOnly) throws Exception {
-        Path stylesheet = Paths.get("/", "xslt", "tohtml", "annotated-wsdl.xsl");
+        String stylesheet = "/xslt/tohtml/annotated-wsdl.xsl";
         return xmlToHtml(xml, bodyOnly, stylesheet);
     }
 

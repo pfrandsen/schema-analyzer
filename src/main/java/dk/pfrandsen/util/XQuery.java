@@ -17,8 +17,8 @@ import dk.pfrandsen.Xml;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -28,21 +28,22 @@ public class XQuery {
         builder.append("declare namespace ").append(prefix).append("=\"").append(namespace).append("\";\n");
     }
 
-    public static String getXQuery(String queryName) {
+    /*public static String getXQuery(String queryName) {
         InputStream stream = XQuery.class.getResourceAsStream("/wsdl/xquery/" + queryName);
         try {
             return IOUtils.toString(stream);
         } catch (IOException e) {
             return "";
         }
-    }
+    }*/
 
     public static String runXQuery(Path queryLocation, String queryFile, String xml) throws IOException,
             MXQueryException {
         String queryResult = "";
-        String path = "/xquery/" + queryLocation.resolve(queryFile).toString();
+        //String path = "/xquery/" + queryLocation.resolve(queryFile).toString();
         // InputStream stream = XQuery.class.getResourceAsStream(path);
-        String xq = IOUtils.toString(XQuery.class.getResourceAsStream(path));
+        //String xq = IOUtils.toString(XQuery.class.getResourceAsStream(path));
+        String xq = xQueryResource(queryLocation, queryFile);
 
         Context ctx = new Context();
         CompilerOptions compilerOptions = new CompilerOptions();
@@ -64,18 +65,13 @@ public class XQuery {
         // currently in-memory stores
         statement.applyPUL();
         statement.close();
-
-        // System.out.println(strResult);
         return queryResult;
     }
 
     public static String runXQuery(Path queryLocation, String queryFile, String xml, String name) throws IOException,
             MXQueryException {
         String queryResult = "";
-        String path = "/xquery/" + queryLocation.resolve(queryFile).toString();
-        // InputStream stream = XQuery.class.getResourceAsStream(path);
-        String xq = IOUtils.toString(XQuery.class.getResourceAsStream(path));
-
+        String xq = xQueryResource(queryLocation, queryFile);
         Context ctx = new Context();
         CompilerOptions compilerOptions = new CompilerOptions();
         compilerOptions.setSchemaAwareness(true);
@@ -100,17 +96,16 @@ public class XQuery {
         // currently in-memory stores
         statement.applyPUL();
         statement.close();
-
-        // System.out.println(strResult);
         return queryResult;
     }
 
     public static String runXQuery(Path queryLocation, String queryFile, String xml, String nameOne, String nameTwo)
             throws IOException, MXQueryException {
         String queryResult = "";
-        String path = "/xquery/" + queryLocation.resolve(queryFile).toString();
+        //String path = "/xquery/" + queryLocation.resolve(queryFile).toString();
         // InputStream stream = XQuery.class.getResourceAsStream(path);
-        String xq = IOUtils.toString(XQuery.class.getResourceAsStream(path));
+        //String xq = IOUtils.toString(XQuery.class.getResourceAsStream(path));
+        String xq = xQueryResource(queryLocation, queryFile);
 
         Context ctx = new Context();
         CompilerOptions compilerOptions = new CompilerOptions();
@@ -137,9 +132,22 @@ public class XQuery {
         // currently in-memory stores
         statement.applyPUL();
         statement.close();
-
-        // System.out.println(strResult);
         return queryResult;
+    }
+
+    public static String xQueryResourceLocation(Path queryLocation, String queryFile) {
+        String location = "/xquery";
+        if (queryLocation != null) {
+            for (Path p : queryLocation) {
+                location += "/" + p;
+            }
+        }
+        return location + "/" +queryFile;
+    }
+
+    public static String xQueryResource(Path queryLocation, String queryFile) throws IOException {
+        String path = xQueryResourceLocation(queryLocation, queryFile);
+        return IOUtils.toString(XQuery.class.getResourceAsStream(path), StandardCharsets.UTF_8);
     }
 
     /**
